@@ -38,7 +38,7 @@ Crie o bucket de arquivos e aplique as tabelas:
 
 Configure os valores em `wrangler.jsonc` antes de publicar:
 
-- `ALLOWED_ORIGIN`: somente a origem do GitHub Pages, sem o nome do repositório nem barra final. Exemplo: `https://SEU-USUARIO.github.io`.
+- `ALLOWED_ORIGIN`: origens autorizadas separadas por vírgula, sem caminho nem barra final. O arquivo já inclui GitHub Pages e os domínios Cloudflare que você informou.
 - `PUBLIC_API_URL`: URL base do Worker, sem barra final. O nome do Worker é `fogoseguro-api`; o Wrangler exibirá a URL com o subdomínio da sua conta.
 - `ADMIN_USER`: usuário inicial, `admin` por padrão.
 
@@ -47,7 +47,7 @@ Publique e configure a senha inicial como segredo:
   npx wrangler deploy
   npx wrangler secret put ADMIN_PASSWORD
 
-Informe uma senha forte e exclusiva com pelo menos 16 caracteres. Não a coloque em `wrangler.jsonc`, no site nem no repositório. Depois, confira a URL exibida pelo Wrangler e use-a como `PUBLIC_API_URL`.
+Informe uma senha exclusiva com pelo menos 5 caracteres. Não a coloque em `wrangler.jsonc`, no site nem no repositório. Depois, confira a URL exibida pelo Wrangler e use-a como `PUBLIC_API_URL`.
 
 3. LIGAR O SITE À API
 ---------------------
@@ -57,15 +57,16 @@ Abra `site/config.js` e defina a URL do Worker, sem barra final:
 
 Salve e envie a alteração ao GitHub (`git add .`, `git commit -m "Configura API do FogoSeguro"`, `git push`). O GitHub Actions publicará a versão atualizada. Recarregue o endereço do Pages. Entre como `admin` usando a senha secreta definida acima.
 
-A URL do Worker precisa corresponder ao `PUBLIC_API_URL`; `ALLOWED_ORIGIN` deve ser exatamente a origem mostrada na barra do navegador, sem o caminho `/NOME-DO-REPOSITORIO/`. Se usar domínio próprio, use a origem HTTPS desse domínio nos dois lugares.
+A URL do Worker precisa corresponder ao `PUBLIC_API_URL`; cada origem usada no site precisa estar listada em `ALLOWED_ORIGIN`, sem o caminho `/NOME-DO-REPOSITORIO/` e sem barra final. Separe várias origens por vírgula.
 
 DADOS E ARQUIVOS
 ----------------
 - D1 armazena usuários, clientes, vendedores, serviços, pedidos, produtos, configurações e preços.
 - R2 armazena logos, imagens e vídeos enviados pelo painel.
-- O banco começa vazio, com catálogo inicial de tipos. Para levar os dados do site antigo, baixe um backup JSON em Configurações e restaure-o no novo painel. Recrie as contas dos funcionários; senhas antigas não são exportadas.
-- Faça backups frequentes pelo painel e mantenha acesso à sua conta Cloudflare.
-- A senha do administrador fica em Secret, e o código do site não contém a senha inicial.
+- A migração 0002 cria os acessos de vendedores e o controle de aceite dos serviços. Sempre execute novamente `npx wrangler d1 migrations apply fogoseguro-db --remote` antes de publicar a API após receber novas migrações. Depois publique com `npx wrangler deploy`.
+- O banco começa vazio, com catálogo inicial de tipos e preços sugeridos editáveis. Para levar os dados do site antigo, baixe um backup JSON em Configurações e restaure-o no novo painel. Recrie as contas dos funcionários; senhas antigas não são exportadas.
+- Faça backups frequentes pelo painel e mantenha acesso à sua conta Cloudflare. O estoque, preços sugeridos, novas capacidades comuns de CO₂ e contas de vendedores são armazenados no D1.
+- As senhas são guardadas como hash; o segredo inicial do administrador fica no Cloudflare Secret e não no código. A sessão do painel persiste entre recargas e abas até usar Sair.
 - O Worker usa D1/R2 e quotas de Workers. Consulte os limites/preços atuais no painel Cloudflare.
 
 O arquivo `site/config.js` começa sem URL de API. Sem configurá-la, o site público carrega, mas os recursos que dependem de banco/login não funcionarão. A configuração da API é necessária para manter os dados salvos e permitir login.
