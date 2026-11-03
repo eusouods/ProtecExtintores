@@ -7,16 +7,19 @@
     {
       "binding": "DB",
       "database_name": "fogoseguro-db",
-      "database_id": "COLE_AQUI_O_DATABASE_ID_GERADO_NO_CLOUDFLARE",
+      "database_id": "fbf85b1b-4ab7-478b-b5d8-14b4be3908f7",
       "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [
-    { "binding": "MEDIA", "bucket_name": "fogoseguro-media" }
+    {
+      "binding": "MEDIA",
+      "bucket_name": "fogoseguro-media"
+    }
   ],
   "vars": {
     "ADMIN_USER": "admin",
-    "ALLOWED_ORIGIN": "https://eusouods.github.io",
+    "ALLOWED_ORIGIN": "https://eusouods.github.io,https://protecextintores.eusouods.workers.dev,https://protecextintoresbeta.pages.dev",
     "PUBLIC_API_URL": "https://fogoseguro-api.eusouods.workers.dev"
   }
 }
