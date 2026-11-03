@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fogoseguro-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-02",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fogoseguro-db",
+      "database_id": "COLE_AQUI_O_DATABASE_ID_GERADO_NO_CLOUDFLARE",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    { "binding": "MEDIA", "bucket_name": "fogoseguro-media" }
+  ],
+  "vars": {
+    "ADMIN_USER": "admin",
+    "ALLOWED_ORIGIN": "https://SEU-USUARIO.github.io",
+    "PUBLIC_API_URL": "https://fogoseguro-api.SUA-CONTA.workers.dev"
+  }
+}
