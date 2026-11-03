@@ -16,7 +16,7 @@
   ],
   "vars": {
     "ADMIN_USER": "admin",
-    "ALLOWED_ORIGIN": "https://SEU-USUARIO.github.io",
-    "PUBLIC_API_URL": "https://fogoseguro-api.SUA-CONTA.workers.dev"
+    "ALLOWED_ORIGIN": "https://eusouods.github.io",
+    "PUBLIC_API_URL": "https://fogoseguro-api.eusouods.workers.dev"
   }
 }
