@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 520" role="img" aria-labelledby="title desc">
+  <title id="title">Ilustração original de extintor vermelho</title>
+  <desc id="desc">Extintor de incêndio vermelho com mangueira preta e manômetro</desc>
+  <defs>
+    <linearGradient id="body" x1="0" x2="1"><stop stop-color="#a71917"/><stop offset=".28" stop-color="#e2382c"/><stop offset=".72" stop-color="#c52320"/><stop offset="1" stop-color="#871615"/></linearGradient>
+    <linearGradient id="metal" x1="0" x2="1"><stop stop-color="#858b8d"/><stop offset=".45" stop-color="#f1f2ed"/><stop offset="1" stop-color="#74797b"/></linearGradient>
+    <filter id="shadow" x="-.3" y="-.2" width="1.6" height="1.6"><feDropShadow dx="0" dy="18" stdDeviation="14" flood-color="#121411" flood-opacity=".25"/></filter>
+  </defs>
+  <ellipse cx="240" cy="474" rx="126" ry="19" fill="#171812" opacity=".12"/>
+  <g filter="url(#shadow)">
+    <path d="M177 137v-23q0-17 17-17h93q17 0 17 17v23" fill="none" stroke="#252827" stroke-width="17" stroke-linecap="round"/>
+    <path d="M295 112h40q22 0 22 19v33" fill="none" stroke="#252827" stroke-width="13" stroke-linecap="round"/>
+    <path d="M350 162q27 2 25 28l-12 104" fill="none" stroke="#252827" stroke-width="11" stroke-linecap="round"/>
+    <path d="M172 145q0-15 15-15h106q15 0 15 15v268q0 37-36 37h-64q-36 0-36-37z" fill="url(#body)" stroke="#971b19" stroke-width="5"/>
+    <path d="M193 156v232" stroke="#ff8c78" stroke-width="8" opacity=".32" stroke-linecap="round"/>
+    <path d="M175 149h130M176 413h130" stroke="#8e1715" stroke-width="8" opacity=".7"/>
+    <rect x="203" y="85" width="72" height="21" rx="7" fill="url(#metal)"/>
+    <path d="M219 84V62q0-9 9-9h35q9 0 9 9v22" fill="none" stroke="#353a39" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="299" cy="109" r="22" fill="url(#metal)" stroke="#454a4b" stroke-width="5"/>
+    <circle cx="299" cy="109" r="13" fill="#f5f2de"/><path d="m299 109 8-8" stroke="#a51f1b" stroke-width="3"/>
+    <path d="M203 222h84v102h-84z" rx="5" fill="#fffdf4"/>
+    <path d="M214 237h62v10h-62zM214 258h49v5h-49zM214 272h55v5h-55zM214 286h42v5h-42zM214 302h62v7h-62z" fill="#252827"/>
+    <path d="M196 450h102" stroke="#4a4d49" stroke-width="9" stroke-linecap="round"/>
+  </g>
+</svg>
