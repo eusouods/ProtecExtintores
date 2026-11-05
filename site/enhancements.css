@@ -37,6 +37,16 @@ input,select,textarea{font-size:16px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 #store .hero.public-view.active{display:flex!important}
 #store .hero.public-view:not(.active){display:none!important}
+/* Navegação do painel no celular: módulos sempre acessíveis */
+.mobile-admin-menu,.mobile-admin-nav{display:none}
+@media(max-width:650px){
+  .admin-top{position:sticky;top:0;z-index:8;background:var(--white);box-shadow:0 5px 18px #08223812}
+  .admin-top .crumb{display:flex;align-items:center;gap:8px;min-width:0}.admin-top .crumb>#crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mobile-admin-menu{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;background:#e7f3f1;color:var(--ink);padding:8px 12px;min-height:42px;font-size:12px;font-weight:800;flex:0 0 auto}.mobile-admin-menu span:first-child{font-size:16px;line-height:1}
+  .mobile-admin-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px;background:#eef5f4;border-bottom:1px solid var(--line);position:sticky;top:60px;z-index:7;max-height:calc(100svh - 62px);overflow:auto;-webkit-overflow-scrolling:touch}
+  .mobile-admin-nav button{display:flex;align-items:center;gap:9px;text-align:left;border:1px solid #d4e4e3;background:#fff;color:var(--ink);border-radius:12px;min-height:48px;padding:10px 11px;font-size:11px;font-weight:800;box-shadow:0 3px 10px #08223808}.mobile-admin-nav button span:first-child{width:20px;text-align:center;color:var(--green);font-size:16px}.mobile-admin-nav button.active{border-color:var(--yellow);background:#fff5ef;box-shadow:inset 3px 0 var(--yellow)}.mobile-admin-nav button:active{transform:scale(.98)}.mobile-admin-nav .mobile-logout{grid-column:1/-1;background:#fff0ed;color:var(--red);border-color:#f0c9c2}.mobile-admin-nav.is-collapsed{display:none}
+}
+@media(max-width:380px){.mobile-admin-nav{grid-template-columns:1fr}.mobile-admin-nav .mobile-logout{grid-column:auto}}
 /* Rebranding 2026 — identidade azul noite, coral e menta */
 :root{--ink:#081b2b;--muted:#647383;--line:#dbe6e8;--paper:#f5f8f7;--white:#fff;--yellow:#ff6b35;--yellow2:#ff925f;--green:#16806c;--red:#cb4034;--shadow:0 24px 70px #0622361c}
 body{background:var(--paper);color:var(--ink)}
