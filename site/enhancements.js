@@ -199,3 +199,6 @@
   document.documentElement.classList.add('fogo-enhanced');
   if(window.bootstrap) bootstrap();
 })();
+window.togglePublicMenu=function(button){const nav=document.getElementById('publicNav');if(!nav)return;const open=nav.classList.toggle('is-open');button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Fechar menu':'Abrir menu');};
+window.closePublicMenu=function(){const nav=document.getElementById('publicNav'),button=document.querySelector('.menu-toggle');if(nav)nav.classList.remove('is-open');if(button){button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Abrir menu');}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePublicMenu();});
