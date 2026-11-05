@@ -97,3 +97,21 @@ body:has(#store:not(.hidden) .hero.active) #homeExtinguisherDecor{display:flex}
 #store .hero.public-view:not(.active){display:none!important}
 @media(max-width:760px){#store .hero{min-height:0;padding:126px 6% 54px;background:linear-gradient(150deg,#171812 0 70%,#26271f 100%)}#store .hero:before{width:235px;height:235px;top:72px;right:8%}#store .hero:after{width:220px;height:270px;top:61px;right:9%}#store .hero h1{font-size:clamp(40px,10vw,58px);letter-spacing:-2px}#store .hero .trust{display:grid;gap:9px;margin-top:27px}#homeExtinguisherDecor{inset:auto 0 -80px;padding:0 1%;opacity:.2}#homeExtinguisherDecor img{width:65px;height:130px}#homeExtinguisherDecor img:nth-child(2){width:52px;height:105px;margin-right:4%}#homeExtinguisherDecor img:nth-child(3){width:60px;height:120px}}
 #store .hero{display:none!important}.type-group{background:#171812;color:#f4cf35}.type-group th{text-align:left;padding:12px 14px}.type-price-group{border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin:7px 0}.type-price-group summary{cursor:pointer;font-weight:800;display:flex;justify-content:space-between}.type-price-group summary small{color:var(--muted);font-weight:600}.type-price-group .list-line{padding:9px 4px}.variant-label{display:grid;gap:5px;font-size:12px;font-weight:700}.variant-label select{padding:9px;border:1px solid var(--line);border-radius:8px;background:#fff}.product-variant .product-body{display:grid;gap:10px}.product-variant .product-foot{align-items:center}@media(max-width:650px){.type-group th{padding:10px}.product-variant .product-foot{flex-wrap:wrap}.variant-label select{min-height:42px}}
+/* Paleta institucional azul, branco e preto */
+:root{--ink:#0b1220;--muted:#526174;--line:#d8e1ec;--paper:#f4f7fb;--white:#ffffff;--yellow:#1769d1;--yellow2:#3b8df3;--green:#1769d1;--red:#c62828;--shadow:0 24px 70px #0b12201c}
+body{background:var(--paper);color:var(--ink)}
+.fogo-enhanced .hero{background:radial-gradient(ellipse at 76% 40%,#3b8df3 0,#1769d1 28%,#0b1220 28.2%,#050914 72%)}
+.fogo-enhanced .hero h1 span,.fogo-enhanced .eyebrow{color:#76b3ff}
+.hero,.login-aside,.sidebar,.employee-service-head,.employee-top,footer{background-color:#0b1220}
+.btn,.feature-icon,.brand-mark,.avatar{background:var(--yellow);color:#fff}
+.btn:hover{background:var(--yellow2)}
+.btn-dark{background:#050914;color:#fff}
+.btn-soft{background:#e7f0fb;color:#0b1220}
+.panel,.product,.stat,.modal,.tracking-card,.employee-service,.form-field input,.form-field select,.form-field textarea{background:#fff;border-color:var(--line)}
+th{background:#edf3fa;color:#526174}
+.features{background:#e7f0fb}
+.tag,.pill{background:#e7f0fb;color:#1769d1}
+.icon-btn:hover{background:#e7f0fb}
+.side-nav button.active{box-shadow:inset 3px 0 #3b8df3}
+.mobile-admin-nav button.active{border-color:#1769d1;background:#e7f0fb;box-shadow:inset 3px 0 #1769d1}
+.toast{border-left-color:#3b8df3}
