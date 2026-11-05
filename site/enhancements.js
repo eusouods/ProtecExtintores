@@ -133,13 +133,49 @@
   window.deleteSellerUser=async function(id){if(!confirm('Remover este acesso de vendedor?'))return;const r=await apiCall('/api/admin/sellers?id='+encodeURIComponent(id),'DELETE');if(r.ok)loadSellerUsers();};
   const oldCreateEmployee=window.createEmployeeUser;
   window.createEmployeeUser=async function(e){e.preventDefault();const f=e.target;const data=Object.fromEntries(new FormData(f));data.password=data.password||'';try{const r=await apiCall('/api/admin/users','POST',data),d=await apiJson(r);if(!r.ok)throw Error(d.error||'Erro ao criar usuário');f.reset();loadEmployeeUsers();toast('Acesso de funcionário criado');}catch(err){toast(err.message)}};
+  let bootstrapPromise=null;
+  function showSessionRestoreError(){
+    let notice=document.getElementById('sessionRestoreNotice');
+    if(!notice){
+      notice=document.createElement('div');notice.id='sessionRestoreNotice';
+      notice.setAttribute('role','status');
+      notice.style.cssText='position:fixed;z-index:30;left:50%;bottom:20px;transform:translateX(-50%);width:min(520px,calc(100% - 32px));padding:16px 18px;background:#171812;color:#fff;border:1px solid #f4c400;border-radius:12px;box-shadow:0 12px 36px #0004;font:14px Nunito,system-ui,sans-serif';
+      document.body.appendChild(notice);
+    }
+    notice.innerHTML='<div style="font-weight:700;margin-bottom:6px">Não foi possível confirmar sua sessão agora.</div><div style="color:#d0d0c8;font-size:12px;margin-bottom:12px">Seu acesso foi mantido. Confira a conexão e tente novamente.</div><button type="button" class="btn btn-small" id="retrySessionRestore">Tentar novamente</button>';
+    document.getElementById('retrySessionRestore').onclick=()=>{notice.remove();bootstrap();};
+  }
   if(window.bootstrap) window.bootstrap=async function(){
-    try {const r=await apiCall('/api/public');if(r.ok){const d=await apiJson(r);db.settings={...db.settings,...d.settings};db.products=d.products||db.products;renderPublic();}}catch{}
-    addInventoryNav();
-    document.getElementById('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});syncBrand();renderPublic();document.getElementById('year').textContent=new Date().getFullYear();
-    const token=localStorage.getItem(tokenKey);
-    if(token&&API_ENABLED){try{const r=await apiCall('/api/session');const d=await apiJson(r);if(!r.ok)throw Error('Sessão expirada');localStorage.setItem(roleKey,d.role);localStorage.setItem(nameKey,d.username||'');if(d.role==='admin'){db=d.state;db.settings.password='';saveLocal();showDashboard();}else if(d.role==='employee'){db.settings={...db.settings,...d.settings};renderEmployee(d.username,d.services||[]);}else renderSeller(d);}catch{localStorage.removeItem(tokenKey);localStorage.removeItem(roleKey);localStorage.removeItem(nameKey);showPublicPage('home');}}
-    else showPublicPage('home');
+    if(bootstrapPromise)return bootstrapPromise;
+    bootstrapPromise=(async()=>{
+      try {const r=await apiCall('/api/public');if(r.ok){const d=await apiJson(r);db.settings={...db.settings,...d.settings};db.products=d.products||db.products;renderPublic();}}catch{}
+      addInventoryNav();
+      document.getElementById('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});syncBrand();renderPublic();document.getElementById('year').textContent=new Date().getFullYear();
+      const token=localStorage.getItem(tokenKey);
+      if(!token||!API_ENABLED){showPublicPage('home');return;}
+      try{
+        const r=await apiCall('/api/session');
+        if(r.status===401){
+          [tokenKey,roleKey,nameKey].forEach(k=>localStorage.removeItem(k));
+          sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);
+          showPublicPage('home');return;
+        }
+        if(!r.ok)throw Error('A API está temporariamente indisponível (HTTP '+r.status+').');
+        const d=await apiJson(r);
+        if(!['admin','employee','seller'].includes(d.role))throw Error('A resposta da sessão não é válida.');
+        localStorage.setItem(roleKey,d.role);localStorage.setItem(nameKey,d.username||'');
+        if(d.role==='admin'){
+          if(!d.state)throw Error('A API não retornou os dados do painel.');
+          db=d.state;db.settings.password='';saveLocal();showDashboard();
+        }else if(d.role==='employee'){
+          db.settings={...db.settings,...d.settings};renderEmployee(d.username,d.services||[]);
+        }else renderSeller(d);
+        document.getElementById('sessionRestoreNotice')?.remove();
+      }catch(error){
+        showPublicPage('home');showSessionRestoreError();
+      }
+    })().finally(()=>{bootstrapPromise=null;});
+    return bootstrapPromise;
   };
   window.addEventListener('storage',e=>{if(e.key===tokenKey&&!e.newValue){sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);showStore();}else if(e.key===tokenKey&&e.newValue&&document.getElementById('dashboard').classList.contains('hidden')){bootstrap();}});
 
