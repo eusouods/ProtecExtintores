@@ -115,3 +115,13 @@ th{background:#edf3fa;color:#526174}
 .side-nav button.active{box-shadow:inset 3px 0 #3b8df3}
 .mobile-admin-nav button.active{border-color:#1769d1;background:#e7f0fb;box-shadow:inset 3px 0 #1769d1}
 .toast{border-left-color:#3b8df3}
+/* Elimina os tons amarelos legados e consolida o azul marinho/azul escuro. */
+.btn-soft,.tag,.pill{background:#e8f1ff!important;color:#123b73!important}
+.stat-icon,.detail div,th{background:#edf4ff!important;color:#123b73!important}
+.features{background:#e3efff!important}.product-image{background:linear-gradient(145deg,#e8f1ff,#fff)!important}
+.icon-btn:hover,.upload:hover{background:#e8f1ff!important;border-color:#1769d1!important}
+.status.warn{background:#e8f1ff!important;color:#123b73!important}
+.process-step.done i,.process-step.current i{background:#1769d1!important;border-color:#0b2b55!important}
+.process-step.done:before,.process-step.current:before{background:#1769d1!important}
+.workflow-choice input{accent-color:#1769d1!important}
+[style*="#8c7100"],[style*="#b69600"]{color:#123b73!important;border-color:#1769d1!important}
