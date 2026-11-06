@@ -125,3 +125,4 @@ th{background:#edf3fa;color:#526174}
 .process-step.done:before,.process-step.current:before{background:#1769d1!important}
 .workflow-choice input{accent-color:#1769d1!important}
 [style*="#8c7100"],[style*="#b69600"]{color:#123b73!important;border-color:#1769d1!important}
+.availability-settings{border-color:#c9d9ef}.setting-toggle{display:flex;align-items:center;gap:13px;padding:15px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:#f7faff;cursor:pointer}.setting-toggle input{width:20px;height:20px;accent-color:#1769d1}.setting-toggle span{display:grid;gap:4px}.setting-toggle small{color:var(--muted);font-size:12px}.store-paused-notice{margin:14px 0;padding:14px;border:1px solid #b8cceb;border-radius:12px;background:#edf4ff;color:#123b73;font-weight:800}
