@@ -36,15 +36,15 @@
     clientField.appendChild(trigger);
 
     const createClientOption = new Option('+ Cadastrar novo cliente', '__create_client__');
-    select.add(createClientOption);
-    select.dataset.lastClientValue = select.value;
-    select.addEventListener('change', () => {
-      if (select.value === '__create_client__') {
-        select.value = select.dataset.lastClientValue || '';
+    clientSelect.add(createClientOption);
+    clientSelect.dataset.lastClientValue = clientSelect.value;
+    clientSelect.addEventListener('change', () => {
+      if (clientSelect.value === '__create_client__') {
+        clientSelect.value = clientSelect.dataset.lastClientValue || '';
         openInlineClientForm();
         return;
       }
-      select.dataset.lastClientValue = select.value;
+      clientSelect.dataset.lastClientValue = clientSelect.value;
     });
 
     const panel = document.createElement('section');
