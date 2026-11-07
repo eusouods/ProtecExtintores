@@ -1,166 +1,170 @@
-/* Inline customer creation in the service registration dialog. */
+/* Client registration handoff from the service form, with service draft restore. */
 (() => {
-  const styles = document.createElement('style');
-  styles.textContent = `
-    .service-client-inline-trigger{margin-top:8px;padding:4px 0;border:0;background:transparent;color:#1769d1;font-size:12px;font-weight:700;text-align:left}
-    .service-client-inline-trigger:hover{text-decoration:underline}
-    .service-client-inline-panel{grid-column:1/-1;margin:2px 0 14px;padding:16px;border:1px solid #d9e4f2;border-radius:14px;background:#f7faff}
-    .service-client-inline-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
-    .service-client-inline-head strong{display:block;font-size:14px}
-    .service-client-inline-head p{margin:4px 0 0;color:#68758a;font-size:11px;line-height:1.5}
-    .service-client-inline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
-    .service-client-inline-grid .form-field{margin:8px 0}
-    .service-client-inline-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
-    @media(max-width:620px){.service-client-inline-grid{grid-template-columns:1fr}.service-client-inline-panel{padding:13px}}
-  `;
-  document.head.appendChild(styles);
+  const draftKey = 'fogoseguro_service_client_handoff';
 
-  function getForm() {
-    return document.getElementById('editForm');
+  const style = document.createElement('style');
+  style.textContent = `
+    .service-client-page-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 0;border:0;background:transparent;color:#1769d1;font-size:12px;font-weight:700;text-align:left}
+    .service-client-page-link:hover{text-decoration:underline}
+    .service-draft-return{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px;padding:14px 16px;border:1px solid #cbdcf2;border-radius:12px;background:#f3f8ff;color:#173b68}
+    .service-draft-return p{margin:0;font-size:13px}
+    .service-draft-return button{flex:none}
+    @media(max-width:620px){.service-draft-return{align-items:flex-start;flex-direction:column}}
+  `;
+  document.head.appendChild(style);
+
+  function captureServiceDraft() {
+    const form = document.getElementById('editForm');
+    if (!form) return {};
+    const read = name => form.querySelector(`[name="${name}"]`)?.value || '';
+    const clientSelect = form.querySelector('[name="clientId"]');
+    const clientId = clientSelect?.value === '__create_client__'
+      ? clientSelect.dataset.lastClientValue || ''
+      : clientSelect?.value || '';
+    const rows = [...document.querySelectorAll('#serviceExtRows .service-ext-row')].map(row => ({
+      type: row.querySelector('[name="extType"]')?.value || '',
+      kg: row.querySelector('[name="extKg"]')?.value || '',
+      qty: row.querySelector('[name="extQty"]')?.value || '1'
+    }));
+    return {
+      clientId,
+      sellerId: read('sellerId'),
+      serviceType: read('serviceType'),
+      date: read('date'),
+      parts: read('parts'),
+      notes: read('notes'),
+      rows
+    };
   }
 
-  function installInlineClientForm() {
-    const form = getForm();
+  function restoreServiceDraft(draft) {
+    const form = document.getElementById('editForm');
+    if (!form || !draft) return;
+    for (const name of ['clientId', 'sellerId', 'serviceType', 'date', 'parts', 'notes']) {
+      const control = form.querySelector(`[name="${name}"]`);
+      if (control && draft[name] != null) control.value = draft[name];
+    }
+    const host = document.getElementById('serviceExtRows');
+    if (!host) return;
+    host.replaceChildren();
+    const rows = Array.isArray(draft.rows) ? draft.rows : [];
+    if (rows.length) rows.forEach(row => addServiceExtRow(row.type || '', row.kg || '', row.qty || 1));
+    else addServiceExtRow();
+    refreshServicePrice();
+  }
+
+  function showReturnBanner() {
+    if (!sessionStorage.getItem(draftKey)) return;
+    const host = document.getElementById('content');
+    if (!host || document.getElementById('serviceDraftReturn')) return;
+    const banner = document.createElement('div');
+    banner.id = 'serviceDraftReturn';
+    banner.className = 'service-draft-return';
+    banner.innerHTML = '<p>Seu serviço está salvo como rascunho enquanto você cadastra o cliente.</p><button type="button" class="btn btn-small">Voltar ao serviço</button>';
+    banner.querySelector('button').addEventListener('click', () => window.resumeServiceRegistration());
+    host.prepend(banner);
+  }
+
+  function openClientRegistration() {
+    const body = `<div class="form-grid">
+      ${field('Nome / Empresa','name',{required:true})}
+      ${field('CPF / CNPJ','document')}
+      ${field('Telefone','phone',{type:'tel'})}
+      ${field('E-mail','email',{type:'email'})}
+      ${field('Endereço','address',{cls:'span2'})}
+      ${field('Observações','notes',{cls:'span2'})}
+    </div><p class="helper">Depois de salvar, o sistema volta ao serviço e seleciona este cliente automaticamente.</p>`;
+    openModal('Cadastrar novo cliente', body, async form => {
+      const client = {
+        id: id(),
+        name: val(form, 'name'),
+        document: val(form, 'document'),
+        phone: val(form, 'phone'),
+        email: val(form, 'email'),
+        address: val(form, 'address'),
+        notes: val(form, 'notes')
+      };
+      if (!client.name || client.name.length < 2) {
+        toast('Informe o nome do cliente com pelo menos 2 caracteres.');
+        return false;
+      }
+      db.clients ||= [];
+      db.clients.push(client);
+      if (!await save()) {
+        db.clients = db.clients.filter(item => item.id !== client.id);
+        saveLocal();
+        return false;
+      }
+      renderPage();
+      toast('Cliente cadastrado. Retomando o serviço.');
+      return {afterClose: () => window.resumeServiceRegistration(client.id)};
+    }, 'Salvar cliente');
+  }
+
+  const originalOpenClient = window.openClient;
+  window.openClient = function(...args) {
+    if (sessionStorage.getItem(draftKey)) return openClientRegistration();
+    return originalOpenClient.apply(this, args);
+  };
+
+  window.resumeServiceRegistration = function(clientId = '') {
+    let draft;
+    try { draft = JSON.parse(sessionStorage.getItem(draftKey) || 'null'); } catch { draft = null; }
+    if (!draft) return;
+    if (clientId) draft.clientId = clientId;
+    sessionStorage.removeItem(draftKey);
+    go('services');
+    setTimeout(() => window.openService(draft), 60);
+  };
+
+  function openClientPageFromService() {
+    sessionStorage.setItem(draftKey, JSON.stringify(captureServiceDraft()));
+    closeModal();
+    go('clients');
+    setTimeout(() => {
+      showReturnBanner();
+      window.openClient();
+    }, 60);
+  }
+
+  function installClientPageAction() {
+    const form = document.getElementById('editForm');
     const clientSelect = form?.querySelector('select[name="clientId"]');
     const clientField = clientSelect?.closest('.form-field');
-    if (!form || !clientSelect || !clientField || form.querySelector('#serviceClientInlinePanel')) return;
+    if (!form || !clientSelect || !clientField || form.querySelector('.service-client-page-link')) return;
 
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
-    trigger.className = 'service-client-inline-trigger';
-    trigger.id = 'serviceClientInlineTrigger';
-    trigger.setAttribute('aria-expanded', 'false');
-    trigger.setAttribute('aria-controls', 'serviceClientInlinePanel');
-    trigger.textContent = '+ Cadastrar novo cliente';
-    trigger.addEventListener('click', toggleInlineClientForm);
-    clientField.appendChild(trigger);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'service-client-page-link';
+    button.textContent = '+ Cadastrar cliente';
+    button.addEventListener('click', openClientPageFromService);
+    clientField.appendChild(button);
 
-    const createClientOption = new Option('+ Cadastrar novo cliente', '__create_client__');
+    const createClientOption = new Option('+ Cadastrar cliente', '__create_client__');
     clientSelect.add(createClientOption);
     clientSelect.dataset.lastClientValue = clientSelect.value;
     clientSelect.addEventListener('change', () => {
       if (clientSelect.value === '__create_client__') {
         clientSelect.value = clientSelect.dataset.lastClientValue || '';
-        openInlineClientForm();
+        openClientPageFromService();
         return;
       }
       clientSelect.dataset.lastClientValue = clientSelect.value;
     });
-
-    const panel = document.createElement('section');
-    panel.id = 'serviceClientInlinePanel';
-    panel.className = 'service-client-inline-panel hidden';
-    panel.setAttribute('aria-label', 'Cadastro de novo cliente');
-    panel.innerHTML = `
-      <div class="service-client-inline-head">
-        <div><strong>Novo cliente</strong><p>Cadastre aqui e ele já ficará selecionado nesta ordem de serviço.</p></div>
-        <button type="button" class="icon-btn" id="closeServiceClientInline" aria-label="Fechar cadastro">✕</button>
-      </div>
-      <div class="service-client-inline-grid">
-        <div class="form-field"><label for="inlineClientName">Nome / empresa <span aria-hidden="true">*</span></label><input id="inlineClientName" name="inlineClientName" autocomplete="organization" placeholder="Nome do cliente" aria-required="true"></div>
-        <div class="form-field"><label for="inlineClientDocument">CPF / CNPJ</label><input id="inlineClientDocument" name="inlineClientDocument" autocomplete="off"></div>
-        <div class="form-field"><label for="inlineClientPhone">Telefone</label><input id="inlineClientPhone" name="inlineClientPhone" type="tel" autocomplete="tel" placeholder="(00) 00000-0000"></div>
-        <div class="form-field"><label for="inlineClientEmail">E-mail</label><input id="inlineClientEmail" name="inlineClientEmail" type="email" autocomplete="email" placeholder="cliente@exemplo.com"></div>
-        <div class="form-field" style="grid-column:1/-1"><label for="inlineClientAddress">Endereço</label><input id="inlineClientAddress" name="inlineClientAddress" autocomplete="street-address"></div>
-        <div class="form-field" style="grid-column:1/-1"><label for="inlineClientNotes">Observações</label><textarea id="inlineClientNotes" name="inlineClientNotes" rows="2"></textarea></div>
-      </div>
-      <div class="service-client-inline-actions">
-        <button type="button" class="btn btn-small" id="saveServiceClientInline">Salvar cliente e selecionar</button>
-      </div>`;
-
-    const sellerField = form.querySelector('[name="sellerId"]')?.closest('.form-field');
-    (sellerField || clientField).insertAdjacentElement('afterend', panel);
-    panel.querySelector('#closeServiceClientInline').addEventListener('click', toggleInlineClientForm);
-    panel.querySelector('#saveServiceClientInline').addEventListener('click', saveInlineClient);
-    panel.addEventListener('keydown', event => {
-      if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
-        event.preventDefault();
-        saveInlineClient();
-      }
-    });
-  }
-
-  function toggleInlineClientForm() {
-    const panel = document.getElementById('serviceClientInlinePanel');
-    const trigger = document.getElementById('serviceClientInlineTrigger');
-    if (!panel || !trigger) return;
-    const opening = panel.classList.contains('hidden');
-    panel.classList.toggle('hidden', !opening);
-    trigger.setAttribute('aria-expanded', String(opening));
-    if (opening) panel.querySelector('#inlineClientName')?.focus();
-  }
-
-  function openInlineClientForm() {
-    const panel = document.getElementById('serviceClientInlinePanel');
-    const trigger = document.getElementById('serviceClientInlineTrigger');
-    if (!panel || !trigger) return;
-    panel.classList.remove('hidden');
-    trigger.setAttribute('aria-expanded', 'true');
-    panel.querySelector('#inlineClientName')?.focus();
-  }
-
-  async function saveInlineClient() {
-    const form = getForm();
-    const panel = document.getElementById('serviceClientInlinePanel');
-    const select = form?.querySelector('select[name="clientId"]');
-    if (!form || !panel || !select) return;
-
-    const read = name => panel.querySelector(`[name="${name}"]`)?.value.trim() || '';
-    const name = read('inlineClientName');
-    if (name.length < 2) {
-      toast('Informe o nome do cliente com pelo menos 2 caracteres.');
-      panel.querySelector('#inlineClientName')?.focus();
-      return;
-    }
-
-    const previousClients = [...(db.clients || [])];
-    const client = {
-      id: id(),
-      name,
-      document: read('inlineClientDocument'),
-      phone: read('inlineClientPhone'),
-      email: read('inlineClientEmail'),
-      address: read('inlineClientAddress'),
-      notes: read('inlineClientNotes')
-    };
-    db.clients ||= [];
-    db.clients.push(client);
-
-    const saveButton = panel.querySelector('#saveServiceClientInline');
-    saveButton.disabled = true;
-    saveButton.textContent = 'Salvando…';
-    try {
-      const saved = await save();
-      if (!saved) {
-        db.clients = previousClients;
-        saveLocal();
-        return;
-      }
-      let option = [...select.options].find(item => item.value === client.id);
-      if (!option) {
-        option = new Option(client.name, client.id);
-        select.add(option);
-      }
-      select.value = client.id;
-      select.dataset.lastClientValue = client.id;
-      panel.querySelectorAll('input,textarea').forEach(input => { input.value = ''; });
-      panel.classList.add('hidden');
-      document.getElementById('serviceClientInlineTrigger')?.setAttribute('aria-expanded', 'false');
-      toast('Cliente cadastrado e selecionado para este serviço.');
-    } catch (error) {
-      db.clients = previousClients;
-      saveLocal();
-      toast(error.message || 'Não foi possível cadastrar o cliente.');
-    } finally {
-      saveButton.disabled = false;
-      saveButton.textContent = 'Salvar cliente e selecionar';
-    }
   }
 
   const originalOpenService = window.openService;
-  window.openService = function(...args) {
+  window.openService = function(draft, ...args) {
     const result = originalOpenService.apply(this, args);
-    installInlineClientForm();
+    installClientPageAction();
+    if (draft && typeof draft === 'object') restoreServiceDraft(draft);
+    return result;
+  };
+
+  const originalGo = window.go;
+  window.go = function(target, ...args) {
+    const result = originalGo.call(this, target, ...args);
+    if (target === 'clients') setTimeout(showReturnBanner, 0);
     return result;
   };
 })();
