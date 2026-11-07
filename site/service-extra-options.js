@@ -17,8 +17,9 @@
     .service-extra-line{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr)) auto;align-items:end;gap:8px;margin:0 0 9px}
     .service-extra-line .form-field{min-width:0;margin:0}
     .service-extra-line .form-field label{font-size:10px}
+    .service-extra-remove{min-height:38px;padding:7px 11px;border:1px solid #fecaca;border-radius:9px;background:#fff7f7;color:#b42318;font-weight:700;white-space:nowrap}
     .service-extra-add{margin-top:4px}
-    @media(max-width:680px){.service-extra-grid{grid-template-columns:1fr}.service-extra-line{grid-template-columns:repeat(2,minmax(0,1fr))}.service-extra-line .icon-btn{grid-column:1/-1;justify-self:start}}
+    @media(max-width:680px){.service-extra-grid{grid-template-columns:1fr}.service-extra-line{grid-template-columns:repeat(2,minmax(0,1fr))}.service-extra-remove{grid-column:1/-1;width:100%}}
   `;
   document.head.appendChild(style);
 
@@ -40,68 +41,65 @@
         </div><div class="form-field"><label>Local / observações</label><input data-field="notes" type="text"></div></div>
       </article>
       <article class="service-extra-card" data-extra-card="wall-support">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou trocar suporte de parede</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar suporte de parede</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Local / observações</label><input data-field="notes" type="text"></div>
         </div></div>
       </article>
       <article class="service-extra-card" data-extra-card="floor-stand">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar ou trocar suporte de piso</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar suporte de piso</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Local / observações</label><input data-field="notes" type="text"></div>
         </div></div>
       </article>
       <article class="service-extra-card" data-extra-card="extinguisher-hose">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou trocar mangueira de extintor<small>Adicione um ou mais agentes extintores.</small></span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar mangueira de extintor<small>Adicione uma ou mais mangueiras por agente.</small></span></label>
         <div class="service-extra-details hidden" data-extra-details><div data-extra-list="extinguisher-hose"></div><button type="button" class="btn btn-soft btn-small service-extra-add" data-extra-add>＋ Adicionar mangueira</button></div>
       </article>
       <article class="service-extra-card" data-extra-card="diffuser">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou trocar difusor<small>Adicione um ou mais tipos.</small></span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar difusor de extintor<small>Adicione um ou mais tipos.</small></span></label>
         <div class="service-extra-details hidden" data-extra-details><div data-extra-list="diffuser"></div><button type="button" class="btn btn-soft btn-small service-extra-add" data-extra-add>＋ Adicionar difusor</button></div>
       </article>
       <article class="service-extra-card" data-extra-card="hydrant-cabinet">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou ajustar abrigo de hidrante</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar ou instalar abrigo de hidrante</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Local / observações</label><input data-field="notes" type="text"></div>
         </div></div>
       </article>
       <article class="service-extra-card" data-extra-card="safety-signage">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou trocar placa de sinalização</span></label>
-        <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
-          <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
-          <div class="form-field"><label>Tipo / local</label><input data-field="notes" type="text" placeholder="Ex.: extintor, hidrante"></div>
-        </div></div>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar placas de sinalização<small>Saídas, extintores, hidrantes, alarmes e placas personalizadas.</small></span></label>
+        <div class="service-extra-details hidden" data-extra-details><div data-extra-list="safety-signage"></div><button type="button" class="btn btn-soft btn-small service-extra-add" data-extra-add>＋ Adicionar placa</button></div>
       </article>
       <article class="service-extra-card" data-extra-card="pressure-gauge">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Trocar manômetro</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar manômetro</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Observações</label><input data-field="notes" type="text"></div>
         </div></div>
       </article>
       <article class="service-extra-card" data-extra-card="valve">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Trocar ou revisar válvula</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar ou revisar válvula</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Tipo / observações</label><input data-field="notes" type="text"></div>
         </div></div>
       </article>
       <article class="service-extra-card" data-extra-card="hydrant-accessories">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou trocar acessório de hidrante<small>Esguicho, adaptador, chave ou tampão Storz.</small></span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar acessório de hidrante<small>Esguicho, adaptador, chave ou tampão Storz.</small></span></label>
         <div class="service-extra-details hidden" data-extra-details><div data-extra-list="hydrant-accessories"></div><button type="button" class="btn btn-soft btn-small service-extra-add" data-extra-add>＋ Adicionar acessório</button></div>
       </article>
       <article class="service-extra-card" data-extra-card="extinguisher-wheels">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Revisar ou trocar rodas / carrinho de extintor</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar rodas / carrinho para extintor</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Local / observações</label><input data-field="notes" type="text"></div>
         </div></div>
       </article>
       <article class="service-extra-card" data-extra-card="emergency-light">
-        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Instalar ou trocar iluminação de emergência</span></label>
+        <label class="service-extra-choice"><input type="checkbox" data-extra-toggle><span>Adicionar iluminação de emergência</span></label>
         <div class="service-extra-details hidden" data-extra-details><div class="service-extra-fields">
           <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
           <div class="form-field"><label>Local / observações</label><input data-field="notes" type="text"></div>
@@ -122,24 +120,28 @@
       <div class="form-field"><label>Diâmetro (mm)</label><input data-field="diameterMm" type="number" min="0.1" step="any" placeholder="mm"></div>
       <div class="form-field"><label>Comprimento (m)</label><input data-field="lengthMeters" type="number" min="0.1" step="any" placeholder="m"></div>
       <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
-      <button type="button" class="icon-btn" data-remove-line aria-label="Remover mangueira">Remover</button>
+      <button type="button" class="service-extra-remove" data-remove-line aria-label="Remover mangueira de hidrante">Remover mangueira</button>
     </div>`;
   }
 
   function selectLine(kind) {
     const isHose = kind === 'extinguisher-hose';
     const isHydrantAccessory = kind === 'hydrant-accessories';
-    const options = isHydrantAccessory
+    const isSignage = kind === 'safety-signage';
+    const options = isSignage
+      ? [['','Selecione a placa'],['Saída','Saída'],['Saída de emergência','Saída de emergência'],['Rota de fuga','Rota de fuga'],['Extintor de incêndio','Extintor de incêndio'],['Extintor de pó químico ABC','Extintor de pó químico ABC'],['Extintor de pó químico BC','Extintor de pó químico BC'],['Extintor de CO₂','Extintor de CO₂'],['Extintor de água','Extintor de água'],['Hidrante','Hidrante'],['Alarme de incêndio','Alarme de incêndio'],['Acionador manual','Acionador manual'],['Ponto de encontro','Ponto de encontro'],['Proibido fumar','Proibido fumar'],['Não utilize elevador','Não utilize elevador'],['Porta corta-fogo','Porta corta-fogo'],['Risco elétrico','Risco elétrico'],['Outra','Outra']]
+      : isHydrantAccessory
       ? [['','Selecione o acessório'],['Esguicho regulável','Esguicho regulável'],['Esguicho jato sólido','Esguicho jato sólido'],['Adaptador Storz','Adaptador Storz'],['Chave Storz','Chave Storz'],['Tampão Storz','Tampão Storz'],['Outro','Outro']]
       : isHose
       ? [['','Selecione o agente'],['Pó químico ABC','Pó químico ABC'],['Pó químico BC','Pó químico BC'],['Água pressurizada','Água pressurizada'],['CO₂','CO₂'],['Outro','Outro']]
       : [['','Selecione o tipo'],['Pó químico ABC/BC','Pó químico ABC/BC'],['Água','Água'],['CO₂','CO₂'],['Outro','Outro']];
-    const label = isHydrantAccessory ? 'Acessório' : isHose ? 'Mangueira' : 'Difusor';
+    const label = isSignage ? 'Placa' : isHydrantAccessory ? 'Acessório' : isHose ? 'Mangueira' : 'Difusor';
     return `<div class="service-extra-line" data-extra-line>
       <div class="form-field"><label>${label}</label><select data-field="type">${options.map(([value,text])=>`<option value="${value}">${text}</option>`).join('')}</select></div>
       <div class="form-field hidden" data-other-type><label>Informe o tipo</label><input data-field="otherType" type="text"></div>
       <div class="form-field"><label>Quantidade</label><input data-field="quantity" type="number" min="1" step="1" value="1"></div>
-      <button type="button" class="icon-btn" data-remove-line aria-label="Remover ${label.toLocaleLowerCase('pt-BR')}">Remover</button>
+      ${isSignage ? '<div class="form-field"><label>Local de instalação</label><input data-field="location" type="text" placeholder="Ex.: corredor, recepção"></div>' : ''}
+      <button type="button" class="service-extra-remove" data-remove-line aria-label="Remover ${label.toLocaleLowerCase('pt-BR')}">Remover ${label.toLocaleLowerCase('pt-BR')}</button>
     </div>`;
   }
 
@@ -149,7 +151,14 @@
     const holder = document.createElement('div');
     holder.innerHTML = kind === 'hydrant-hose-test' ? hydrantLine() : selectLine(kind);
     const line = holder.firstElementChild;
-    line.querySelector('[data-remove-line]').addEventListener('click', () => line.remove());
+    line.querySelector('[data-remove-line]').addEventListener('click', () => {
+      line.remove();
+      if (!list.querySelector('[data-extra-line]')) {
+        const toggle = card.querySelector('[data-extra-toggle]');
+        if (toggle?.checked) { toggle.checked = false; toggle.dispatchEvent(new Event('change', {bubbles:true})); }
+      }
+      window.refreshServicePrice();
+    });
     line.querySelector('[data-field="type"]')?.addEventListener('change', event => {
       const other = line.querySelector('[data-other-type]');
       if (other) other.classList.toggle('hidden', event.target.value !== 'Outro');
@@ -184,7 +193,7 @@
       const kind = card.dataset.extraCard;
       toggle.addEventListener('change', () => {
         details.classList.toggle('hidden', !toggle.checked);
-        if (toggle.checked && ['hydrant-hose-test','extinguisher-hose','diffuser','hydrant-accessories'].includes(kind) && !card.querySelector('[data-extra-line]')) addLine(card, kind);
+        if (toggle.checked && ['hydrant-hose-test','extinguisher-hose','diffuser','hydrant-accessories','safety-signage'].includes(kind) && !card.querySelector('[data-extra-line]')) addLine(card, kind);
       });
       card.querySelector('[data-extra-add]')?.addEventListener('click', () => addLine(card, kind));
       card.querySelector('[data-field="color"]')?.addEventListener('change', event => {
@@ -218,15 +227,16 @@
         }));
         if (!lines.length || lines.some(line => !line.type || line.diameterMm <= 0 || line.lengthMeters <= 0)) return {items,error:'Informe tipo, diâmetro e comprimento de cada mangueira de hidrante.'};
         items.push({code,title:'Teste de mangueira de hidrante',lines,price});
-      } else if (code === 'extinguisher-hose' || code === 'diffuser' || code === 'hydrant-accessories') {
+      } else if (code === 'extinguisher-hose' || code === 'diffuser' || code === 'hydrant-accessories' || code === 'safety-signage') {
         const lines = [...card.querySelectorAll('[data-extra-line]')].map(line => ({
           type: line.querySelector('[data-field="type"]')?.value || '',
           otherType: line.querySelector('[data-field="otherType"]')?.value.trim() || '',
+          location: line.querySelector('[data-field="location"]')?.value.trim() || '',
           quantity: Math.max(1, Math.floor(Number(line.querySelector('[data-field="quantity"]')?.value || 1)))
         }));
-        const label = code === 'diffuser' ? 'difusor' : code === 'hydrant-accessories' ? 'acessório' : 'mangueira';
+        const label = code === 'safety-signage' ? 'placa' : code === 'diffuser' ? 'difusor' : code === 'hydrant-accessories' ? 'acessório' : 'mangueira';
         if (!lines.length || lines.some(line => !line.type || (line.type === 'Outro' && !line.otherType))) return {items,error:`Selecione o tipo de ${label} ou informe o tipo personalizado.`};
-        const title = code === 'diffuser' ? 'Difusor de extintor' : code === 'hydrant-accessories' ? 'Acessório de hidrante' : 'Mangueira de extintor';
+        const title = code === 'safety-signage' ? 'Placa de sinalização' : code === 'diffuser' ? 'Difusor de extintor' : code === 'hydrant-accessories' ? 'Acessório de hidrante' : 'Mangueira de extintor';
         items.push({code,title,lines,price});
       } else if (code === 'demarcation') {
         const lengthMeters = readNumber(card, 'lengthMeters');
@@ -344,7 +354,7 @@
     if (Array.isArray(item.lines)) {
       item.lines.forEach(line => {
         if (item.code === 'hydrant-hose-test') parts.push(`${line.type} · ${line.diameterMm} mm · ${line.lengthMeters} m · qtd. ${line.quantity}`);
-        else parts.push(`${line.type === 'Outro' ? line.otherType : line.type} · qtd. ${line.quantity}`);
+        else parts.push(`${line.type === 'Outro' ? line.otherType : line.type} · qtd. ${line.quantity}${line.location ? ` · local: ${line.location}` : ''}`);
       });
     }
     if (item.details) {
@@ -389,7 +399,7 @@
       const kind = card.dataset.extraCard;
       toggle.addEventListener('change', () => {
         details.classList.toggle('hidden', !toggle.checked);
-        if (toggle.checked && ['hydrant-hose-test','extinguisher-hose','diffuser','hydrant-accessories'].includes(kind) && !card.querySelector('[data-extra-line]')) addLine(card, kind);
+        if (toggle.checked && ['hydrant-hose-test','extinguisher-hose','diffuser','hydrant-accessories','safety-signage'].includes(kind) && !card.querySelector('[data-extra-line]')) addLine(card, kind);
       });
       card.querySelector('[data-extra-add]')?.addEventListener('click', () => addLine(card, kind));
       card.querySelector('[data-field="color"]')?.addEventListener('change', event => card.querySelector('[data-other-color]')?.classList.toggle('hidden', event.target.value !== 'Outra'));
