@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Abrindo página…</title>
+<p>Redirecionando para o FogoSeguro…</p>
+<script>
+const aliases=['config','configuracoes','painel','manutencoes','extintores','pecas-precos','clientes','funcionarios','produtos','pedidos','acessos'];
+const parts=location.pathname.split('/').filter(Boolean),at=parts.findIndex(part=>aliases.includes(part.toLowerCase()));
+if(at>=0){sessionStorage.setItem('__fogoPendingRoute','/'+parts[at].toLowerCase());const base='/'+parts.slice(0,at).join('/');location.replace((base==='/'?'':base)+'/index.html');}
+else location.replace('./index.html');
+</script>
+</html>
