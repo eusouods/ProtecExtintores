@@ -35,6 +35,7 @@
       date: read('date'),
       parts: read('parts'),
       notes: read('notes'),
+      extraServicesDraft: window.captureServiceExtrasDraft?.() || null,
       rows
     };
   }
