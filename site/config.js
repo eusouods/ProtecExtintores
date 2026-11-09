@@ -4,6 +4,23 @@ window.PROTEC_API_BASE_URL = 'https://protecextintores.eusouods.workers.dev';
 // Client ID OAuth público do Google. Preencha após criar o cliente OAuth Web.
 window.PROTEC_GOOGLE_CLIENT_ID = '';
 
+// O painel nunca deve usar o modo local legado: ele precisa de uma API HTTPS.
+// Este listener em captura é registrado antes do script principal e bloqueia o
+// formulário caso alguém abra uma cópia local ou remova a configuração da API.
+(() => {
+  const configured = /^https:\/\//i.test(String(window.PROTEC_API_BASE_URL || ''));
+  document.getElementById('loginForm')?.addEventListener('submit', event => {
+    if (configured) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const error = document.getElementById('loginError');
+    if (error) {
+      error.textContent = 'O painel exige uma API HTTPS configurada. Confira PROTEC_API_BASE_URL em config.js.';
+      error.classList.remove('hidden');
+    }
+  }, true);
+})();
+
 // ─────────────────────────────────────────────────────────────
 // DADOS DA EMPRESA — preencha o que tiver. O que ficar vazio ('' ou [])
 // simplesmente não aparece no site (nada de texto "preencher aqui" na vitrine).
