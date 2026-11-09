@@ -1,0 +1,16 @@
+/* Acabamento global: foco visível, movimento reduzido e ajustes de toque. */
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+img,video,svg{max-width:100%}
+:focus-visible{outline:3px solid #0131CD;outline-offset:2px;border-radius:4px}
+[data-theme="dark"] :focus-visible{outline-color:#8fb0ff}
+button,[role="button"],a.btn,.btn{touch-action:manipulation}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+@media print{.topbar,.theme-toggle,.whatsapp-float{display:none!important}}
+
+/* Correções de tema: texto invisível no cartão do herói e cartão de destaque desalinhado. */
+#store .hero-card-bottom,#store .hero-card-bottom strong{color:#10234f}
+html[data-theme="dark"] #store .hero-card-bottom,html[data-theme="dark"] #store .hero-card-bottom strong{color:#fff}
+#store .trust>span:first-child{padding-left:9px;border-left:2px solid var(--yellow)}

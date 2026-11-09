@@ -1,0 +1,141 @@
+/* Keeps headers, headings and dense labels in the document flow at every width. */
+.employee-top,
+.admin-top {
+  box-sizing: border-box;
+  height: auto;
+  min-height: 64px;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+#dashboard .admin-top {
+  height: auto;
+  min-height: 68px;
+}
+.customer-account-header {
+  position: relative;
+  top: auto;
+  margin: 0 0 14px;
+}
+.employee-top > *,
+.admin-top > *,
+.employee-header-actions,
+.admin-top-right {
+  min-width: 0;
+}
+.employee-header-actions,
+.admin-top-right {
+  flex-wrap: wrap;
+}
+.employee-main,
+.admin-content,
+#content {
+  min-width: 0;
+}
+.page-title,
+.panel-head,
+.section-head,
+.admin-team-shortcuts header {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title > *,
+.panel-head > *,
+.section-head > *,
+.admin-team-shortcuts header > * {
+  min-width: 0;
+}
+.page-title h1,
+.panel-head h3,
+.section-head h2,
+.employee-top b,
+.admin-top .crumb,
+.employee-service-head,
+.seller-service-status,
+.customer-order,
+.admin-record-card {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+#dashboard #content thead th {
+  position: static;
+  top: auto;
+  line-height: 1.35;
+  white-space: normal;
+}
+.table-wrap {
+  min-width: 0;
+}
+.customer-payment-hint {
+  margin: 10px 0;
+  padding: 11px 13px;
+  border-left: 3px solid #d88b2e;
+  border-radius: 8px;
+  background: #fff7e9;
+  color: #68420f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.checkout-pix {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #dce5ee;
+  border-radius: 14px;
+  background: #f7f9fc;
+}
+.checkout-pix > b { color: #12304c; }
+.checkout-pix label { color: #334155; font-size: 13px; font-weight: 800; }
+.checkout-pix textarea { width: 100%; min-height: 88px; overflow-wrap: anywhere; }
+.checkout-pix .btn { justify-self: start; }
+#store .topbar {
+  min-height: 64px;
+}
+@media (max-width: 760px) {
+  .fogo-enhanced .employee-top,
+  .employee-top {
+    height: auto;
+    min-height: 64px;
+    padding-block: 10px;
+    align-items: center;
+  }
+  .employee-header-actions,
+  .admin-top-right {
+    gap: 6px;
+  }
+  .employee-main,
+  .admin-content {
+    padding-top: 20px;
+  }
+  .employee-tabs,
+  .seller-service-tabs {
+    flex-wrap: wrap;
+  }
+  .employee-tabs button,
+  .seller-service-tabs button {
+    min-width: min(100%, 130px);
+  }
+  .admin-page-intro,
+  .admin-record-top,
+  .admin-team-shortcuts header {
+    align-items: flex-start;
+  }
+}
+@media (max-width: 420px) {
+  .employee-top .brand,
+  .employee-top > div:first-child {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .employee-header-actions,
+  .employee-top > div:last-child {
+    max-width: 100%;
+  }
+  .employee-top .btn,
+  .admin-top .btn {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+}
