@@ -1,6 +1,6 @@
 // URL base do Worker de API do ProtecExtintores, sem barra no final.
 // Exemplo: https://nome-do-worker.sua-conta.workers.dev
-window.PROTEC_API_BASE_URL = 'https://protecextintores.eusouods.workers.dev';
+window.PROTEC_API_BASE_URL = 'https://protecextintores-api.eusouods.workers.dev';
 // Client ID OAuth público do Google. Preencha após criar o cliente OAuth Web.
 window.PROTEC_GOOGLE_CLIENT_ID = '';
 
