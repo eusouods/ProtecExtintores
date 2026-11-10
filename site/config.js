@@ -33,7 +33,7 @@ window.PROTEC_EMPRESA = {
   email: '',
   endereco: '',            // Ex.: 'Rua Exemplo, 123 — Bairro, Teresina/PI'
   horario: '',             // Ex.: 'Seg. a sex., 8h às 18h'  (aparece também no cartão da página inicial)
-  cnpj: '',
+  cnpj: '41.243.192/0001-44',
   instagram: '',           // Só o usuário, sem @. Ex.: 'protecextintores'
 
   // Três fatos curtos logo abaixo do título da página inicial. Só deixe o que for verdade.

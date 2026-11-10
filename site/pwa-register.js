@@ -75,3 +75,69 @@
     });
   };
 })();
+
+/* Validações de cadastro compartilhadas por loja e painel administrativo. */
+(() => {
+  const digits = value => String(value || '').replace(/\D/g, '');
+  const repeated = value => /^(\d)\1+$/.test(value);
+  const validCpf = value => {
+    const cpf = digits(value);
+    if (cpf.length !== 11 || repeated(cpf)) return false;
+    const digit = length => {
+      const sum = cpf.slice(0, length).split('').reduce((total, item, index) => total + Number(item) * (length + 1 - index), 0);
+      const rest = (sum * 10) % 11;
+      return rest === 10 ? 0 : rest;
+    };
+    return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
+  };
+  const validCnpj = value => {
+    const cnpj = digits(value);
+    if (cnpj.length !== 14 || repeated(cnpj)) return false;
+    const digit = size => {
+      let weight = size - 7;
+      const sum = cnpj.slice(0, size).split('').reduce((total, item) => {
+        const next = total + Number(item) * weight;
+        weight = weight === 2 ? 9 : weight - 1;
+        return next;
+      }, 0);
+      const rest = sum % 11;
+      return rest < 2 ? 0 : 11 - rest;
+    };
+    return digit(12) === Number(cnpj[12]) && digit(13) === Number(cnpj[13]);
+  };
+  const validDocument = value => {
+    const valueDigits = digits(value);
+    return valueDigits.length === 11 ? validCpf(valueDigits) : valueDigits.length === 14 && validCnpj(valueDigits);
+  };
+  const validEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/u.test(String(value || '').trim());
+  const validPhone = value => {
+    const phone = digits(value).replace(/^55(?=\d{10,11}$)/, '');
+    return /^(?:[1-9]\d)(?:9\d{8}|[2-8]\d{7})$/.test(phone);
+  };
+  window.protecValidation = {validCpf, validCnpj, validDocument, validEmail, validPhone};
+
+  const validateField = input => {
+    const value = input.value.trim();
+    if (!value) { input.setCustomValidity(''); return ''; }
+    if (input.matches('[name="document"]') && !validDocument(value)) return 'Informe um CPF ou CNPJ válido.';
+    if ((input.type === 'email' || input.matches('[data-contact-email]')) && !validEmail(value)) return 'Informe um e-mail válido.';
+    if ((input.type === 'tel' || input.matches('[name="phone"],[data-service-field="phone"]')) && !validPhone(value)) return 'Informe um telefone com DDD válido.';
+    return '';
+  };
+  const updateValidity = input => input.setCustomValidity(validateField(input));
+  document.addEventListener('input', event => {
+    if (event.target.matches?.('input[name="document"], input[type="email"], input[type="tel"], input[name="phone"], input[data-contact-email], input[data-service-field="phone"]')) updateValidity(event.target);
+  });
+  document.addEventListener('submit', event => {
+    const fields = [...event.target.querySelectorAll?.('input[name="document"], input[type="email"], input[type="tel"], input[name="phone"], input[data-contact-email], input[data-service-field="phone"]') || []];
+    const invalid = fields.find(input => {
+      updateValidity(input);
+      return !input.checkValidity();
+    });
+    if (!invalid) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    invalid.reportValidity();
+    invalid.focus();
+  }, true);
+})();

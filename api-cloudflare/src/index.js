@@ -113,11 +113,21 @@ async function customerLoginLimited(request,env){let ip=request.headers.get('CF-
 async function publicOrderLimited(request,env){let ip=request.headers.get('CF-Connecting-IP')||'unknown',key=await digest(ip+':orders'),t=Date.now(),row=await env.DB.prepare('SELECT window_start,attempts FROM public_track_limits WHERE ip_hash=?').bind(key).first();if(!row||t-Number(row.window_start)>900000){await env.DB.prepare('INSERT INTO public_track_limits(ip_hash,window_start,attempts) VALUES(?,?,1) ON CONFLICT(ip_hash) DO UPDATE SET window_start=excluded.window_start,attempts=1').bind(key,t).run();return false}if(Number(row.attempts)>=30)return true;await env.DB.prepare('UPDATE public_track_limits SET attempts=attempts+1 WHERE ip_hash=?').bind(key).run();return false}
 async function publicTrackLimited(request,env){let ip=request.headers.get('CF-Connecting-IP')||'unknown',key=await digest(ip),t=Date.now(),row=await env.DB.prepare('SELECT window_start,attempts FROM public_track_limits WHERE ip_hash=?').bind(key).first();if(!row||t-Number(row.window_start)>900000){await env.DB.prepare('INSERT INTO public_track_limits(ip_hash,window_start,attempts) VALUES(?,?,1) ON CONFLICT(ip_hash) DO UPDATE SET window_start=excluded.window_start,attempts=1').bind(key,t).run();return false}if(Number(row.attempts)>=40)return true;await env.DB.prepare('UPDATE public_track_limits SET attempts=attempts+1 WHERE ip_hash=?').bind(key).run();return false}
 async function parseBody(request){let text=await request.text();if(text.length>MAX_JSON)throw Error('Payload excede o limite');try{return JSON.parse(text||'{}')}catch{throw Error('JSON inválido')}}
+function digitsOnly(value){return String(value||'').replace(/\D/g,'')}
+function repeatedDigits(value){return /^(\d)\1+$/.test(value)}
+function validEmail(value){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/u.test(String(value||'').trim())}
+function validPhone(value){let phone=digitsOnly(value).replace(/^55(?=\d{10,11}$)/,'');return /^(?:[1-9]\d)(?:9\d{8}|[2-8]\d{7})$/.test(phone)}
+function validCpf(value){let cpf=digitsOnly(value);if(cpf.length!==11||repeatedDigits(cpf))return false;let digit=size=>{let total=0;for(let index=0;index<size;index++)total+=Number(cpf[index])*(size+1-index);let rest=(total*10)%11;return rest===10?0:rest};return digit(9)===Number(cpf[9])&&digit(10)===Number(cpf[10])}
+function validCnpj(value){let cnpj=digitsOnly(value);if(cnpj.length!==14||repeatedDigits(cnpj))return false;let digit=size=>{let weight=size-7,total=0;for(let index=0;index<size;index++){total+=Number(cnpj[index])*weight;weight=weight===2?9:weight-1}let rest=total%11;return rest<2?0:11-rest};return digit(12)===Number(cnpj[12])&&digit(13)===Number(cnpj[13])}
+function validDocument(value){let document=digitsOnly(value);return document.length===11?validCpf(document):document.length===14&&validCnpj(document)}
+function validateContacts(state){for(const group of ['clients','employees','sellers'])for(const person of state?.[group]||[]){let document=String(person.document||'').trim(),email=String(person.email||'').trim(),phone=String(person.phone||'').trim();if(document&&!validDocument(document))throw Error('CPF ou CNPJ inválido no cadastro de '+(person.name||'contato')+'.');if(email&&!validEmail(email))throw Error('E-mail inválido no cadastro de '+(person.name||'contato')+'.');if(phone&&!validPhone(phone))throw Error('Telefone inválido no cadastro de '+(person.name||'contato')+'.')}}
+const saveStateWithValidatedContacts=saveState;
+saveState=async function(env,value,username,opts={}){validateContacts(value);return saveStateWithValidatedContacts(env,value,username,opts)};
 async function customerRoute(request,env,path,method,adminUsername){
   if(path==='/api/customer/register'&&method==='POST'){
     if(await customerLoginLimited(request,env))return json({error:'Muitas tentativas. Aguarde 15 minutos.'},429);
     let data=await parseBody(request),name=String(data.name||'').trim(),email=String(data.email||'').trim().toLowerCase(),password=String(data.password||'');
-    if(name.length<2||name.length>100||email.length>254||!/^\S+@\S+\.\S+$/.test(email)||password.length<8||password.length>128)return json({error:'Informe nome, e-mail válido e senha com 8 a 128 caracteres.'},400);
+    if(name.length<2||name.length>100||email.length>254||!validEmail(email)||password.length<8||password.length>128)return json({error:'Informe nome, e-mail válido e senha com 8 a 128 caracteres.'},400);
     let customer={id:crypto.randomUUID(),name,email},salt=randomHex(16),hash=await passHash(password,salt);
     try{await env.DB.prepare('INSERT INTO customer_accounts(id,name,email,password_salt,password_hash,iterations,created_at) VALUES(?,?,?,?,?,?,?)').bind(customer.id,name,email,salt,hash,PBKDF2_ITERATIONS,now()).run()}catch{return json({error:'Este e-mail já possui uma conta. Entre ou use a opção Google vinculada.'},409)}
     await syncCustomerClient(env,customer,adminUsername);await env.DB.prepare('DELETE FROM customer_login_attempts WHERE ip_hash=?').bind(await digest(request.headers.get('CF-Connecting-IP')||'unknown')).run();return json(await issueCustomerSession(env,customer),201);
@@ -277,7 +287,8 @@ if(path==='/api/public/orders'&&method==='POST'){
     if(d.order.website||d.website)return json({ok:true,code:d.order.code},201);
     let digits=String(d.order.phone||'').replace(/\D/g,''),since=Date.now()-15*60*1000,recent=(state.orders||[]).filter(o=>o.kind==='Manutenção'&&o.receivedAt&&Date.parse(o.receivedAt)>since);
     if(String(d.order.name||'').trim().length<2||String(d.order.name||'').length>100)return json({error:'Informe seu nome ou o da empresa.'},400);
-    if(digits.length<8||digits.length>15)return json({error:'Informe um telefone ou WhatsApp válido, com DDD.'},400);
+    if(!validPhone(d.order.phone))return json({error:'Informe um telefone ou WhatsApp válido, com DDD.'},400);
+    if(d.order.email&&!validEmail(d.order.email))return json({error:'Informe um e-mail válido.'},400);
     if(recent.filter(o=>String(o.phone||'').replace(/\D/g,'')===digits).length>=3||recent.length>=40)return json({error:'Recebemos muitas solicitações em pouco tempo. Tente novamente em alguns minutos ou fale com a equipe.'},429);
     d.order.name=String(d.order.name).trim();d.order.phone=String(d.order.phone).slice(0,30);d.order.email=String(d.order.email||'').slice(0,254);d.order.details=String(d.order.details||'').slice(0,1500);
     delete d.order.customerId;if(d.service){delete d.service.customerId;d.service.extraServices=(d.service.extraServices||[]).slice(0,20)}
