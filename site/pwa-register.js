@@ -8,7 +8,7 @@
 
 /* Painel administrativo no celular: a navegação abre apenas pelo botão ☰. */
 (() => {
-  const mobile = matchMedia('(max-width: 650px)');
+  const mobile = matchMedia('(max-width: 650px), (hover: none) and (pointer: coarse)');
   const close = () => {
     if (!mobile.matches) return;
     const nav = document.getElementById('mobileAdminNav');
