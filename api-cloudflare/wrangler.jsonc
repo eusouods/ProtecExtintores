@@ -1,20 +1,20 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "protecextintores-api",
+  "name": "protecextintores",
   "main": "src/index.js",
   "compatibility_date": "2026-11-02",
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "protecextintores-db",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_name": "fogoseguro-db",
+      "database_id": "fbf85b1b-4ab7-478b-b5d8-14b4be3908f7",
       "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [
     {
       "binding": "MEDIA",
-      "bucket_name": "protecextintores-media"
+      "bucket_name": "fogoseguro-media"
     }
   ],
   "triggers": {
@@ -23,7 +23,7 @@
   "vars": {
     "ADMIN_USER": "admin",
     "ALLOWED_ORIGIN": "https://eusouods.github.io,https://protecextintoresbeta.pages.dev,https://protecextintores.eusouods.workers.dev",
-    "PUBLIC_API_URL": "https://protecextintores-api.eusouods.workers.dev",
+    "PUBLIC_API_URL": "https://protecextintores.eusouods.workers.dev",
     "GOOGLE_CLIENT_ID": ""
   }
 }
