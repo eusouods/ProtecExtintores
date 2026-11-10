@@ -238,6 +238,43 @@
     html[data-theme="dark"] :is(input,select,textarea){background:#171a20!important;color:#f7f7f5!important;border-color:#4b515b!important}
   `;
   document.head.append(firePalette);
+  /* Contraste e neutralização final de cores antigas inseridas por telas dinâmicas. */
+  const contrastGuard = document.createElement('style');
+  contrastGuard.id = 'protec-contrast-and-neutral-palette';
+  contrastGuard.textContent = `
+    #store :is(h1,h2,h3,h4,h5,h6,strong,th,legend),#login :is(h1,h2,h3,h4,h5,h6,strong,th,legend),#dashboard :is(h1,h2,h3,h4,h5,h6,strong,th,legend){color:#24282e!important}
+    #store :is(p,label,td,li,small,.helper,.muted,.subtitle,.description),#login :is(p,label,td,li,small,.helper,.muted,.subtitle,.description),#dashboard :is(p,label,td,li,small,.helper,.muted,.subtitle,.description){color:#4b5563!important}
+    #store a:not(.btn):not(.button),#login a:not(.btn):not(.button),#dashboard a:not(.btn):not(.button){color:#b82e20!important}
+    :is([class*="success"],[class*="info"],[class*="green"],[class*="blue"],[class*="available"],[class*="confirmed"]){background-color:#fff0ec!important;color:#a52d20!important;border-color:#f3b8a9!important}
+    :is([class*="success"],[class*="info"],[class*="green"],[class*="blue"],[class*="available"],[class*="confirmed"]) :is(svg,path){fill:currentColor!important;stroke:currentColor!important}
+    #store :is(.topbar,.site-header,.public-header,.footer,.site-footer,.public-footer),#dashboard :is(.sidebar,.admin-sidebar,.app-sidebar,.dashboard-header),#login .login-aside,.employee-top,.seller-top{background:#171a20!important;color:#fff1eb!important}
+    #store :is(.topbar,.site-header,.public-header,.footer,.site-footer,.public-footer) :is(h1,h2,h3,h4,h5,h6,p,a,strong,span),#dashboard :is(.sidebar,.admin-sidebar,.app-sidebar,.dashboard-header) :is(h1,h2,h3,h4,h5,h6,p,a,strong,span),#login .login-aside :is(h1,h2,h3,h4,h5,h6,p,a,strong,span),.employee-top :is(h1,h2,h3,h4,h5,h6,p,a,strong,span),.seller-top :is(h1,h2,h3,h4,h5,h6,p,a,strong,span){color:#fff1eb!important}
+    html[data-theme="dark"] body,html[data-theme="dark"] #store,html[data-theme="dark"] #login,html[data-theme="dark"] #dashboard,html[data-theme="dark"] :is(.page,.page-shell,.page-content,.content,.content-area,.main,.main-content,.admin-content,.employee-portal,.seller-dashboard,.login-main){background:#171a20!important;color:#f4e5e1!important}
+    html[data-theme="dark"] :is([class*="card"],[class*="panel"],[class*="modal"],[class*="table"],[class*="form"],[class*="drawer"],[class*="dropdown"],[class*="popover"],[class*="menu"],.panel,.stat,.product,.config-card,.table-wrap,.admin-page-intro,.catalog-card){background:#24282e!important;color:#f4e5e1!important;border-color:#3b4048!important;background-image:none!important}
+    html[data-theme="dark"] :is(h1,h2,h3,h4,h5,h6,strong,th,legend){color:#f4e5e1!important}
+    html[data-theme="dark"] :is(p,label,td,li,small,.helper,.muted,.subtitle,.description){color:#cfc2be!important}
+    html[data-theme="dark"] a:not(.btn):not(.button){color:#ffad91!important}
+    html[data-theme="dark"] :is(input,select,textarea,[contenteditable="true"]){background:#1b1e24!important;color:#f4e5e1!important;border-color:#4b515b!important}
+    html[data-theme="dark"] :is(.btn,.btn-dark,.btn-primary,.button-primary,.primary-button,.save-button,.action-primary,.add-button,.submit-button,.btn-success,.button-success,.success-button,#dashboard #content .btn:not(.btn-soft)){background:#e23d28!important;color:#fff1eb!important;border-color:#e23d28!important}
+    html[data-theme="dark"] :is(.btn-soft,.btn-secondary,.button-secondary,.btn-outline,.button-outline,.secondary-button){background:#30353d!important;color:#f4e5e1!important;border-color:#4b515b!important}
+    html[data-theme="dark"] :is([class*="success"],[class*="info"],[class*="green"],[class*="blue"],[class*="available"],[class*="confirmed"],.badge,.tag,.pill,.chip,.status,.alert,.notice,.empty-state,.info-box,.success-box){background:#442019!important;color:#ffb49a!important;border-color:#8f3b2b!important}
+    html[data-theme="dark"] :is(.topbar,.site-header,.public-header,.footer,.site-footer,.public-footer,.sidebar,.admin-sidebar,.app-sidebar,.dashboard-header,.employee-top,.seller-top,#login .login-aside){background:#111419!important;color:#fff1eb!important;border-color:#343a40!important}
+    html[data-theme="dark"] :is(.topbar,.site-header,.public-header,.footer,.site-footer,.public-footer,.sidebar,.admin-sidebar,.app-sidebar,.dashboard-header,.employee-top,.seller-top,#login .login-aside) :is(h1,h2,h3,h4,h5,h6,p,a,strong,span){color:#fff1eb!important}
+  `;
+  document.head.append(contrastGuard);
+  const legacyInlineColor = /#(?:0131cd|2f5cf0|174de4|10234f|102641|13233b|17365d|0d284b|14243b|1c9c69|31ba83|13945f|0e8052|72dfb2|129760|1f7a4d|1f9d57|17804a|55d4a8|386b4b|17633a|166534|176b55|254000|365400|b9fc01|caff45)/ig;
+  const neutralizeInlineColors = root => {
+    const nodes = root instanceof Element && root.matches('[style]') ? [root, ...root.querySelectorAll('[style]')] : root.querySelectorAll?.('[style]') || [];
+    nodes.forEach(node => {
+      const current = node.getAttribute('style');
+      if (current && legacyInlineColor.test(current)) node.setAttribute('style', current.replace(legacyInlineColor, '#e23d28'));
+      legacyInlineColor.lastIndex = 0;
+    });
+  };
+  neutralizeInlineColors(document);
+  new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {
+    if (node.nodeType === 1) neutralizeInlineColors(node);
+  }))).observe(document.body, { childList: true, subtree: true });
   document.documentElement.classList.add('protec-catalog-mode');
 
   const categoryOptions = ['Extintores','Placas e sinalização','Hidrantes e mangueiras','Iluminação de emergência','Acessórios de prevenção'];
