@@ -70,7 +70,7 @@ Esta versão inclui ajustes seguros que não dependem de dados comerciais ainda 
 
 Preencha os dados reais em `site/config.js` (contatos, localização/área atendida, horário e canais). Revise preço, estoque, fotos, informações técnicas, certificações e textos com o responsável da empresa. Configure e teste a URL da API, as origens permitidas no Cloudflare e o segredo de administrador. Acrescente política de privacidade, termos, condições de venda e regras de cancelamento com os dados verdadeiros do negócio.
 
-Depois de publicar esta versão, aplique novamente o deploy da API Cloudflare para disponibilizar a rota de upload de vídeo. O bucket R2 `fogoseguro-media` já é o binding esperado no `wrangler.jsonc`; não é necessária uma migração D1 para este recurso.
+Depois de publicar esta versão, aplique novamente o deploy da API Cloudflare para disponibilizar a rota de upload de vídeo. O bucket R2 `protecextintores-media` é o binding esperado no `wrangler.jsonc`; não é necessária uma migração D1 para este recurso.
 
 Os vídeos podem conter informações pessoais. Oriente a equipe a filmar apenas a peça e a área indispensável, e mantenha a URL de produção da API corretamente configurada para que a rota autenticada proteja o acesso.
 
@@ -185,7 +185,7 @@ O painel permite configurar instituições que implementem os endpoints da API P
 
    ```powershell
    cd api-cloudflare
-   npx wrangler d1 migrations apply fogoseguro-db --remote
+   npx wrangler d1 migrations apply protecextintores-db --remote
    ```
 
 2. Gere uma chave mestra aleatória de 32 bytes no PowerShell:
@@ -236,7 +236,7 @@ Revisei os arquivos do site, os scripts de área pública e painel, a API Cloudf
 
 ## Urgente antes de usar em produção
 
-1. **Publicar a API atualizada no Cloudflare.** A nova rota autenticada de vídeos e o cabeçalho CORS `X-Video-Duration` só existem no código desta versão. Sem novo deploy do Worker, o envio de vídeo falhará. Não há migração D1 nova; o binding R2 `MEDIA` deve continuar apontando para `fogoseguro-media`.
+1. **Publicar a API atualizada no Cloudflare.** A nova rota autenticada de vídeos e o cabeçalho CORS `X-Video-Duration` só existem no código desta versão. Sem novo deploy do Worker, o envio de vídeo falhará. Não há migração D1 nova; o binding R2 `MEDIA` deve continuar apontando para `protecextintores-media`.
 2. **Publicar o site atualizado no GitHub Pages.** Envie a pasta `site/` pelo fluxo de publicação do repositório. Confirme que `PROTEC_API_BASE_URL`, `PUBLIC_API_URL` e `ALLOWED_ORIGIN` correspondem ao domínio real usado no telefone.
 3. **Confirmar o endereço do APK.** O app Android segue apontando para `https://eusouods.github.io/ProtecExtintores/`. Se o site estiver em outro domínio/nome de repositório, ajuste `start_url` em `strings.xml` e gere um APK novo. Abrir o link no navegador Chrome é um fluxo separado do APK; este pacote não revelou o endereço digitado nem a mensagem exata do navegador.
 4. **Conferir armazenamento e espaço no R2.** Um minuto de vídeo pode ocupar dezenas de megabytes. O limite atual é 50 MB por arquivo; se o vídeo de um minuto gravado pelo aparelho ultrapassar esse tamanho, reduzir a resolução/qualidade no aparelho antes do envio.
