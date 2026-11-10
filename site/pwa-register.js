@@ -37,3 +37,41 @@
   }, true);
   mobile.addEventListener?.('change', event => { if (event.matches) close(); });
 })();
+
+/* Cadastro da equipe no painel administrativo. */
+(() => {
+  window.openEmployee = function() {
+    const form = `<div class="form-grid">
+      ${field('Nome completo', 'name', {required:true})}
+      ${field('Função', 'role', {required:true, placeholder:'Ex.: Técnico de manutenção'})}
+      ${field('Telefone / WhatsApp', 'phone', {type:'tel'})}
+      ${field('E-mail', 'email', {type:'email'})}
+    </div>
+    <p class="helper">Depois do cadastro, crie o usuário e a senha em <b>Acessos funcionários</b> para liberar o login do membro da equipe.</p>`;
+
+    openModal('Cadastrar funcionário', form, async data => {
+      const name = val(data, 'name');
+      const role = val(data, 'role');
+      if (!name || !role) {
+        toast('Informe o nome e a função do funcionário.');
+        return false;
+      }
+      const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+      if ((db.employees || []).some(item => String(item.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR') === normalized)) {
+        toast('Já existe um funcionário cadastrado com esse nome.');
+        return false;
+      }
+
+      const employee = {id:id(), name, role, phone:val(data, 'phone'), email:val(data, 'email')};
+      db.employees = db.employees || [];
+      db.employees.push(employee);
+      if (!await save()) {
+        db.employees = db.employees.filter(item => item.id !== employee.id);
+        saveLocal();
+        return false;
+      }
+      renderPage('employees');
+      toast('Funcionário cadastrado. Agora crie o acesso dele em Acessos funcionários.');
+    });
+  };
+})();
