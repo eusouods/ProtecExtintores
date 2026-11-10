@@ -197,6 +197,47 @@
     html[data-theme="dark"] :is(.badge,.tag,.pill,.chip,.status,.status-success,.success,.available,.active-badge,.inventory-low,.request-result-error,.notification-success,.alert,.alert-success,.alert-info,.notice,.notice-success,.empty-state,.info-box,.success-box,.tab.active,.tabs button.active,.filter.active){background:#4c1021!important;color:#fda4af!important;border-color:#9f1239!important}
   `;
   document.head.append(paletteGuard);
+  /* Identidade final: grafite, brasa e chama. Esta camada é a última a carregar. */
+  const firePalette = document.createElement('style');
+  firePalette.id = 'protec-fire-safety-palette';
+  firePalette.textContent = `
+    :root,.protec-catalog-mode{
+      --protec-surface:#f7f7f5!important;--protec-ink:#24282e!important;--protec-accent:#e23d28!important;--protec-deep:#171a20!important;--protec-muted:#667085!important;
+      --primary:#e23d28!important;--primary-dark:#b82e20!important;--primary-light:#fff0ec!important;--accent:#e23d28!important;--accent-soft:#fff0ec!important;
+      --ink:#24282e!important;--muted:#667085!important;--line:#e6d8d2!important;--paper:#f7f7f5!important;--white:#fff!important;
+      --brand:#e23d28!important;--brand-hover:#b82e20!important;--focus:#e23d28!important;--success:#e23d28!important;--success-bg:#fff0ec!important;--warning:#f59e0b!important;
+      --yellow:#f59e0b!important;--yellow2:#ff6b35!important;--green:#e23d28!important;--lime:#ff6b35!important;--red:#e23d28!important;
+      --blue:#e23d28!important;--blue-dark:#b82e20!important;--blue-light:#fff0ec!important;--navy:#171a20!important;--navy-2:#24282e!important;
+      --dash-primary:#e23d28!important;--dash-primary-hover:#b82e20!important;--dash-accent:#ff6b35!important;--dash-green:#e23d28!important;--dash-blue-soft:#fff0ec!important;
+      --admin-ink:#24282e!important;--admin-muted:#667085!important;--admin-line:#e6d8d2!important;--admin-bg:#f7f7f5!important;--admin-panel:#fff!important;--admin-navy:#171a20!important;--admin-navy-2:#24282e!important;--admin-accent:#e23d28!important;--admin-blue-soft:#fff0ec!important;
+      --customer-brand:#e23d28!important;--customer-lime:#ff6b35!important;
+    }
+    body{background:#f7f7f5!important;color:#24282e!important}
+    #store .topbar,#dashboard .sidebar,.employee-top,.seller-top,.site-header,.public-header,.dashboard-header,.footer,.site-footer,#store footer,.public-footer{background:#171a20!important;color:#fff!important;border-color:#343a40!important}
+    #store .hero,.login-aside{background:radial-gradient(circle at 82% 16%,rgb(255 107 53 / 28%),transparent 28%),linear-gradient(135deg,#171a20 0%,#24282e 62%,#5c1d18 100%)!important}
+    :is(.btn,.btn-dark,.btn-primary,.button-primary,.primary-button,.save-button,.action-primary,.add-button,.submit-button,.btn-success,.button-success,.success-button,#dashboard #content .btn:not(.btn-soft)){background:#e23d28!important;color:#fff!important;border-color:#e23d28!important;box-shadow:0 8px 18px rgb(226 61 40 / 18%)}
+    :is(.btn,.btn-dark,.btn-primary,.button-primary,.primary-button,.save-button,.action-primary,.add-button,.submit-button,.btn-success,.button-success,.success-button,#dashboard #content .btn:not(.btn-soft)):hover{background:#b82e20!important;border-color:#b82e20!important;box-shadow:0 12px 24px rgb(184 46 32 / 24%)!important}
+    :is(.btn-soft,.btn-secondary,.button-secondary,.btn-outline,.button-outline,.secondary-button){background:#fff7f4!important;color:#9e2d20!important;border-color:#efd2c9!important;box-shadow:none!important}
+    :is(.brand-mark,.dashboard-stat-icon,.dashboard-eyebrow:before,.employee-tabs button.active span,.seller-service-tabs button.active span){background:#e23d28!important;color:#fff!important}
+    :is(.eyebrow,#store .hero h1 span,.dashboard-eyebrow,.dashboard-role-chip,.dashboard-stat-icon,.employee-tabs button.active,.seller-service-tabs button.active,.mobile-admin-nav button.active,.employee-group>strong small,.type-group,.receipt-brand,.receipt-code b,.price-from){color:#e23d28!important}
+    :is(.panel,.stat,.product,.config-card,.table-wrap,.admin-page-intro,.card,.form-card,.employee-card,.seller-card,.service-card,.dashboard-card,.stat-card,.product-card,.public-product,.catalog-card,.modal,.modal-content){background:#fff!important;color:#24282e!important;border-color:#e6d8d2!important;box-shadow:0 12px 28px rgb(34 24 20 / 7%)!important}
+    :is(.catalog-category,.badge,.tag,.pill,.chip,.status,.status-success,.success,.available,.active-badge,.inventory-low,.request-result-error,.notification-success,.alert,.alert-success,.alert-info,.notice,.notice-success,.empty-state,.info-box,.success-box){background:#fff0ec!important;color:#a52d20!important;border-color:#f3b8a9!important}
+    :is(.employee-tabs,.seller-service-tabs,.mobile-admin-nav){background:#fff3ed!important;border-color:#f1cabe!important}
+    :is(.employee-tabs button.active,.seller-service-tabs button.active,.mobile-admin-nav button.active,.tab.active,.tabs button.active,.filter.active){background:#fff0ec!important;border-color:#e23d28!important;box-shadow:inset 3px 0 #e23d28!important}
+    :is(.progress,.progress-bar,.meter-fill,.completion-bar,.timeline-dot,.step.active,.step.done,.toggle input:checked + span,.switch input:checked + span){background:#e23d28!important;border-color:#e23d28!important}
+    :is(.fab,.floating-action,.whatsapp-button,.whatsapp-float,.contact-float){background:#e23d28!important;color:#fff!important;box-shadow:0 12px 24px rgb(226 61 40 / 28%)!important}
+    :is(input,select,textarea){background:#fff!important;color:#24282e!important;border-color:#e6d8d2!important;caret-color:#e23d28!important}
+    :is(input,select,textarea):focus,:is(button,a,input,select,textarea):focus-visible{outline-color:#e23d28!important;border-color:#e23d28!important;box-shadow:0 0 0 3px rgb(226 61 40 / 18%)!important}
+    :is(input,select,textarea)::placeholder{color:#667085!important;opacity:1}
+    .toast{background:#171a20!important;border-left-color:#ff6b35!important;color:#fff!important}
+    html[data-theme="dark"]{color-scheme:dark;--protec-surface:#171a20!important;--protec-ink:#f7f7f5!important;--protec-accent:#ff6b35!important;--protec-deep:#171a20!important;--protec-muted:#a9afb8!important;--ink:#f7f7f5!important;--muted:#a9afb8!important;--line:#3b4048!important;--paper:#171a20!important;--white:#24282e!important;--brand:#ff6b35!important;--brand-hover:#ff8a5b!important;--dash-primary:#ff6b35!important;--dash-primary-hover:#ff8a5b!important;--dash-accent:#f59e0b!important;--dash-green:#ff6b35!important;--dash-blue-soft:#442019!important;--admin-ink:#f7f7f5!important;--admin-muted:#a9afb8!important;--admin-line:#3b4048!important;--admin-bg:#171a20!important;--admin-panel:#24282e!important;--admin-navy:#171a20!important;--admin-navy-2:#24282e!important;--admin-accent:#ff6b35!important;--admin-blue-soft:#442019!important;--customer-brand:#ff6b35!important;--customer-lime:#f59e0b!important}
+    html[data-theme="dark"] body,html[data-theme="dark"] :is(.page,.page-shell,.page-content,.content,.content-area,.main,.main-content,.admin-content,.employee-portal,.seller-dashboard,.login-main,#store,#dashboard.app){background:#171a20!important;color:#f7f7f5!important}
+    html[data-theme="dark"] :is(.panel,.stat,.product,.config-card,.table-wrap,.admin-page-intro,.card,.form-card,.employee-card,.seller-card,.service-card,.dashboard-card,.stat-card,.product-card,.public-product,.catalog-card,.modal,.modal-content){background:#24282e!important;color:#f7f7f5!important;border-color:#3b4048!important;box-shadow:none!important}
+    html[data-theme="dark"] :is(.btn-soft,.btn-secondary,.button-secondary,.btn-outline,.button-outline,.secondary-button){background:#30353d!important;color:#f7f7f5!important;border-color:#4b515b!important}
+    html[data-theme="dark"] :is(.catalog-category,.badge,.tag,.pill,.chip,.status,.status-success,.success,.available,.active-badge,.inventory-low,.request-result-error,.notification-success,.alert,.alert-success,.alert-info,.notice,.notice-success,.empty-state,.info-box,.success-box,.employee-tabs,.seller-service-tabs,.mobile-admin-nav,.tab.active,.tabs button.active,.filter.active){background:#442019!important;color:#ffad91!important;border-color:#8f3b2b!important}
+    html[data-theme="dark"] :is(input,select,textarea){background:#171a20!important;color:#f7f7f5!important;border-color:#4b515b!important}
+  `;
+  document.head.append(firePalette);
   document.documentElement.classList.add('protec-catalog-mode');
 
   const categoryOptions = ['Extintores','Placas e sinalização','Hidrantes e mangueiras','Iluminação de emergência','Acessórios de prevenção'];
