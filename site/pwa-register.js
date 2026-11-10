@@ -6,6 +6,85 @@
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
 })();
 
+/* Revisão administrativa antes do fechamento definitivo da manutenção. */
+(() => {
+  const validYear = value => /^20\d{2}$/.test(String(value || '').trim());
+  const reviewStyle = document.createElement('style');
+  reviewStyle.textContent = `.admin-review-list{display:grid;gap:14px}.admin-review-item{padding:16px;border:1px solid var(--line,#dbe3ef);border-radius:14px;background:var(--paper,#f8fafc)}.admin-review-item h3{margin:0 0 13px;font-size:14px}.admin-review-item h3 small{font-weight:600;color:var(--muted,#64748b)}html[data-theme="dark"] .admin-review-item{background:#1e293b!important;border-color:#334155!important}`;
+  document.head.append(reviewStyle);
+  const reviewYear = service => {
+    const dateYear = String(service?.date || '').match(/^(20\d{2})-/)?.[1];
+    return dateYear || String(new Date().getFullYear());
+  };
+  const escReview = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+
+  window.openAdminServiceReview = function(serviceId, finalizeAfterReview = false) {
+    const service = (db.services || []).find(item => item.id === serviceId);
+    if (!service) return toast('Serviço não encontrado. Atualize o painel e tente novamente.');
+    const items = service.items || [];
+    if (!items.length) return toast('Este serviço não possui extintores para revisar.');
+    const body = `<p class="helper">Confira os dados registrados pelo técnico. O ano da manutenção é obrigatório para cada extintor; o ano hidrostático é opcional.</p><div class="admin-review-list">${items.map((item, index) => `<section class="admin-review-item"><h3>${escReview(item.type || 'Extintor')}${item.kg ? ` · ${escReview(item.kg)} kg` : ''} <small>Item ${index + 1}</small></h3><div class="form-grid"><div class="form-field"><label>Número de série / patrimônio</label><input name="serial_${index}" maxlength="100" value="${escReview(item.serial || '')}" placeholder="Opcional"></div><div class="form-field"><label>Ano da manutenção *</label><input name="maintenanceYear_${index}" inputmode="numeric" pattern="20[0-9]{2}" maxlength="4" required value="${escReview(item.maintenanceYear || service.maintenanceValid || reviewYear(service))}" placeholder="2026"></div><div class="form-field"><label>Ano hidrostático</label><input name="hydroYear_${index}" inputmode="numeric" pattern="20[0-9]{2}" maxlength="4" value="${escReview(item.hydroYear || service.hydroValid || '')}" placeholder="Opcional"></div><div class="form-field"><label>Selo / lacre</label><input name="seal_${index}" maxlength="100" value="${escReview(item.seal || '')}" placeholder="Opcional"></div></div></section>`).join('')}</div><div class="form-field"><label>Observação da revisão</label><textarea name="reviewNotes" rows="3" maxlength="1500" placeholder="Opcional: conferência, pendências ou recomendações."></textarea></div>`;
+    openModal(finalizeAfterReview ? 'Conferir dados para finalizar' : 'Revisar dados do serviço', body, async form => {
+      const before = structuredClone(service);
+      const reviewNotes = String(form.get('reviewNotes') || '').trim();
+      for (let index = 0; index < items.length; index++) {
+        const maintenanceYear = String(form.get(`maintenanceYear_${index}`) || '').trim();
+        const hydroYear = String(form.get(`hydroYear_${index}`) || '').trim();
+        if (!validYear(maintenanceYear)) throw Error(`Informe um ano de manutenção válido no item ${index + 1}.`);
+        if (hydroYear && !validYear(hydroYear)) throw Error(`Informe um ano hidrostático válido no item ${index + 1} ou deixe-o vazio.`);
+        Object.assign(items[index], {
+          serial: String(form.get(`serial_${index}`) || '').trim(),
+          maintenanceYear,
+          hydroYear,
+          seal: String(form.get(`seal_${index}`) || '').trim()
+        });
+      }
+      service.maintenanceValid = String(items[0].maintenanceYear || '');
+      service.hydroValid = String(items[0].hydroYear || '');
+      service.history = service.history || [];
+      service.history.push({ at: new Date().toISOString(), action: 'Dados revisados pelo administrador', description: reviewNotes || 'Validades e identificação dos extintores conferidas antes do fechamento.' });
+      if (!await save()) {
+        Object.assign(service, before);
+        saveLocal();
+        return false;
+      }
+      window.renderServicesPage?.();
+      toast(finalizeAfterReview ? 'Dados conferidos. Confirme o fechamento do serviço.' : 'Dados da manutenção revisados e salvos.');
+      if (finalizeAfterReview) return { afterClose: () => setTimeout(() => window.finalizeService(serviceId), 80) };
+      return true;
+    }, finalizeAfterReview ? 'Salvar e finalizar' : 'Salvar revisão');
+  };
+
+  window.manageProcess = function(serviceId) {
+    return window.openAdminServiceReview(serviceId, false);
+  };
+
+  window.finalizeService = async function(serviceId) {
+    const service = (db.services || []).find(item => item.id === serviceId);
+    if (!service) return toast('Serviço não encontrado. Atualize o painel e tente novamente.');
+    if (service.closed) return toast('Este serviço já está finalizado.');
+    const missingValidity = (service.items || []).some(item => !validYear(item.maintenanceYear) || (item.hydroYear && !validYear(item.hydroYear)));
+    if (missingValidity) {
+      toast('Revise as validades antes de finalizar o serviço.');
+      return window.openAdminServiceReview(serviceId, true);
+    }
+    if (!confirm(`Finalizar definitivamente o serviço ${service.code || ''}? Esta ação gera o comprovante e não poderá ser desfeita.`)) return;
+    try {
+      const response = await apiCall('/api/admin/finalize', 'POST', { serviceId });
+      const data = await apiJson(response);
+      if (!response.ok) throw Error(data.error || 'Não foi possível finalizar o serviço.');
+      db = data.state || db;
+      db.settings = db.settings || {};
+      delete db.settings.password;
+      saveLocal();
+      window.renderServicesPage?.();
+      toast('Serviço finalizado e comprovante liberado.');
+    } catch (error) {
+      toast(error.message || 'Não foi possível finalizar o serviço.');
+    }
+  };
+})();
+
 /* Painel administrativo no celular: a navegação abre apenas pelo botão ☰. */
 (() => {
   const mobile = matchMedia('(max-width: 650px), (hover: none) and (pointer: coarse)');
