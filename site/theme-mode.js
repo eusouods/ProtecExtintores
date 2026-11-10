@@ -26,7 +26,7 @@
   function apply() {
     document.documentElement.dataset.theme = mode;
     const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = mode === 'dark' ? '#171a20' : '#e23d28';
+  if (meta) meta.content = mode === 'dark' ? '#0f172a' : '#2563eb';
     const button = document.querySelector('.theme-toggle');
     if (!button) return;
     const dark = mode === 'dark';
