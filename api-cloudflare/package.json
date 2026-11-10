@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "db:remote": "wrangler d1 migrations apply fogoseguro-db --remote"
+    "db:remote": "wrangler d1 migrations apply protecextintores-db --remote"
   },
   "devDependencies": {
     "wrangler": "^4.44.0"
