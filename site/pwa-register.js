@@ -141,3 +141,101 @@
     invalid.focus();
   }, true);
 })();
+
+/* Rebranding corporativo e catálogo público — sem carrinho ou conta de cliente. */
+(() => {
+  const style = document.createElement('style');
+  style.textContent = `
+    :root{--protec-surface:#f4f6f8;--protec-ink:#1f2937;--protec-accent:#e11d48;--protec-deep:#111827;--protec-muted:#6b7280}
+    body{background:var(--protec-surface)!important;color:var(--protec-ink)!important}
+    #store .topbar,#dashboard .sidebar,.employee-top,.seller-top{background:var(--protec-deep)!important;color:#fff!important;border-color:#374151!important}
+    #store .hero{background:linear-gradient(135deg,#111827 0%,#1f2937 66%,#3a1020 100%)!important}
+    #store .hero h1 span,.eyebrow{color:#fb7185!important}.brand-mark{background:var(--protec-accent)!important;color:#fff!important}
+    .btn,.btn-dark,#dashboard #content .btn:not(.btn-soft){background:var(--protec-accent)!important;color:#fff!important;border-color:var(--protec-accent)!important}
+    .btn:hover,#dashboard #content .btn:not(.btn-soft):hover{background:#be123c!important}.btn-soft{background:#e5e7eb!important;color:var(--protec-ink)!important;border-color:#d1d5db!important}
+    .panel,.stat,.product,.config-card,.table-wrap,.admin-page-intro{border-color:#e5e7eb!important;box-shadow:0 10px 28px rgb(17 24 39 / 7%)!important}
+    .catalog-card{position:relative;display:flex;flex-direction:column;min-height:100%;overflow:hidden;border:1px solid #e5e7eb;border-radius:18px;background:#fff;box-shadow:0 10px 30px rgb(17 24 39 / 8%)}
+    .catalog-card:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgb(17 24 39 / 14%)}
+    .catalog-media{height:230px;background:linear-gradient(145deg,#e5e7eb,#f9fafb);display:grid;place-items:center;overflow:hidden}.catalog-media img{width:100%;height:100%;object-fit:cover}.catalog-placeholder{font-size:58px}
+    .catalog-body{display:flex;flex:1;flex-direction:column;gap:10px;padding:20px}.catalog-category{align-self:flex-start;border-radius:999px;background:#ffe4e6;color:#be123c;padding:5px 9px;font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}.catalog-body h3{margin:0;color:var(--protec-deep);font-size:18px}.catalog-body p{margin:0;color:var(--protec-muted);font-size:13px;line-height:1.55}.catalog-body .btn{margin-top:auto;align-self:flex-start}
+    .catalog-admin-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800}.catalog-admin-status input{accent-color:var(--protec-accent)}
+    #customerCartButton,#customerAccountButton,.customer-account-button,.customer-panel-redesign,.checkout-confirmation,.customer-order-panel{display:none!important}
+    @media(max-width:650px){.catalog-media{height:205px}.catalog-body{padding:17px}.catalog-body .btn{width:100%}}
+  `;
+  document.head.append(style);
+  document.documentElement.classList.add('protec-catalog-mode');
+
+  const categoryOptions = ['Extintores','Placas e sinalização','Hidrantes e mangueiras','Iluminação de emergência','Acessórios de prevenção'];
+  const imageSource = async form => {
+    const file = form.get('imageFile');
+    const uploaded = await fileData(file);
+    if (uploaded) return uploaded;
+    const url = String(form.get('imageUrl') || '').trim();
+    if (!url) return '';
+    try {
+      const parsed = new URL(url);
+      if (!['https:','http:'].includes(parsed.protocol)) throw Error();
+      return parsed.href;
+    } catch { throw Error('Use uma URL de imagem válida, iniciada por https:// ou http://.'); }
+  };
+  const quote = product => {
+    const message = `Olá! Gostaria de solicitar informações sobre: ${product.name}.`;
+    const link = window.fogoWhatsAppLink?.(message);
+    if (link) return window.open(link, '_blank', 'noopener');
+    window.showPublicPage?.('service');
+    toast('Informe seus dados para solicitar um orçamento.');
+  };
+  const renderCatalog = () => {
+    const host = document.getElementById('publicProducts');
+    if (!host) return;
+    const visible = (db.products || []).filter(product => product.catalogEnabled !== false);
+    host.className = 'products catalog-grid';
+    host.innerHTML = visible.length ? visible.map(product => `<article class="catalog-card"><div class="catalog-media">${product.image ? `<img src="${esc(product.image)}" alt="${esc(product.name)}" loading="lazy">` : '<span class="catalog-placeholder">🧯</span>'}</div><div class="catalog-body"><span class="catalog-category">${esc(product.category || 'Catálogo')}</span><h3>${esc(product.name)}</h3><p>${esc(product.description || product.type || 'Equipamento de prevenção')}${product.model ? ` · ${esc(product.model)}` : ''}</p><button class="btn btn-small" type="button" data-catalog-product="${esc(product.id)}">Solicitar orçamento</button></div></article>`).join('') : '<div class="empty">O catálogo está sendo atualizado. Fale com a equipe para solicitar informações.</div>';
+    host.querySelectorAll('[data-catalog-product]').forEach(button => button.addEventListener('click', () => quote((db.products || []).find(product => product.id === button.dataset.catalogProduct))));
+  };
+  const originalRenderPublic = window.renderPublic;
+  window.renderPublic = function() { originalRenderPublic?.apply(this, arguments); renderCatalog(); };
+  window.addToCart = () => toast('Este catálogo é exclusivo para consulta. Solicite um orçamento à equipe.');
+  window.openCart = () => toast('Compras online foram removidas. Solicite um orçamento para receber atendimento personalizado.');
+  window.openCustomerAuth = () => toast('A área de cliente foi removida. Use o catálogo para solicitar um orçamento.');
+  window.openCustomerAccount = window.openCustomerAuth;
+
+  const catalogAdmin = host => {
+    const products = db.products || [], active = products.filter(product => product.catalogEnabled !== false).length;
+    host.innerHTML = `<div class="page-title"><div><div class="eyebrow">Catálogo profissional</div><h1>Produtos em catálogo</h1><p>Controle a visibilidade e as imagens de referência da vitrine pública.</p></div><button class="btn btn-small" onclick="openProduct()">＋ Adicionar produto</button></div><div class="panel"><div class="panel-head"><div><h3>${active} produto(s) ativo(s)</h3><p>${products.length - active} item(ns) oculto(s) da vitrine.</p></div><button class="btn btn-soft btn-small" onclick="showStore('home')">Ver catálogo ↗</button></div>${products.length ? `<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Imagem</th><th>Vitrine</th><th>Ações</th></tr></thead><tbody>${products.map(product => `<tr><td><strong>${esc(product.name)}</strong><small>${esc(product.model || product.type || 'Sem referência')}</small></td><td>${esc(product.category || 'Catálogo')}</td><td>${product.image ? 'Imagem definida' : 'Sem imagem'}</td><td><label class="catalog-admin-status"><input type="checkbox" ${product.catalogEnabled !== false ? 'checked' : ''} onchange="toggleCatalogProduct('${esc(product.id)}',this.checked)">${product.catalogEnabled !== false ? 'Ativo' : 'Oculto'}</label></td><td><button class="icon-btn" onclick="editProduct('${esc(product.id)}')">Editar</button> <button class="icon-btn" onclick="del('products','${esc(product.id)}')">Excluir</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nenhum produto cadastrado no catálogo.</div>'}</div>`;
+  };
+  const originalRenderPage = window.renderPage;
+  window.renderPage = function(target) {
+    const current = target || window.page;
+    if (current === 'products') return catalogAdmin(document.getElementById('content'));
+    return originalRenderPage?.apply(this, arguments);
+  };
+  window.toggleCatalogProduct = async (id, enabled) => {
+    const product = (db.products || []).find(item => item.id === id);
+    if (!product) return;
+    const previous = product.catalogEnabled !== false;
+    product.catalogEnabled = Boolean(enabled);
+    if (!await save()) { product.catalogEnabled = previous; return window.renderPage('products'); }
+    window.renderPage('products'); window.renderPublic(); toast(enabled ? 'Produto exibido no catálogo.' : 'Produto ocultado do catálogo.');
+  };
+  window.openProduct = function() {
+    const body = `<div class="form-grid">${field('Nome do produto','name',{required:true})}${field('Categoria','category',{options:categoryOptions.map(value => ({value,label:value}))})}${field('Tipo / especificação','type')}${field('Modelo ou referência','model')}${field('Código / SKU','sku')}${field('Descrição','description',{cls:'span2'})}<div class="form-field span2"><label>URL da imagem de referência</label><input name="imageUrl" type="url" placeholder="https://exemplo.com/imagem.jpg"><small>Use uma imagem pública do fabricante ou forneça um arquivo abaixo.</small></div><div class="form-field span2"><label>Enviar imagem</label><label class="upload">Selecionar imagem<input type="file" hidden accept="image/*" name="imageFile"></label></div><label class="form-field span2"><span><input name="catalogEnabled" type="checkbox" checked> Exibir este produto no catálogo público</span></label></div>`;
+    openModal('Adicionar produto ao catálogo', body, async form => {
+      const product = {id:id(),name:val(form,'name'),category:val(form,'category'),type:val(form,'type'),kg:'',model:val(form,'model'),sku:val(form,'sku'),description:val(form,'description'),price:0,image:await imageSource(form),video:'',catalogEnabled:form.get('catalogEnabled') === 'on'};
+      db.products = db.products || []; db.products.push(product);
+      if (!await save()) { db.products = db.products.filter(item => item.id !== product.id); saveLocal(); return false; }
+      window.renderPage('products'); window.renderPublic(); toast('Produto adicionado ao catálogo.');
+    });
+  };
+  window.editProduct = function(id) {
+    const product = (db.products || []).find(item => item.id === id); if (!product) return;
+    const body = `<div class="form-grid">${field('Nome do produto','name',{required:true,value:product.name})}${field('Categoria','category',{options:categoryOptions.map(value => ({value,label:value,selected:value === product.category}))})}${field('Tipo / especificação','type',{value:product.type})}${field('Modelo ou referência','model',{value:product.model})}${field('Código / SKU','sku',{value:product.sku})}${field('Descrição','description',{cls:'span2',value:product.description})}<div class="form-field span2"><label>Nova URL da imagem</label><input name="imageUrl" type="url" placeholder="Mantenha vazio para preservar a imagem atual"></div><div class="form-field span2"><label>Atualizar imagem por arquivo</label><label class="upload">Selecionar imagem<input type="file" hidden accept="image/*" name="imageFile"></label></div><label class="form-field span2"><span><input name="catalogEnabled" type="checkbox" ${product.catalogEnabled !== false ? 'checked' : ''}> Exibir no catálogo público</span></label></div>`;
+    openModal('Editar produto do catálogo', body, async form => {
+      const image = await imageSource(form);
+      product.name = val(form,'name'); product.category = val(form,'category'); product.type = val(form,'type'); product.model = val(form,'model'); product.sku = val(form,'sku'); product.description = val(form,'description'); product.catalogEnabled = form.get('catalogEnabled') === 'on'; if (image) product.image = image;
+      if (!await save()) return false;
+      window.renderPage('products'); window.renderPublic(); toast('Produto atualizado.');
+    });
+  };
+  setTimeout(() => { window.renderPublic(); document.querySelectorAll('#customerCartButton,#customerAccountButton').forEach(node => node.remove()); }, 0);
+})();
