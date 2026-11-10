@@ -1,6 +1,6 @@
 /* Service worker simples: rede primeiro, cache só como reserva offline. Não toca na API. */
 // Altere a versão a cada publicação para não manter telas antigas após o deploy.
-const CACHE = 'protecextintores-v3';
+const CACHE = 'protecextintores-v4';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
