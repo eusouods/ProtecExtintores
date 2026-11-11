@@ -8,26 +8,30 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK platform
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      # The pinned GitHub image already includes SDK 35 and Build Tools 35.
+      # Avoid downloading a different command-line SDK during each build.
+      - name: Verify preinstalled Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${ANDROID_HOME:?Android SDK path is missing}"
+          test -f "$ANDROID_HOME/platforms/android-35/android.jar"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/aapt2"
+          test -f android-app/gradlew
+          test -f android-app/gradle/wrapper/gradle-wrapper.jar
+          java -version
 
       - name: Check and build debug APK
         working-directory: android-app
@@ -40,7 +44,7 @@ jobs:
           sha256sum android-dist/ProtecExtintores.apk > android-dist/SHA256SUMS.txt
 
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ProtecExtintores-APK
           path: android-dist/
