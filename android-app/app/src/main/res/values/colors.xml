@@ -1,0 +1,7 @@
+<resources>
+    <color name="protec_primary">#6D28D9</color>
+    <color name="protec_background">#F8F9FC</color>
+    <color name="protec_surface">#FFFFFF</color>
+    <color name="protec_text">#202033</color>
+    <color name="protec_muted">#626278</color>
+</resources>

@@ -19,6 +19,25 @@ Para instalar no aparelho, transfira o APK e autorize a instalação desse arqui
 
 ## Gerar pelo GitHub Actions
 
-O workflow `Build Android APK` pode ser iniciado manualmente na aba **Actions** do GitHub. Ele compila o APK de depuração e disponibiliza `ProtecExtintores-android-debug-apk` como artefato para baixar.
+Não precisa abrir o PowerShell nem instalar Java no computador para usar esta opção.
+
+1. Envie os arquivos atualizados para a raiz do repositório `eusouods/ProtecExtintores`, incluindo a pasta oculta `.github` e a pasta `android-app`. Não envie o ZIP como se fosse o código do projeto.
+2. No GitHub, abra **Actions > Build Android APK > Run workflow** e confirme **Run workflow**.
+3. Aguarde a execução ficar verde e abra essa execução.
+4. Em **Artifacts**, baixe **ProtecExtintores-APK**.
+5. Extraia o arquivo baixado e transfira **ProtecExtintores.apk** para o Android.
+6. Abra o APK no aparelho e permita a instalação por essa fonte, se o Android solicitar.
+
+O workflow verifica o projeto com Android Lint antes de gerar o APK. O arquivo `SHA256SUMS.txt` acompanha o APK para conferência de integridade.
+
+Este é um APK de teste, com assinatura de depuração. A chave de teste pode mudar entre execuções do GitHub; nesse caso, será necessário desinstalar a versão de teste anterior para instalar a nova. A sessão local será removida. Para distribuição definitiva e atualizações por cima da versão instalada, configure uma chave de lançamento permanente e mantenha uma cópia segura. Nenhuma chave de produção foi criada ou publicada neste projeto.
 
 O app requer conexão com a internet. Ele mantém login/sessão via armazenamento do navegador e aceita envio de imagens e vídeos do aparelho.
+
+## Aparência e uso
+
+O ícone e a barra de carregamento usam a identidade violeta atual. A tela nativa de falha de conexão acompanha o modo claro/escuro do Android; o conteúdo do site mantém seu próprio seletor de tema. A área do site respeita as barras do sistema e o recorte de tela no Android 15.
+
+O catálogo e os painéis de administrador, funcionário e vendedor continuam sendo os do site publicado. Atualizações publicadas no site chegam ao aplicativo pelo mesmo endereço, sujeitas ao cache do site. Um ZIP de código-fonte não instala no celular: primeiro gere o APK pelo fluxo acima.
+
+O seletor permite anexar vídeos e imagens já disponíveis no aparelho. Gravação direta com a câmera, notificações nativas, funcionamento offline, downloads de relatórios e impressão não foram implementados nem validados como funções nativas. Teste os fluxos de login, anexos e reprodução no aparelho antes de distribuir à equipe.

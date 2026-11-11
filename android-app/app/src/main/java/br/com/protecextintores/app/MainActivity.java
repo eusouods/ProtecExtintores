@@ -7,9 +7,9 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.view.Window;
+import android.os.Build;
+import android.view.WindowInsets;
 import android.webkit.CookieManager;
-import android.webkit.SafeBrowsingResponse;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -41,15 +41,28 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         startUrl = getString(R.string.start_url);
         websiteHost = Uri.parse(startUrl).getHost();
-        getWindow().setStatusBarColor(android.graphics.Color.rgb(23, 24, 18));
-        getWindow().setNavigationBarColor(android.graphics.Color.rgb(23, 24, 18));
+        getWindow().setStatusBarColor(0xFF111118);
+        getWindow().setNavigationBarColor(0xFF111118);
         FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(0xFF111118);
+        // Android 15 draws under system bars. Keep forms and navigation tappable.
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets bars = insets.getInsets(
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            } else {
+                view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+                        insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            }
+            return insets;
+        });
         webView = new WebView(this);
         progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progressBar.setMax(100);
         progressBar.setIndeterminate(false);
-        progressBar.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFFF4C400));
-        progressBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x00171812));
+        progressBar.setProgressTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.protec_primary)));
+        progressBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x00111118));
 
         root.addView(webView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -87,14 +100,18 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, false);
 
-        webView.setBackgroundColor(0xFFF8F5E8);
+        webView.setBackgroundColor(getColor(R.color.protec_background));
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String scheme = uri.getScheme() == null ? "" : uri.getScheme();
-                if (("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))
-                        && websiteHost != null && websiteHost.equalsIgnoreCase(uri.getHost())) {
+                String sitePath = Uri.parse(startUrl).getPath();
+                String requestedPath = uri.getPath();
+                if ("https".equalsIgnoreCase(scheme)
+                        && websiteHost != null && websiteHost.equalsIgnoreCase(uri.getHost())
+                        && uri.getPort() == -1 && requestedPath != null
+                        && requestedPath.startsWith(sitePath)) {
                     return false;
                 }
                 if ("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme)
@@ -169,7 +186,7 @@ public class MainActivity extends Activity {
                         fileChooserCallback = null;
                         callback.onReceiveValue(null);
                         Toast.makeText(MainActivity.this, "Não foi possível abrir os arquivos neste aparelho.", Toast.LENGTH_SHORT).show();
-                        return false;
+                        return true;
                     }
                 }
             }
@@ -181,11 +198,11 @@ public class MainActivity extends Activity {
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setGravity(android.view.Gravity.CENTER);
         panel.setPadding(dp(24), dp(24), dp(24), dp(24));
-        panel.setBackgroundColor(android.graphics.Color.WHITE);
+        panel.setBackgroundColor(getColor(R.color.protec_surface));
 
         TextView title = new TextView(this);
         title.setText("Não foi possível abrir a ProtecExtintores");
-        title.setTextColor(android.graphics.Color.rgb(29, 16, 14));
+        title.setTextColor(getColor(R.color.protec_text));
         title.setTextSize(20);
         title.setGravity(android.view.Gravity.CENTER);
         panel.addView(title, new LinearLayout.LayoutParams(
@@ -193,7 +210,7 @@ public class MainActivity extends Activity {
 
         TextView details = new TextView(this);
         details.setTag("load-error-details");
-        details.setTextColor(android.graphics.Color.rgb(109, 94, 89));
+        details.setTextColor(getColor(R.color.protec_muted));
         details.setTextSize(15);
         details.setGravity(android.view.Gravity.CENTER);
         LinearLayout.LayoutParams detailsParams = new LinearLayout.LayoutParams(
@@ -202,6 +219,8 @@ public class MainActivity extends Activity {
         panel.addView(details, detailsParams);
 
         Button retry = new Button(this);
+        retry.setTextColor(android.graphics.Color.WHITE);
+        retry.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.protec_primary)));
         retry.setText("Tentar novamente");
         retry.setOnClickListener(view -> webView.loadUrl(startUrl));
         panel.addView(retry, new LinearLayout.LayoutParams(
