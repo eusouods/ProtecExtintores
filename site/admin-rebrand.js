@@ -3,7 +3,7 @@
   const safe = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const itemsOf = service => Array.isArray(service.items) ? service.items : [];
   const isCancelled = service => Boolean(service.cancelledAt || service.status === 'Cancelado');
-  const finalStatus = service => !isCancelled(service) && Boolean(service.closed || service.closedAt || (itemsOf(service).length && itemsOf(service).every(item => item.status === 'Concluído') && !service.employeeCompletedAt));
+  const finalStatus = service => !isCancelled(service) && Boolean(service.closed || service.closedAt);
   const actorRole = service => service.registeredByRole === 'employee' || service.registeredByRole === 'seller' ? service.registeredByRole : service.registeredByRole ? '' : service.sellerId || service.sellerName ? 'seller' : '';
   const actorName = service => service.registeredBy || (actorRole(service) === 'employee' ? service.employeeName : service.sellerName) || (actorRole(service) === 'employee' ? 'Funcionário sem identificação' : actorRole(service) === 'seller' ? 'Vendedor sem identificação' : 'Administração');
   const actorId = service => actorRole(service) === 'employee' ? service.employeeId || '' : service.sellerId || '';
@@ -17,7 +17,7 @@
     if (actorRole(service) !== role) return false;
     return true;
   };
-  const recordsFor = (role,id,name) => (db.services||[]).filter(service => servicePerson(service,role) && (!id || actorId(service) === id || (!actorId(service)&&name&&actorName(service)===name)));
+  const recordsFor = (role,id,name) => (db.services||[]).filter(service => servicePerson(service,role) && (!id || (role==='employee'?service.employeeId:service.sellerId) === id || (!(role==='employee'?service.employeeId:service.sellerId)&&name&&(role==='employee'?service.employeeName:actorName(service))===name)));
 
   function installSidebar(){
     const servicesNav=document.querySelector('.side-nav button[data-page="services"]')?.closest('.side-nav');
@@ -43,7 +43,7 @@
     const seen=new Set();
     const people=list.map(person=>({id:person.id,name:person.name||person.username||'Sem nome'}));
     people.forEach(person=>seen.add(person.id));
-    rows.forEach(service=>{const id=actorId(service);if(id&&!seen.has(id)){people.push({id,name:actorName(service)});seen.add(id)}});
+    rows.forEach(service=>{const id=role==='employee'?service.employeeId:service.sellerId;if(id&&!seen.has(id)){people.push({id,name:role==='employee'?service.employeeName||'Funcionário anterior':actorName(service)});seen.add(id)}});
     return people.map(person=>({...person,services:recordsFor(role,person.id,person.name)})).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   }
 
@@ -67,7 +67,7 @@
     document.getElementById('crumb').textContent=person.name;
     container.innerHTML=`<div class="admin-profile-back"><button type="button" class="btn btn-soft btn-small" data-back-role="${role}">← Todos ${role==='employee'?'os funcionários':'os vendedores'}</button></div><div class="admin-page-intro"><div><span class="admin-eyebrow">Página individual · ${role==='employee'?'Funcionário':'Vendedor'}</span><h1>${safe(person.name)}</h1><p>Serviços cadastrados neste perfil, incluindo o histórico finalizado.</p></div><span class="admin-intro-total"><b>${all.length}</b><small>serviços no histórico</small></span></div><div class="admin-history-stats"><button type="button" data-filter="all" class="${filter==='all'?'active':''}"><b>${all.length}</b><span>Todos</span></button><button type="button" data-filter="active" class="${filter==='active'?'active':''}"><b>${active.length}</b><span>Em andamento</span></button><button type="button" data-filter="review" class="${filter==='review'?'active':''}"><b>${pendingReview.length}</b><span>Aguardando revisão</span></button><button type="button" data-filter="finished" class="${filter==='finished'?'active':''}"><b>${finished.length}</b><span>Finalizados</span></button></div>${serviceTableRows(shown)}`;
     container.querySelector('[data-back-role]')?.addEventListener('click',event=>go(event.currentTarget.dataset.backRole==='employee'?'employee-history':'seller-history'));
-    container.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{window.adminServiceProfileFilter=button.dataset.filter;renderProfile(role,id,container)}));
+    container.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{window.adminServiceProfileFilter=button.dataset.filter;personProfile(role,id,container)}));
     container.querySelectorAll('[data-service-history]').forEach(button=>button.addEventListener('click',()=>window.serviceHistory(button.dataset.serviceHistory)));
     container.querySelectorAll('[data-service-order]').forEach(button=>button.addEventListener('click',()=>window.serviceOrder(button.dataset.serviceOrder)));
   }
@@ -79,7 +79,7 @@
     if(route==='employee-history')return personRoster('employee',container);
     if(route==='seller-history')return personRoster('seller',container);
     if(route==='employee-profile'||route==='seller-profile'){
-      const role=route==='employee-profile'?'employee':'seller';return renderProfile(role,window.adminServiceProfile?.role===role?window.adminServiceProfile.id:'',container);
+      const role=route==='employee-profile'?'employee':'seller';return personProfile(role,window.adminServiceProfile?.role===role?window.adminServiceProfile.id:'',container);
     }
   };
 

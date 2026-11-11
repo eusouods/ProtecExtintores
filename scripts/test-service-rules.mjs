@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {dueDate,estimateFinance,preserveAndCapture,missingVideos,sellerView} from '../site/service-rules.mjs';
+import {employeeHistory,handleOperations} from '../api-cloudflare/src/operations.mjs';
+const state={settings:{sellerBillingPolicy:{mode:'weekly',weekday:5}},sellers:[{id:'s1',name:'Vendedor'}],costCatalog:[{id:'c1',name:'ABC',kg:'6',category:'Serviço',unitCost:20,salePrice:50},{id:'c2',name:'Válvula M30',unitCost:10,salePrice:25},{id:'c3',name:'Pintura',unitCost:5,salePrice:15}],services:[]};
+const service={id:'work',sellerId:'s1',employeeId:'e1',date:'2026-11-11',price:100,items:[{type:'ABC',kg:'6',unitPrice:50,status:'Concluído',replacedParts:['Válvula M30'],replacementMedia:{'Válvula M30':{url:'https://test/media/service-media/a.mp4'}}},{type:'ABC',kg:'6',unitPrice:50,status:'Concluído',replacedParts:[]}],paintingQuantity:1,employeeCompletedAt:'2026-11-11T14:00:00Z'};
+assert.equal(dueDate('2026-11-11T14:00:00Z',{mode:'weekly',weekday:5}),'2026-11-13');
+assert.equal(dueDate('2026-11-13T14:00:00Z',{mode:'weekly',weekday:5}),'2026-11-13');
+assert.equal(dueDate('2026-11-14T01:00:00Z',{mode:'completion'}),'2026-11-13');
+assert.equal(dueDate('2026-12-31T14:00:00Z',{mode:'weekly',weekday:1}),'2027-01-04');
+const totals=estimateFinance(state,service);assert.equal(totals.revenueCents,14000);assert.equal(totals.costCents,5500);assert.equal(totals.profitCents,8500);assert.equal(totals.costsComplete,true);
+assert.deepEqual(missingVideos(service),[]);
+const noVideo=structuredClone(service);delete noVideo.items[0].replacementMedia;assert.equal(missingVideos(noVideo).length,1);
+const previous={...structuredClone(state),services:[structuredClone(service)]};const next=structuredClone(previous);next.services[0].closed=true;next.services[0].closedAt='2026-11-11T15:00:00Z';
+preserveAndCapture(next,previous,'2026-11-11T15:00:00Z');assert.equal(next.services[0].finance.revenueCents,14000);assert.equal(next.services[0].price,140);assert.equal(next.services[0].finance.dueDate,'2026-11-13');
+const changed=structuredClone(next);changed.costCatalog[0].unitCost=99;changed.services[0].finance.revenueCents=1;preserveAndCapture(changed,next,'2026-11-12T15:00:00Z');assert.equal(changed.services[0].finance.revenueCents,14000);
+assert.throws(()=>preserveAndCapture({...next,services:[]},next,new Date().toISOString()),/histórico/);
+assert.equal(employeeHistory(next,'e1').length,1);assert.equal(employeeHistory(next,'e2').length,0);
+assert.equal(employeeHistory({...state,services:[service]},'e1').length,1);
+assert.equal(sellerView(next.services[0]).finance,undefined);assert.equal(sellerView(next.services[0]).charge.amountCents,14000);assert.equal(sellerView(next.services[0]).items[0].replacementMedia['Válvula M30'].url,'https://test/media/service-media/a.mp4');
+const incomplete=estimateFinance({...state,costCatalog:[]},service);assert.equal(incomplete.costsComplete,false);assert(incomplete.missingCosts.includes('ABC'));
+// As permissões e a quitação são exercitadas com dados isolados, sem atingir o D1 real.
+const ctx={auth:async()=>null,json:(data,status=200)=>new Response(JSON.stringify(data),{status}),now:()=>new Date().toISOString(),readState:async()=>next,saveState:async()=>{}};
+const denied=await handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid'})}),{},ctx);assert.equal(denied.status,403);
+let saved;ctx.auth=async()=>({username:'admin',role:'admin'});ctx.saveState=async(_env,s)=>{saved=s};
+const paid=await handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid',serviceIds:['work'],reference:'PIX recebido'})}),{},ctx);assert.equal(paid.status,200);assert.equal(saved.services[0].finance.payment.status,'paid');
+await assert.rejects(()=>handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid',serviceIds:['work'],reference:'duplicado'})}),{},ctx),/já paga/);
+console.log('Regras verificadas: histórico, cobrança semanal/conclusão, fuso horário, custos, snapshots, vídeos, permissão e quitação sem duplicidade.');

@@ -1,7 +1,7 @@
 /* Peças e evidências de vídeo por extintor para a área técnica. */
 (() => {
-  const videoParts = new Set(['Válvula M30', 'Válvula de CO₂', 'Manômetro']);
   const allParts = ['Válvula M30','Válvula de CO₂','Sifão','Manômetro','Mangueira','Difusor','Outro'];
+  const videoParts = new Set(allParts);
   const maxBytes = 50 * 1024 * 1024;
 
   function groups(items) {
@@ -72,6 +72,7 @@
       const response = await window.apiCall('/api/employee/services');
       const payload = await window.apiJson(response);
       if (!response.ok) throw new Error(payload.error || 'Não foi possível carregar o serviço.');
+      for(const part of payload.partOptions || []){if(!allParts.includes(part))allParts.push(part);videoParts.add(part)}
       const service = (payload.services || []).find(item => item.id === serviceId);
       const group = service && groups(service.items)[groupIndex];
       if (!group) throw new Error('Este grupo de extintores não está disponível. Atualize a página e tente novamente.');
@@ -90,7 +91,7 @@
         return `<fieldset class="employee-item-parts"><legend>Extintor ${position + 1}${esc(serial)}${esc(capacity)}</legend><div class="employee-part-checkboxes">${labels}</div></fieldset>`;
       }).join('');
 
-      const body = `<p class="helper">Marque as peças em cada extintor. Para cada válvula ou manômetro substituído, envie um vídeo individual de até 60 segundos e 50 MB. Filme apenas o equipamento e a área necessária.</p><div class="form-field"><label for="employeeTechnicalNotes">Observação técnica</label><textarea id="employeeTechnicalNotes" name="notes" rows="4">${esc(group.items.map(item => item.notes || '').filter(Boolean).join('\n'))}</textarea></div><section class="employee-parts-section"><h3>Peças por extintor</h3>${pieceRows}</section><section class="replacement-video-section"><h3>Vídeos de válvulas e manômetros</h3><p class="helper">Marque as peças primeiro; cada substituição marcada terá seu próprio campo de vídeo.</p><div id="${slotHostId}"></div></section>`;
+      const body = `<p class="helper">Marque as peças em cada extintor. Para cada peça substituído, envie um vídeo individual de até 60 segundos e 50 MB. Filme apenas o equipamento e a área necessária.</p><div class="form-field"><label for="employeeTechnicalNotes">Observação técnica</label><textarea id="employeeTechnicalNotes" name="notes" rows="4">${esc(group.items.map(item => item.notes || '').filter(Boolean).join('\n'))}</textarea></div><section class="employee-parts-section"><h3>Peças por extintor</h3>${pieceRows}</section><section class="replacement-video-section"><h3>Vídeos de cada peça trocada</h3><p class="helper">Marque as peças primeiro; cada substituição marcada terá seu próprio campo de vídeo.</p><div id="${slotHostId}"></div></section>`;
 
       window.openModal('Observações, peças e vídeos', body, async formData => {
         const notes = String(formData.get('notes') || '');
@@ -128,7 +129,7 @@
           }
         }
 
-        for (let position = 0; position < group.indexes.length; position++) {
+        for (let position = 0; !service.employeeCompletedAt && position < group.indexes.length; position++) {
           const itemIndex = group.indexes[position];
           const item = group.items[position];
           const request = await window.apiCall('/api/employee/status', 'POST', {
@@ -151,9 +152,11 @@
           item.notes = notes;
           item.replacedParts = [...(selectedParts.get(group.indexes[position]) || [])];
         });
+        await window.refreshEmployeePortal?.();
         window.toast?.('Peças e vídeos individuais salvos.');
       });
 
+      if(service.employeeCompletedAt){document.querySelectorAll('#editForm .employee-part-checkbox input,#employeeTechnicalNotes').forEach(input=>input.disabled=true);}
       const slotHost = document.getElementById(slotHostId);
       const renderVideoSlots = () => {
         if (!slotHost) return;
@@ -173,7 +176,7 @@
             rows.push(`<div class="replacement-video-slot"><label for="${inputId}"><b>${esc(label)}</b><small>Vídeo individual com até 60 segundos e 50 MB.</small></label>${existing?.url ? `<div class="saved-video"><small>Vídeo registrado · ${Math.ceil(Number(existing.durationSeconds)||0)} s</small><button type="button" class="btn btn-soft btn-small" data-load-private-video data-url="${esc(existing.url)}">Carregar vídeo para assistir</button><video controls playsinline preload="none" data-media-player hidden></video></div>` : ''}<input id="${inputId}" name="${inputId}" type="file" accept="video/mp4,video/quicktime,video/webm,video/3gpp,video/3gpp2,video/x-m4v" data-replacement-video data-part="${esc(part)}" data-item-index="${itemIndex}" data-hint="${inputId}-hint"><small id="${inputId}-hint" class="replacement-video-hint">${existing?.url ? 'Selecione outro vídeo apenas para substituir o atual.' : 'Vídeo obrigatório para esta peça.'}</small></div>`);
           }
         });
-        slotHost.innerHTML = rows.join('') || '<p class="helper">Marque Válvula M30, Válvula de CO₂ ou Manômetro para adicionar os vídeos correspondentes.</p>';
+        slotHost.innerHTML = rows.join('') || '<p class="helper">Marque uma peça para adicionar o vídeo correspondente.</p>';
         slotHost.querySelectorAll('[data-replacement-video]').forEach(input => {
           const key = slotKey(Number(input.dataset.itemIndex), input.dataset.part);
           const retainedFile = selectedFiles.get(key);
