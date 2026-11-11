@@ -1,6 +1,6 @@
 # Históricos, peças, pintura e cobranças
 
-Esta versão mantém o tema neutro e os painéis de administrador, funcionário e vendedor.
+Esta versão mantém os painéis de administrador, funcionário e vendedor. A identidade visual atual está descrita em `ATUALIZACAO-VISUAL.md`.
 
 ## Publicar
 

@@ -14,6 +14,7 @@
   };
   const statusLabel = service => isCancelled(service) ? 'Cancelado' : finalStatus(service) ? 'Finalizado' : service.employeeCompletedAt ? 'Aguardando revisão' : service.status || itemsOf(service)[0]?.status || 'Em andamento';
   const servicePerson = (service,role) => {
+    if (role === 'employee') return Boolean(service.employeeId);
     if (actorRole(service) !== role) return false;
     return true;
   };
