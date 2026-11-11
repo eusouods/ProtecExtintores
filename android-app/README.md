@@ -30,6 +30,8 @@ Não precisa abrir o PowerShell nem instalar Java no computador para usar esta o
 
 O workflow verifica o projeto com Android Lint antes de gerar o APK. O arquivo `SHA256SUMS.txt` acompanha o APK para conferência de integridade.
 
+O ambiente de compilação está fixado em Ubuntu 24.04 e utiliza Android SDK Platform 35 e Build Tools 35.0.0 pré-instalados no servidor do GitHub. Não depende da etapa `android-actions/setup-android`, que falhou na execução anterior. O Gradle 8.13 é iniciado pelo wrapper incluído no projeto.
+
 Este é um APK de teste, com assinatura de depuração. A chave de teste pode mudar entre execuções do GitHub; nesse caso, será necessário desinstalar a versão de teste anterior para instalar a nova. A sessão local será removida. Para distribuição definitiva e atualizações por cima da versão instalada, configure uma chave de lançamento permanente e mantenha uma cópia segura. Nenhuma chave de produção foi criada ou publicada neste projeto.
 
 O app requer conexão com a internet. Ele mantém login/sessão via armazenamento do navegador e aceita envio de imagens e vídeos do aparelho.
