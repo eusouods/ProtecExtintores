@@ -2,22 +2,22 @@
 (() => {
   const style = document.createElement('style');
   style.textContent = `
-    .service-extra-section{grid-column:1/-1;margin:8px 0 18px;padding:16px;border:1px solid #dce4f7;border-radius:14px;background:#fbfcff}
+    .service-extra-section{grid-column:1/-1;margin:8px 0 18px;padding:16px;border:1px solid #e4e4e4;border-radius:14px;background:#fcfcfc}
     .service-extra-section>h3{margin:0 0 5px;font-size:14px}
     .service-extra-section>.helper{margin:0 0 12px}
     .service-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-    .service-extra-card{min-width:0;padding:12px;border:1px solid #dce4f7;border-radius:11px;background:#fff}
+    .service-extra-card{min-width:0;padding:12px;border:1px solid #e4e4e4;border-radius:11px;background:#ffffff}
     .service-extra-choice{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:12px;font-weight:700}
-    .service-extra-choice input{width:17px;height:17px;flex:none;margin:1px 0 0;accent-color:#0131cd}
+    .service-extra-choice input{width:17px;height:17px;flex:none;margin:1px 0 0;accent-color:#323232}
     .service-extra-choice span{display:grid;gap:3px}
-    .service-extra-choice small{color:#83746f;font-size:10px;font-weight:400;line-height:1.4}
+    .service-extra-choice small{color:#777777;font-size:10px;font-weight:400;line-height:1.4}
     .service-extra-details{padding-top:10px}
     .service-extra-details .form-field{margin:8px 0}
     .service-extra-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
     .service-extra-line{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr)) auto;align-items:end;gap:8px;margin:0 0 9px}
     .service-extra-line .form-field{min-width:0;margin:0}
     .service-extra-line .form-field label{font-size:10px}
-    .service-extra-remove{min-height:38px;padding:7px 11px;border:1px solid #fecaca;border-radius:9px;background:#fff7f7;color:#b42318;font-weight:700;white-space:nowrap}
+    .service-extra-remove{min-height:38px;padding:7px 11px;border:1px solid #d5d5d5;border-radius:9px;background:#f9f9f9;color:#414141;font-weight:700;white-space:nowrap}
     .service-extra-add{margin-top:4px}
     @media(max-width:680px){.service-extra-grid{grid-template-columns:1fr}.service-extra-line{grid-template-columns:repeat(2,minmax(0,1fr))}.service-extra-remove{grid-column:1/-1;width:100%}}
   `;
@@ -371,7 +371,7 @@
     if (!container || !extras.length || container.querySelector('.saved-service-extras')) return;
     const section = document.createElement('section');
     section.className = 'saved-service-extras';
-    section.style.cssText = 'margin-top:18px;padding:14px;border:1px solid #dce4f7;border-radius:10px;background:#fbfcff';
+    section.style.cssText = 'margin-top:18px;padding:14px;border:1px solid #e4e4e4;border-radius:10px;background:#fcfcfc';
     const title = document.createElement('h3'); title.textContent = heading; title.style.cssText = 'margin:0 0 8px;font-size:14px'; section.appendChild(title);
     const list = document.createElement('ul'); list.style.cssText = 'margin:0;padding-left:20px';
     extras.forEach(item => { const li = document.createElement('li'); li.style.cssText = 'margin:5px 0'; li.textContent = [item.title,describeExtra(item)].filter(Boolean).join(' — '); list.appendChild(li); });
@@ -442,7 +442,7 @@
       if (!body || !extras.length || body.querySelector('.employee-extra-summary')) return;
       const summary = document.createElement('section');
       summary.className = 'employee-extra-summary';
-      summary.style.cssText = 'margin-top:10px;padding:10px 12px;border:1px solid #dce4f7;border-radius:10px;background:#fbfcff';
+      summary.style.cssText = 'margin-top:10px;padding:10px 12px;border:1px solid #e4e4e4;border-radius:10px;background:#fcfcfc';
       const heading = document.createElement('strong'); heading.textContent = 'Serviços complementares'; heading.style.cssText = 'font-size:12px'; summary.appendChild(heading);
       const list = document.createElement('ul'); list.style.cssText = 'margin:6px 0 0;padding-left:18px;font-size:11px';
       extras.forEach(item => { const line = document.createElement('li'); line.textContent = [item.title,describeExtra(item)].filter(Boolean).join(' — '); list.appendChild(line); });

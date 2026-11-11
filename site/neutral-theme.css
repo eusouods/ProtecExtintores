@@ -1,0 +1,60 @@
+/* Sistema visual neutro — claro e escuro compartilham os mesmos papéis. */
+@layer protecNeutral {
+:root{color-scheme:light;--ui-bg:#f6f6f6;--ui-panel:#fff;--ui-raised:#fafafa;--ui-hover:#eee;--ui-text:#202020;--ui-muted:#626262;--ui-border:#dedede;--ui-control:#aaa;--ui-action:#303030;--ui-action-text:#fff;--ui-selected:#e8e8e8;--ui-focus:#737373;--ui-shadow:0 4px 18px rgb(0 0 0 / 4%)}
+:root[data-theme="dark"]{color-scheme:dark;--ui-bg:#151515;--ui-panel:#1e1e1e;--ui-raised:#252525;--ui-hover:#303030;--ui-text:#ededed;--ui-muted:#b0b0b0;--ui-border:#383838;--ui-control:#656565;--ui-action:#3d3d3d;--ui-action-text:#f5f5f5;--ui-selected:#333;--ui-focus:#a3a3a3;--ui-shadow:none}
+html:root,html:root[data-theme="dark"]{
+--ink:var(--ui-text)!important;--muted:var(--ui-muted)!important;--line:var(--ui-border)!important;--paper:var(--ui-bg)!important;--white:var(--ui-panel)!important;--shadow:var(--ui-shadow)!important;
+--yellow:var(--ui-action)!important;--yellow2:var(--ui-hover)!important;--green:var(--ui-text)!important;--red:var(--ui-text)!important;--brand:var(--ui-action)!important;--brand-hover:var(--ui-hover)!important;--focus:var(--ui-focus)!important;
+--protec-surface:var(--ui-bg)!important;--protec-ink:var(--ui-text)!important;--protec-accent:var(--ui-action)!important;--protec-deep:var(--ui-text)!important;--protec-muted:var(--ui-muted)!important;
+--dash-primary:var(--ui-text)!important;--dash-primary-hover:var(--ui-text)!important;--dash-accent:var(--ui-text)!important;--dash-green:var(--ui-text)!important;--dash-blue-soft:var(--ui-selected)!important;
+--admin-ink:var(--ui-text)!important;--admin-muted:var(--ui-muted)!important;--admin-line:var(--ui-border)!important;--admin-bg:var(--ui-bg)!important;--admin-panel:var(--ui-panel)!important;--admin-navy:var(--ui-panel)!important;--admin-navy-2:var(--ui-raised)!important;--admin-accent:var(--ui-text)!important;--admin-blue-soft:var(--ui-selected)!important;--customer-brand:var(--ui-text)!important;--customer-lime:var(--ui-selected)!important}
+html:root body{background:var(--ui-bg)!important;color:var(--ui-text)!important;font-family:Inter,"Segoe UI",Arial,sans-serif!important;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;accent-color:var(--ui-action)!important}
+html:root body :is(h1,h2,h3,h4,h5,h6,.brand,.stat strong,.employee-main h1){font-family:Inter,"Segoe UI",Arial,sans-serif!important;letter-spacing:-.025em;font-weight:650}
+html:root body :is(#store,#login,#dashboard,#employeePortal,.main,.admin-content,.login-main,.employee-main,.seller-dashboard){background:var(--ui-bg)!important;color:var(--ui-text)!important}
+html:root body :is(#store .topbar,#dashboard .sidebar,#dashboard .admin-top,.employee-top,.seller-top,.site-footer,#store footer,.login-aside){background:var(--ui-panel)!important;color:var(--ui-text)!important;border-color:var(--ui-border)!important;background-image:none!important}
+html:root body #store .hero{background:var(--ui-raised)!important;color:var(--ui-text)!important;border-bottom:1px solid var(--ui-border);background-image:none!important}
+html:root body .hero::before,html:root body .hero::after,html:root body .login-aside::before,html:root body .login-aside::after,html:root body .login-main::before,html:root body .login-main::after{display:none!important}
+html:root body :is(.login-main,.login-box){background:var(--ui-panel)!important;background-image:none!important;border-color:var(--ui-border)!important;box-shadow:var(--ui-shadow)!important}
+html:root body #login .login-aside :is(span,p,h1,h2,.eyebrow),html:root body #store .hero :is(h1 span,.eyebrow){color:var(--ui-text)!important}
+html:root body #login .login-role-list span{background:var(--ui-selected)!important;border:1px solid var(--ui-border)!important;color:var(--ui-text)!important}
+html:root body #store :is(ol li,.how-it-works li,.faq-item,.faq-list details){background:var(--ui-panel)!important;color:var(--ui-text)!important;border-color:var(--ui-border)!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(h1,h2,h3,h4,h5,h6,strong,b,th,legend,.brand,.eyebrow,.price,.receipt-brand,.receipt-code b){color:var(--ui-text)!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(p,label,td,li,small,.helper,.muted,.tracking-meta,.crumb,.side-label,.subtitle,.description,.stat-top,.trust){color:var(--ui-muted)!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal) a:not(.btn){color:var(--ui-text)!important;text-underline-offset:4px}
+html:root body :is(#store .hero h1 span,#store .hero p,.login-aside p,.employee-top span,.seller-top span,#store footer span){color:var(--ui-text)!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(.panel,.stat,.card,.product,.catalog-card,.config-card,.table-wrap,.admin-page-intro,.employee-service,.seller-service-status,.admin-person-card,.admin-record-card,.admin-empty-state,.tracking-card,.hero-card,.modal,.ops-month,.ops-summary article,.ops-alert-card,.team-operations-summary article,.receipt-paper,.seller-tracking-event,.customer-service-card){background:var(--ui-panel)!important;color:var(--ui-text)!important;border:1px solid var(--ui-border)!important;border-radius:12px;box-shadow:var(--ui-shadow)!important;background-image:none!important}
+html:root body :is(.modal-head,.modal-body,.modal-actions,.panel-head,.employee-service-head,.employee-service-body,.employee-group,.employee-item,.part-row,.detail>div,.seller-service-items span,.public-progress,.admin-review-item,.features,.product-image,.catalog-media,.hero-card-top,.hero-card-bottom,.order-table th,.receipt-table th){background:var(--ui-raised)!important;color:var(--ui-text)!important;border-color:var(--ui-border)!important;background-image:none!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(input,select,textarea,[contenteditable="true"],.search){background:var(--ui-panel)!important;color:var(--ui-text)!important;border:1px solid var(--ui-control)!important;border-radius:8px;caret-color:var(--ui-text)!important;accent-color:var(--ui-action)!important;box-shadow:none!important}
+html:root body :is(input,select,textarea)::placeholder{color:var(--ui-muted)!important;opacity:1}
+html:root body :is(button,input,select,textarea){font-family:inherit}
+html:root body :is(input[type="checkbox"],input[type="radio"]){accent-color:var(--ui-action)!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(.btn,.btn-primary,.btn-dark,.primary-button,.button-primary,.submit-button,.save-button){background:var(--ui-action)!important;color:var(--ui-action-text)!important;border:1px solid var(--ui-action)!important;border-radius:8px;box-shadow:none!important;font-weight:600;min-height:38px;transform:none!important;text-decoration:none!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(.btn span,.btn strong,.btn b){color:inherit!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(.btn-soft,.btn-outline,.btn-outline-light,.btn-secondary,.icon-btn,.theme-toggle){background:var(--ui-panel)!important;color:var(--ui-text)!important;border:1px solid var(--ui-control)!important;border-radius:8px;box-shadow:none!important}
+html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(.btn:hover,.icon-btn:hover,.theme-toggle:hover){background:var(--ui-hover)!important;color:var(--ui-text)!important;border-color:var(--ui-control)!important;transform:none!important}
+html:root body :is(button,a,input,select,textarea):focus-visible{outline:2px solid var(--ui-focus)!important;outline-offset:3px;box-shadow:none!important}
+html:root body :is(button:disabled,input:disabled,select:disabled){opacity:.55;cursor:not-allowed}
+html:root body :is(.sidebar .side-nav button,#mobileAdminNav button,.employee-tabs button,.seller-service-tabs button){background:transparent!important;color:var(--ui-muted)!important;box-shadow:none!important;border-color:transparent!important}
+html:root body :is(.sidebar .side-nav button.active,#mobileAdminNav button.active,.employee-tabs button.active,.seller-service-tabs button.active,.sidebar .side-nav button:hover){background:var(--ui-selected)!important;color:var(--ui-text)!important;box-shadow:none!important;border-color:var(--ui-border)!important}
+html:root body :is(.sidebar .side-nav button span,#mobileAdminNav button span,.employee-tabs button span,.seller-service-tabs button span){color:inherit!important;background:transparent!important}
+html:root body :is(.employee-tabs,.seller-service-tabs,#mobileAdminNav){background:var(--ui-raised)!important;border-color:var(--ui-border)!important}
+html:root body :is(.avatar,.brand-mark,.dashboard-stat-icon,.stat-icon,.feature-icon,.ops-count,.ops-event time){background:var(--ui-selected)!important;color:var(--ui-text)!important;border-color:var(--ui-border)!important}
+html:root body :is(.badge,.status,.status.warn,.status.success,.status.expired,.pill,.tag,.chip,.catalog-category,.admin-record-status,.dashboard-role-chip,.alert,.notice,.inventory-low,.error,.required-mark,.live-dot,.dashboard-eyebrow:before){background:var(--ui-selected)!important;color:var(--ui-text)!important;border-color:var(--ui-control)!important;box-shadow:none!important}
+html:root body :is(.error,.required-mark){background:transparent!important;font-weight:700}
+html:root body :is(table,td,th,.list-line,.history-entry:before,.service-order,.order-head,.receipt-heading,.receipt-footer,.ops-event){border-color:var(--ui-border)!important}
+html:root body th{background:var(--ui-raised)!important;color:var(--ui-muted)!important;font-size:11px;letter-spacing:.035em}
+html:root body td{font-size:12px;color:var(--ui-text)!important}
+html:root body :is(.progress-bar,.meter-fill,.timeline-dot,.process-step.done i,.process-step.current i,.process-step.done:before,.process-step.current:before){background:var(--ui-text)!important;border-color:var(--ui-text)!important}
+html:root body :is(.fab,.floating-action,.whatsapp-button,.whatsapp-float,.contact-float,.toast){background:var(--ui-action)!important;color:var(--ui-action-text)!important;border-color:var(--ui-control)!important;box-shadow:var(--ui-shadow)!important}
+html:root body .modal-back{background:rgb(0 0 0 / 60%)!important;backdrop-filter:blur(3px)}
+html:root body .admin-content{padding-top:30px;padding-bottom:40px}
+html:root body .page-title h1{font-size:clamp(23px,2.5vw,29px);line-height:1.25}
+html:root body .page-title p{font-size:13px;line-height:1.6}
+html:root body .panel-head{padding:18px 20px}
+html:root body .catalog-body p{line-height:1.65}
+html:root body .catalog-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgb(0 0 0 / 8%)!important}
+html:root[data-theme="dark"] body :is(.ops-summary article,.ops-month,.ops-alert-card,.team-operations-summary article,.admin-review-item){background:var(--ui-panel)!important;color:var(--ui-text)!important;border-color:var(--ui-border)!important}
+html:root[data-theme="dark"] body :is(.ops-event time,.ops-count){background:var(--ui-selected)!important;color:var(--ui-text)!important}
+@media(max-width:650px){html:root body .admin-content{padding:20px 14px}html:root body .page-title{gap:14px;flex-wrap:wrap}html:root body .modal{border-radius:12px;max-height:92dvh}html:root body .modal-body{padding:16px}html:root body .modal-actions{flex-wrap:wrap}}
+@media print{html:root body{background:#fff!important;color:#111!important}html:root body :is(.receipt-paper,.service-order){background:#fff!important;color:#111!important;box-shadow:none!important}}
+}

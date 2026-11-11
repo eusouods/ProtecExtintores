@@ -69,10 +69,10 @@
 .customer-payment-hint {
   margin: 10px 0;
   padding: 11px 13px;
-  border-left: 3px solid #d88b2e;
+  border-left: 3px solid #959595;
   border-radius: 8px;
-  background: #fff7e9;
-  color: #68420f;
+  background: #f8f8f8;
+  color: #464646;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -81,12 +81,12 @@
   gap: 10px;
   margin: 18px 0;
   padding: 16px;
-  border: 1px solid #dce5ee;
+  border: 1px solid #e4e4e4;
   border-radius: 14px;
-  background: #f7f9fc;
+  background: #f9f9f9;
 }
-.checkout-pix > b { color: #12304c; }
-.checkout-pix label { color: #334155; font-size: 13px; font-weight: 800; }
+.checkout-pix > b { color: #2c2c2c; }
+.checkout-pix label { color: #3f3f3f; font-size: 13px; font-weight: 800; }
 .checkout-pix textarea { width: 100%; min-height: 88px; overflow-wrap: anywhere; }
 .checkout-pix .btn { justify-self: start; }
 #store .topbar {
