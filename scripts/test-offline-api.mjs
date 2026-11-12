@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+const base=process.env.PROTEC_TEST_API || 'http://127.0.0.1:8789';
+if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw Error('Estes testes só podem usar uma API local de teste.');
+const suffix=crypto.randomUUID().slice(0,8),employeeId='emp-'+suffix,sellerId='seller-'+suffix,password='Offline-Test-Only-2026';
+async function call(path,method='GET',body,token){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();return {status:r.status,data}}
+async function ok(path,method,body,token){const r=await call(path,method,body,token);assert.ok(r.status>=200&&r.status<300,`${path}: ${r.status} ${JSON.stringify(r.data)}`);return r.data}
+const admin=await ok('/api/login','POST',{username:'admin',password:process.env.PROTEC_TEST_ADMIN_PASSWORD || password});
+let state=await ok('/api/admin/state','GET',null,admin.token);state.employees.push({id:employeeId,name:'Técnico Offline QA'});state.sellers.push({id:sellerId,name:'Vendedor Offline QA'});
+await ok('/api/admin/state','PUT',state,admin.token);
+await ok('/api/admin/users','POST',{employeeId,username:'offline'+suffix,password},admin.token);
+await ok('/api/admin/sellers','POST',{sellerId,username:'seller'+suffix,password},admin.token);
+const employee=await ok('/api/login','POST',{username:'offline'+suffix,password}),seller=await ok('/api/login','POST',{username:'seller'+suffix,password});
+const profile=await ok('/api/offline/bootstrap','GET',null,employee.token);assert.equal(profile.accountKey,'employee:'+employeeId);assert.ok(Date.parse(profile.offlineUntil)>Date.now());
+const createId=crypto.randomUUID(),deviceId=crypto.randomUUID(),serviceId=crypto.randomUUID();
+const operation=(kind,payload={},extra={})=>({id:crypto.randomUUID(),accountKey:profile.accountKey,deviceId,serviceId,kind,payload,createdAt:new Date().toISOString(),...extra});
+const create=operation('create',{date:'2026-11-12',clientName:'Cliente Offline QA',serviceType:'Recarga',items:[{type:'ABC',kg:'6',qty:2}]},{id:createId});
+const parallel=await Promise.all([call('/api/offline/sync','POST',create,employee.token),call('/api/offline/sync','POST',create,employee.token)]);
+assert.ok(parallel.some(r=>r.status===200));
+const received=await ok('/api/offline/sync','POST',create,employee.token);assert.equal(received.service.id,serviceId);
+const replay=await ok('/api/offline/sync','POST',create,employee.token);assert.deepEqual(replay.service,received.service);assert.equal(replay.operationId,received.operationId);
+const duplicate=await call('/api/offline/sync','POST',{...create,payload:{...create.payload,clientName:'Changed'}},employee.token);assert.equal(duplicate.status,409);
+state=await ok('/api/admin/state','GET',null,admin.token);assert.equal(state.services.filter(s=>s.id===serviceId).length,1);
+const pause=operation('pause',{reason:'Atendimento urgente'},{previousId:create.id});const paused=await ok('/api/offline/sync','POST',pause,employee.token);assert.ok(paused.service.pausedAt);
+const urgentId=crypto.randomUUID(),urgent=operation('create',create.payload,{serviceId:urgentId});const urgentReceived=await ok('/api/offline/sync','POST',urgent,employee.token);
+const resumeBlocked=await call('/api/offline/sync','POST',operation('resume',{}, {baseVersion:paused.service.syncVersion}),employee.token);assert.equal(resumeBlocked.status,409);
+const urgentPause=operation('pause',{reason:'Retomar atendimento anterior'},{serviceId:urgentId,baseVersion:urgentReceived.service.syncVersion});await ok('/api/offline/sync','POST',urgentPause,employee.token);
+const resume=operation('resume',{}, {previousId:pause.id});const resumed=await ok('/api/offline/sync','POST',resume,employee.token);assert.equal(resumed.service.pauseIntervals.length,1);
+const paint=operation('painting',{quantity:0},{previousId:resume.id});await ok('/api/offline/sync','POST',paint,employee.token);
+const technical=operation('technical',{itemIndex:0,parts:['Válvula M30'],notes:'Registro offline'},{previousId:paint.id});const technicalReceived=await ok('/api/offline/sync','POST',technical,employee.token);
+const noVideo=await call('/api/offline/sync','POST',operation('complete',{}, {previousId:technical.id}),employee.token);assert.equal(noVideo.status,400);assert.match(noVideo.data.error,/Vídeos/);
+const bytes=new TextEncoder().encode('offline-video-integrity-fixture'),sha256=Buffer.from(await crypto.subtle.digest('SHA-256',bytes)).toString('hex');
+const media=operation('media',{itemIndex:0,part:'Válvula M30',durationSeconds:2,mime:'video/mp4',sha256,blobKey:'test-local',name:'video.mp4'},{previousId:technical.id});
+const form=new FormData();form.append('operation',JSON.stringify(media));form.append('file',new Blob([bytes],{type:'video/mp4'}),'video.mp4');
+const upload=await fetch(base+'/api/offline/media',{method:'POST',headers:{Authorization:'Bearer '+employee.token},body:form});const uploaded=await upload.json();assert.equal(upload.status,200,JSON.stringify(uploaded));assert.ok(uploaded.service.items[0].replacementMedia['Válvula M30'].url);
+const finished=await ok('/api/offline/sync','POST',operation('complete',{}, {previousId:media.id}),employee.token);assert.ok(finished.service.employeeCompletedAt);assert.equal(finished.service.closed,false);
+// A new server edit must not be overwritten by a stale device snapshot.
+state=await ok('/api/admin/state','GET',null,admin.token);state.services.find(s=>s.id===urgentId).notes='Alteração administrativa';await ok('/api/admin/state','PUT',state,admin.token);
+const stale=await call('/api/offline/sync','POST',operation('resume',{}, {serviceId:urgentId,previousId:urgentPause.id}),employee.token);assert.equal(stale.status,409);assert.ok(stale.data.conflict);assert.equal(stale.data.current.notes,'Alteração administrativa');
+const foreign=await call('/api/offline/sync','POST',{...create,id:crypto.randomUUID()},seller.token);assert.equal(foreign.status,403);
+const sellerProfile=await ok('/api/offline/bootstrap','GET',null,seller.token);assert.equal(sellerProfile.services.length,0);
+const availableId=crypto.randomUUID(),availableOrder=operation('create',create.payload,{accountKey:sellerProfile.accountKey,serviceId:availableId});await ok('/api/offline/sync','POST',availableOrder,seller.token);
+await ok('/api/employee/claim','POST',{serviceId:availableId},employee.token);
+state=await ok('/api/admin/state','GET',null,admin.token);assert.equal(state.services.find(s=>s.id===availableId).employeeId,employeeId);assert.ok(state.services.find(s=>s.id===urgentId).pausedAt);
+const policy=await ok('/api/offline/policy','POST',{hours:48},admin.token);assert.equal(policy.hours,48);assert.equal((await call('/api/offline/policy','POST',{hours:200},admin.token)).status,400);
+state=await ok('/api/admin/state','GET',null,admin.token);state.employees.find(e=>e.id===employeeId).active=false;await ok('/api/admin/state','PUT',state,admin.token);assert.equal((await call('/api/offline/bootstrap','GET',null,employee.token)).status,403);
+console.log('API local D1/R2: duplicação/reenvio, corrida de gravação, pausa/urgência/retomada, integridade de vídeo, conclusão/revisão, conflitos, contas separadas, prazo e conta bloqueada verificados.');

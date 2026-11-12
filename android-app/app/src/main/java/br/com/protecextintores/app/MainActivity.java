@@ -5,6 +5,9 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.os.Build;
@@ -14,6 +17,10 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import androidx.webkit.ServiceWorkerControllerCompat;
+import androidx.webkit.ServiceWorkerClientCompat;
+import androidx.webkit.WebViewFeature;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -35,6 +42,8 @@ public class MainActivity extends Activity {
     private String startUrl;
     private String websiteHost;
     private LinearLayout loadErrorView;
+    private OfflineBridge offlineBridge;
+    private boolean bundledFallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +88,7 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         configureWebView();
+        offlineBridge = new OfflineBridge(this, webView);
         if (savedInstanceState != null && webView.restoreState(savedInstanceState) != null) {
             // The WebView restored its current page and navigation history.
         } else {
@@ -100,8 +110,19 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, false);
 
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.SERVICE_WORKER_BASIC_USAGE)) {
+            ServiceWorkerControllerCompat.getInstance().setServiceWorkerClient(new ServiceWorkerClientCompat() {
+                @Override public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
+                    return bundledPage(request.getUrl());
+                }
+            });
+        }
+
         webView.setBackgroundColor(getColor(R.color.protec_background));
         webView.setWebViewClient(new WebViewClient() {
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return bundledPage(request.getUrl());
+            }
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -139,6 +160,11 @@ public class MainActivity extends Activity {
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame() && !bundledFallback && websiteHost.equals(request.getUrl().getHost())) {
+                    bundledFallback = true;
+                    view.post(() -> view.loadUrl(request.getUrl().toString()));
+                    return;
+                }
                 if (request.isForMainFrame()) showLoadError("Não foi possível abrir o site. " + error.getDescription());
             }
 
@@ -245,6 +271,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (offlineBridge != null && offlineBridge.activityResult(requestCode, resultCode)) return;
         if (requestCode != FILE_PICKER_REQUEST || fileChooserCallback == null) return;
         Uri[] selected = null;
         if (resultCode == Activity.RESULT_OK && data != null) {
@@ -268,6 +295,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (offlineBridge != null) offlineBridge.destroy();
         if (fileChooserCallback != null) fileChooserCallback.onReceiveValue(null);
         if (webView != null) {
             webView.stopLoading();
@@ -278,5 +306,33 @@ public class MainActivity extends Activity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private boolean connected() {
+        ConnectivityManager manager=(ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkCapabilities capabilities=manager==null?null:manager.getNetworkCapabilities(manager.getActiveNetwork());
+        return capabilities!=null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    }
+
+    private WebResourceResponse bundledPage(Uri uri) {
+        if (!bundledFallback && connected()) return null;
+        String sitePath=Uri.parse(startUrl).getPath(),requestPath=uri.getPath();
+        if (!"https".equals(uri.getScheme()) || !websiteHost.equals(uri.getHost()) || uri.getPort()!=-1 || requestPath==null || !requestPath.startsWith(sitePath)) return null;
+        String file=requestPath.substring(sitePath.length());
+        if (file.isEmpty() || !file.substring(file.lastIndexOf('/')+1).contains(".")) file="index.html";
+        if (file.contains("..") || file.contains("\\")) return null;
+        String mime=file.endsWith(".html")?"text/html":file.endsWith(".js")||file.endsWith(".mjs")?"text/javascript":file.endsWith(".css")?"text/css":file.endsWith(".svg")?"image/svg+xml":file.endsWith(".png")?"image/png":file.endsWith(".json")||file.endsWith(".webmanifest")?"application/json":"application/octet-stream";
+        try { return new WebResourceResponse(mime,"UTF-8",getAssets().open("site/"+file)); }
+        catch (java.io.IOException ignored) { return null; }
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (offlineBridge != null) offlineBridge.onResume();
+    }
+
+    @Override protected void onStop() {
+        if (offlineBridge != null) offlineBridge.onStop();
+        super.onStop();
     }
 }

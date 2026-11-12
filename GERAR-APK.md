@@ -2,6 +2,8 @@
 
 O projeto Android está na pasta `android-app`. A geração pela internet está preparada no workflow `.github/workflows/android-apk.yml`.
 
+Para a versão 1.1, atualize primeiro a API conforme `ATUALIZACAO-OFFLINE.md`. Esta versão inclui mudanças nativas e exige um APK novo.
+
 1. Publique o conteúdo atualizado deste projeto no repositório `eusouods/ProtecExtintores`, preservando a pasta `.github`.
 2. No GitHub, selecione **Actions → Build Android APK → Run workflow → Run workflow**.
 3. Quando terminar com sucesso, abra a execução e baixe **ProtecExtintores-APK** na seção **Artifacts**.

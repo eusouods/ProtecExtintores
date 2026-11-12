@@ -1,4 +1,5 @@
 import {cents,PART_NAMES,technicalView,sellerView,captureFinance,missingVideos,completed,cancelled} from '../../site/service-rules.mjs';
+import {isPaused} from '../../site/offline-rules.mjs';
 export const allowedParts = state => [...new Set([...PART_NAMES,...(state.costCatalog || []).filter(item=>item.active !== false && item.technicalPart).map(item=>item.name)])];
 export const employeeHistory = (state,id) => (state.services || []).filter(service=>service.employeeId === id || (!service.employeeId && !completed(service) && !cancelled(service))).map(technicalView);
 export const sellerHistory = (state,id) => (state.services || []).filter(service=>service.sellerId === id).map(sellerView);
@@ -20,7 +21,7 @@ export async function handleOperations(request,env,context) {
   const data=await request.json(),state=await readState(env),at=now();
   if(employee){
     const service=(state.services || []).find(item=>item.id===data.serviceId && item.employeeId===session.employee_id);
-    if(!service||service.closed||service.employeeCompletedAt||cancelled(service))return json({error:'O serviço não está disponível para alteração.'},409);
+    if(!service||service.closed||service.employeeCompletedAt||cancelled(service)||isPaused(service))return json({error:'O serviço não está disponível para alteração. Retome o serviço se estiver pausado.'},409);
     const quantity=Number(data.quantity);
     if(!Number.isInteger(quantity)||quantity<0||quantity>(service.items || []).length)return json({error:'Informe uma quantidade entre zero e o total de extintores.'},400);
     service.paintingQuantity=quantity;service.paintingRecordedAt=at;

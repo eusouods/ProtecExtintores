@@ -3,7 +3,7 @@
   'use strict';
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
-  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+  const workerUrl=new URL('./sw.js',document.currentScript.src);window.addEventListener('load', () => { navigator.serviceWorker.register(workerUrl).catch(() => {}); });
 })();
 
 /* Revisão administrativa antes do fechamento definitivo da manutenção. */
