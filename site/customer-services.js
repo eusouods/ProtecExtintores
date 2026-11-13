@@ -6,33 +6,33 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .customer-services-section{margin:34px -1px 0;padding:34px 28px;border:1px solid #e4e4e4;border-radius:24px;background:linear-gradient(150deg,#fcfcfc,#ffffff);box-shadow:0 16px 44px #2222220c}
+    .customer-services-section{margin:34px -1px 0;padding:34px 28px;border:1px solid var(--ui-border,#c8d8e3);border-radius:24px;background:linear-gradient(150deg,var(--ui-panel,#f9fcff),var(--ui-panel,#f9fcff));box-shadow:0 16px 44px rgb(6 20 12 / 0.047)}
     .customer-services-heading{max-width:740px;margin:0 auto 24px;text-align:center}
-    .customer-services-heading h2{margin:8px 0;font-size:clamp(24px,4vw,34px);color:#222222}
-    .customer-services-heading p{margin:0;color:#747474;line-height:1.6}
-    .customer-service-gate{max-width:650px;margin:0 auto;padding:25px;border:1px solid #e4e4e4;border-radius:18px;background:#ffffff;text-align:center;box-shadow:0 10px 28px #2222220b}
-    .customer-service-gate h3{margin:0 0 8px;color:#222222}.customer-service-gate p{margin:0 auto 17px;max-width:490px;color:#747474;line-height:1.55}
+    .customer-services-heading h2{margin:8px 0;font-size:clamp(24px,4vw,34px);color:var(--ui-text,#193142)}
+    .customer-services-heading p{margin:0;color:var(--ui-muted,#466173);line-height:1.6}
+    .customer-service-gate{max-width:650px;margin:0 auto;padding:25px;border:1px solid var(--ui-border,#c8d8e3);border-radius:18px;background:var(--ui-panel,#f9fcff);text-align:center;box-shadow:0 10px 28px rgb(6 20 12 / 0.043)}
+    .customer-service-gate h3{margin:0 0 8px;color:var(--ui-text,#193142)}.customer-service-gate p{margin:0 auto 17px;max-width:490px;color:var(--ui-muted,#466173);line-height:1.55}
     .customer-service-form{max-width:1000px;margin:0 auto}.customer-service-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .customer-service-card{min-width:0;padding:15px;border:1px solid #e4e4e4;border-radius:15px;background:#ffffff;transition:border-color .18s,box-shadow .18s}
-    .customer-service-card:has([data-customer-toggle]:checked){border-color:#323232;box-shadow:0 0 0 3px #3232321a}
-    .customer-service-choice{display:flex;align-items:flex-start;gap:11px;cursor:pointer;color:#222222;font-weight:800;font-size:14px;line-height:1.35}
-    .customer-service-choice input{width:19px;height:19px;flex:none;margin:1px 0 0;accent-color:#323232}
-    .customer-service-choice small{display:block;margin-top:4px;color:#797979;font-size:11px;font-weight:400;line-height:1.45}
-    .customer-service-details{margin-top:13px;padding-top:12px;border-top:1px solid #f1f1f1}
+    .customer-service-card{min-width:0;padding:15px;border:1px solid var(--ui-border,#c8d8e3);border-radius:15px;background:var(--ui-panel,#f9fcff);transition:border-color .18s,box-shadow .18s}
+    .customer-service-card:has([data-customer-toggle]:checked){border-color:var(--ui-border,#c8d8e3);box-shadow:0 0 0 3px rgb(6 20 12 / 0.102)}
+    .customer-service-choice{display:flex;align-items:flex-start;gap:11px;cursor:pointer;color:var(--ui-text,#193142);font-weight:800;font-size:14px;line-height:1.35}
+    .customer-service-choice input{width:19px;height:19px;flex:none;margin:1px 0 0;accent-color:var(--ui-accent,#075f98)}
+    .customer-service-choice small{display:block;margin-top:4px;color:var(--ui-muted,#466173);font-size:11px;font-weight:400;line-height:1.45}
+    .customer-service-details{margin-top:13px;padding-top:12px;border-top:1px solid var(--ui-border,#c8d8e3)}
     .customer-service-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
     .customer-service-fields .form-field{min-width:0;margin:7px 0}.customer-service-fields .span2{grid-column:1/-1}
-    .customer-service-fields .form-field:has(input:required) label:after,.customer-service-fields .form-field:has(select:required) label:after{content:' *';color:#323232;font-weight:800}
-    .customer-service-help{margin:4px 0 0;color:#858585;font-size:11px;line-height:1.45}
+    .customer-service-fields .form-field:has(input:required) label:after,.customer-service-fields .form-field:has(select:required) label:after{content:' *';color:var(--ui-text,#193142);font-weight:800}
+    .customer-service-help{margin:4px 0 0;color:var(--ui-muted,#466173);font-size:11px;line-height:1.45}
     .customer-maintenance-row{display:grid;grid-template-columns:1.2fr .8fr .7fr auto;gap:8px;align-items:end;margin:0 0 10px}
     .customer-maintenance-row .form-field{min-width:0;margin:0}.customer-maintenance-row .form-field label{font-size:10px}
-    .customer-service-remove{min-height:42px;padding:8px 11px;border:1px solid #d1d1d1;border-radius:10px;background:#f9f9f9;color:#444444;font-size:12px;font-weight:700}
+    .customer-service-remove{min-height:42px;padding:8px 11px;border:1px solid var(--ui-border,#c8d8e3);border-radius:10px;background:var(--ui-raised,#e0eaf2);color:var(--ui-muted,#466173);font-size:12px;font-weight:700}
     .customer-service-sign-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .customer-service-sign-list label{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid #e4e4e4;border-radius:10px;color:#6a6a6a;font-size:12px}
-    .customer-service-sign-list input{width:17px;height:17px;accent-color:#323232}
-    .customer-service-contact{margin:19px 0 8px;padding:16px;border:1px solid #e4e4e4;border-radius:15px;background:#ffffff}
-    .customer-service-submit{display:flex;align-items:center;justify-content:center;width:100%;margin-top:14px;min-height:50px;border-radius:13px;background:#323232;color:white}
-    .customer-service-submit:hover{background:#414141}.customer-service-result{max-width:760px;margin:18px auto 0}
-    .customer-service-result .tracking-card{border-color:#d0d0d0;background:#f9f9f9}
+    .customer-service-sign-list label{display:flex;align-items:center;gap:8px;padding:9px;border:1px solid var(--ui-border,#c8d8e3);border-radius:10px;color:var(--ui-muted,#466173);font-size:12px}
+    .customer-service-sign-list input{width:17px;height:17px;accent-color:var(--ui-accent,#075f98)}
+    .customer-service-contact{margin:19px 0 8px;padding:16px;border:1px solid var(--ui-border,#c8d8e3);border-radius:15px;background:var(--ui-panel,#f9fcff)}
+    .customer-service-submit{display:flex;align-items:center;justify-content:center;width:100%;margin-top:14px;min-height:50px;border-radius:13px;background:var(--ui-panel,#f9fcff);color:var(--ui-text,#193142)}
+    .customer-service-submit:hover{background:var(--ui-panel,#f9fcff)}.customer-service-result{max-width:760px;margin:18px auto 0}
+    .customer-service-result .tracking-card{border-color:var(--ui-border,#c8d8e3);background:var(--ui-raised,#e0eaf2)}
     @media(max-width:680px){.customer-services-section{margin:24px -10px 0;padding:27px 15px;border-radius:18px}.customer-service-options{grid-template-columns:1fr}.customer-service-fields{grid-template-columns:1fr}.customer-service-fields .span2{grid-column:auto}.customer-maintenance-row{grid-template-columns:1fr 1fr}.customer-maintenance-row .customer-service-remove{grid-column:1/-1;width:100%}.customer-service-sign-list{grid-template-columns:1fr 1fr}.customer-service-gate{padding:20px 16px}}
   `;
   document.head.appendChild(style);
@@ -50,7 +50,7 @@
   legacySection.dataset.publicPage = 'products';
   legacySection.classList.add('customer-services-section');
   legacySection.innerHTML = `
-    <div class="customer-services-heading"><div class="eyebrow" style="color:#323232">Atendimento ProtecExtintores</div><h2>Peça serviços e instalação</h2><p>Escolha manutenção de extintores, instalação e outros itens de segurança. A equipe confirma disponibilidade, visita e orçamento antes de qualquer serviço.</p></div>
+    <div class="customer-services-heading"><div class="eyebrow" style="color:var(--ui-text,#193142)">Atendimento ProtecExtintores</div><h2>Peça serviços e instalação</h2><p>Escolha manutenção de extintores, instalação e outros itens de segurança. A equipe confirma disponibilidade, visita e orçamento antes de qualquer serviço.</p></div>
     
     <form id="customerServiceRequestForm" class="customer-service-form"><p class="customer-service-help">* Campos obrigatórios. Selecione apenas os serviços necessários.</p>
       <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">

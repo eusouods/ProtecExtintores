@@ -1,6 +1,8 @@
 # Documentação da ProtecExtintores
 
-**Atualização atual: ordens offline e pausa de serviço (Android 1.1).** Leia primeiro `ATUALIZACAO-OFFLINE.md`. Esta versão exige atualizar a API, publicar o site e gerar um APK novo. Os textos consolidados abaixo descrevem versões anteriores.
+**Identidade atual: azul no modo claro e verde no modo escuro — Android 1.1.1.** Leia `ATUALIZACAO-VISUAL.md` para as cores e instruções de publicação. O pacote preserva os recursos de ordens offline e pausa/retomada descritos em `ATUALIZACAO-OFFLINE.md`.
+
+**Recursos operacionais: ordens offline e pausa de serviço.** A configuração inicial desses recursos está em `ATUALIZACAO-OFFLINE.md`. Os textos consolidados abaixo descrevem versões anteriores.
 
 Compilação dos documentos do projeto.
 

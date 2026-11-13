@@ -3,7 +3,7 @@
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=2';
+  style.href = './professional-updates.css?v=blue-mint-15';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');

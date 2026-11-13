@@ -1,4 +1,4 @@
-import './service-management.mjs?v=vibrant-13.1';
+import './service-management.mjs?v=blue-mint-15';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled} from './service-rules.mjs';
@@ -180,6 +180,9 @@ window.chooseEmployeeNextStep=id=>staffAction('painting',id);
 window.advanceEmployeeService=(id,status)=>enqueue('stage',id,{status});
 window.acceptEmployeeService=id=>staffAction('claim',id);
 window.offlineServices={prepare,sync,get services(){return services},get ready(){return Boolean(profile&&!locked&&accountToken===localStorage.getItem(tokenKey))},vault};
+let lastNativeTheme='';
+const syncNativeTheme=()=>{const mode=document.documentElement.dataset.theme==='dark'?'dark':'light';if(vault.native()&&mode!==lastNativeTheme){lastNativeTheme=mode;nativeCall('theme',{mode}).catch(()=>{});}};
+new MutationObserver(syncNativeTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});syncNativeTheme();
 const previousSettings=window.settings;
 window.settings=function(container){previousSettings.apply(this,arguments);if(!container||container.querySelector('[data-offline-policy]'))return;const card=document.createElement('section');card.className='panel config-card';card.dataset.offlinePolicy='';card.innerHTML=`<h3>Acesso offline da equipe</h3><p>Defina por quanto tempo um aparelho preparado pode registrar serviços sem validar novamente o acesso. A sincronização sempre confere a conta no servidor.</p><form><label class="form-field">Prazo em horas (1 a 168)<input name="hours" type="number" min="1" max="168" step="1" required value="${Number(db.settings.offlineHours)||72}"></label><button class="btn btn-small">Salvar prazo offline</button></form>`;card.querySelector('form').onsubmit=async e=>{e.preventDefault();try{const hours=Number(new FormData(e.currentTarget).get('hours')),r=await network('/api/offline/policy',{method:'POST',body:JSON.stringify({hours})}),data=await r.json();if(!r.ok)throw Error(data.error);db.settings.offlineHours=hours;notify('Prazo atualizado. Será aplicado quando cada aparelho se conectar novamente.')}catch(error){notify(error.message)}};container.append(card)};
 const previousServiceTable=window.serviceTable;

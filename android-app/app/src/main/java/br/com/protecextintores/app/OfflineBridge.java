@@ -44,6 +44,7 @@ public final class OfflineBridge {
     }
     private Object dispatch(String action,JSONObject request) throws Exception {
         if(action.equals("lockState"))return new JSONObject().put("locked",locked).put("enabled",preferences.getBoolean("enabled",false));
+        if(action.equals("theme")){String mode=request.getString("mode");if(!mode.equals("light")&&!mode.equals("dark"))throw new IllegalArgumentException("Tema inválido.");activity.runOnUiThread(()->((MainActivity)activity).applyAppearance(mode));return true;}
         if(action.equals("logout")){JSONArray keys=vault.keys("auth:");for(int i=0;i<keys.length();i++)vault.remove(keys.getString(i));vault.put("active",JSONObject.NULL);WorkManager.getInstance(activity).cancelAllWorkByTag("protec-offline-sync");return true;}
         if(locked)throw new SecurityException("Desbloqueie o aparelho para acessar seus registros.");
         String key=request.optString("key");if(key.length()>240)throw new IllegalArgumentException("Chave inválida.");

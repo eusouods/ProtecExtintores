@@ -4,6 +4,8 @@
 
 O endereço inicial do aplicativo fica em `app/src/main/res/values/strings.xml`, no valor `start_url`. Ele está configurado para `https://eusouods.github.io/ProtecExtintores/`. Se o GitHub Pages da empresa usar outro domínio ou nome de repositório, atualize esse valor antes de compilar o APK. A tela do app agora mostra o erro HTTP/conexão e permite tentar novamente, em vez de deixar apenas um aviso temporário.
 
+O endereço usado para enviar em segundo plano fica no mesmo arquivo, em `api_base_url`, e deve corresponder à API configurada em `site/config.js`.
+
 O seletor de arquivos do WebView usa os tipos aceitos pelo campo de upload e tem alternativa pelo seletor de documentos do Android.
 
 Aplicativo Android leve que abre o site oficial `https://eusouods.github.io/ProtecExtintores/` em uma WebView. Login, dados e atualizações continuam usando o mesmo site e a API já configurada.
@@ -34,12 +36,12 @@ O ambiente de compilação está fixado em Ubuntu 24.04 e utiliza Android SDK Pl
 
 Este é um APK de teste, com assinatura de depuração. A chave de teste pode mudar entre execuções do GitHub; nesse caso, será necessário desinstalar a versão de teste anterior para instalar a nova. A sessão local será removida. Para distribuição definitiva e atualizações por cima da versão instalada, configure uma chave de lançamento permanente e mantenha uma cópia segura. Nenhuma chave de produção foi criada ou publicada neste projeto.
 
-O app requer conexão com a internet. Ele mantém login/sessão via armazenamento do navegador e aceita envio de imagens e vídeos do aparelho.
+O primeiro login e a sincronização exigem internet. A versão 1.1 permite registrar serviços offline após preparar a conta, com SQLite e vídeos privados criptografados, fila de envio pelo WorkManager e bloqueio opcional pelo Android. Leia `../ATUALIZACAO-OFFLINE.md` antes de atualizar um aparelho com pendências.
 
 ## Aparência e uso
 
-O ícone e a barra de carregamento usam a identidade violeta atual. A tela nativa de falha de conexão acompanha o modo claro/escuro do Android; o conteúdo do site mantém seu próprio seletor de tema. A área do site respeita as barras do sistema e o recorte de tela no Android 15.
+O APK 1.1.1 usa azul e cinza claro no modo claro, e verde com tons de floresta no modo escuro. O ícone, a barra de carregamento, a tela de falha de conexão e as barras do aplicativo usam a mesma identidade. O tema selecionado no site também atualiza a aparência nativa. A área do site respeita as barras do sistema e o recorte de tela no Android 15.
 
 O catálogo e os painéis de administrador, funcionário e vendedor continuam sendo os do site publicado. Atualizações publicadas no site chegam ao aplicativo pelo mesmo endereço, sujeitas ao cache do site. Um ZIP de código-fonte não instala no celular: primeiro gere o APK pelo fluxo acima.
 
-O seletor permite anexar vídeos e imagens já disponíveis no aparelho. Gravação direta com a câmera, notificações nativas, funcionamento offline, downloads de relatórios e impressão não foram implementados nem validados como funções nativas. Teste os fluxos de login, anexos e reprodução no aparelho antes de distribuir à equipe.
+O seletor permite anexar vídeos e imagens já disponíveis no aparelho. Gravação direta com a câmera, notificações nativas, downloads de relatórios e impressão não foram acrescentados. O código nativo offline passou pela verificação de compilação Java, mas ainda precisa de teste em aparelho físico. Teste login, modo avião, reinício, anexos, desbloqueio e sincronização antes de distribuir à equipe.

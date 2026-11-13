@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 15,
   "assets": [
     "admin-rebrand.css",
     "admin-rebrand.js",
@@ -21,11 +21,16 @@
     "extintor-original.svg",
     "homepage-rebrand.css",
     "homepage-rebrand.js",
+    "icons/icon-192-dark.png",
     "icons/icon-192.png",
+    "icons/icon-512-dark.png",
     "icons/icon-512.png",
+    "icons/icon-maskable-512-dark.png",
     "icons/icon-maskable-512.png",
+    "icons/protec-icon-dark.svg",
     "icons/protec-icon.svg",
     "layout-overlap-fixes.css",
+    "manifest-dark.webmanifest",
     "manifest.webmanifest",
     "next-maintenance.css",
     "next-maintenance.js",

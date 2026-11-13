@@ -16,6 +16,7 @@ for(const name of fs.readdirSync(site)){
  if(!/\.(html|js|mjs)$/.test(name))continue;const file=path.join(site,name),text=fs.readFileSync(file,'utf8');
  if(name.endsWith('.js'))new vm.Script(text,{filename:file});
  if(name.endsWith('.html'))for(const script of text.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(script[1],{filename:file});
+ if(/--[\w-]*var\(/.test(text))throw Error('Referência de variável CSS inválida em '+name);
  checked++;
 }
 const index=fs.readFileSync(path.join(site,'index.html'),'utf8');if(index.includes('neutral-theme.js'))throw Error('Referência ao tema anterior.');if(!index.includes('theme-system.js'))throw Error('Tema principal desconectado.');

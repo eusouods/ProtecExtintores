@@ -44,16 +44,16 @@ public class MainActivity extends Activity {
     private LinearLayout loadErrorView;
     private OfflineBridge offlineBridge;
     private boolean bundledFallback;
+    private FrameLayout appRoot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         startUrl = getString(R.string.start_url);
         websiteHost = Uri.parse(startUrl).getHost();
-        getWindow().setStatusBarColor(0xFF111118);
-        getWindow().setNavigationBarColor(0xFF111118);
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(0xFF111118);
+        appRoot = root;
+        root.setBackgroundColor(getColor(R.color.protec_background));
         // Android 15 draws under system bars. Keep forms and navigation tappable.
         root.setOnApplyWindowInsetsListener((view, insets) -> {
             if (Build.VERSION.SDK_INT >= 30) {
@@ -71,7 +71,7 @@ public class MainActivity extends Activity {
         progressBar.setMax(100);
         progressBar.setIndeterminate(false);
         progressBar.setProgressTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.protec_primary)));
-        progressBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x00111118));
+        progressBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x0014241C));
 
         root.addView(webView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -88,6 +88,8 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         configureWebView();
+        boolean systemDark=(getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK)==android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        applyAppearance(getSharedPreferences("protec-appearance",MODE_PRIVATE).getString("mode",systemDark?"dark":"light"));
         offlineBridge = new OfflineBridge(this, webView);
         if (savedInstanceState != null && webView.restoreState(savedInstanceState) != null) {
             // The WebView restored its current page and navigation history.
@@ -245,7 +247,7 @@ public class MainActivity extends Activity {
         panel.addView(details, detailsParams);
 
         Button retry = new Button(this);
-        retry.setTextColor(android.graphics.Color.WHITE);
+        retry.setTextColor(getColor(R.color.protec_on_primary));
         retry.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.protec_primary)));
         retry.setText("Tentar novamente");
         retry.setOnClickListener(view -> webView.loadUrl(startUrl));
@@ -306,6 +308,29 @@ public class MainActivity extends Activity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    /** Match the website's selected theme, including Android 15 system-bar insets. */
+    public void applyAppearance(String mode) {
+        if (!"light".equals(mode) && !"dark".equals(mode)) return;
+        boolean dark="dark".equals(mode);
+        int background=android.graphics.Color.parseColor(dark?"#14241C":"#E9F0F5");
+        int panel=android.graphics.Color.parseColor(dark?"#203329":"#F9FCFF");
+        int text=android.graphics.Color.parseColor(dark?"#EDFFF5":"#193142");
+        int muted=android.graphics.Color.parseColor(dark?"#ACC9B7":"#466173");
+        int action=android.graphics.Color.parseColor(dark?"#41E887":"#0876BD");
+        int onAction=android.graphics.Color.parseColor(dark?"#12271C":"#FFFFFF");
+        getSharedPreferences("protec-appearance",MODE_PRIVATE).edit().putString("mode",mode).apply();
+        getWindow().setStatusBarColor(background);
+        getWindow().setNavigationBarColor(!dark && Build.VERSION.SDK_INT<26?android.graphics.Color.parseColor("#193142"):background);
+        int flags=getWindow().getDecorView().getSystemUiVisibility();
+        flags=dark?flags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR:flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if(Build.VERSION.SDK_INT>=26)flags=dark?flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR:flags | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        getWindow().getDecorView().setSystemUiVisibility(flags);
+        if(appRoot!=null)appRoot.setBackgroundColor(background);
+        if(webView!=null)webView.setBackgroundColor(background);
+        if(progressBar!=null)progressBar.setProgressTintList(android.content.res.ColorStateList.valueOf(action));
+        if(loadErrorView!=null){loadErrorView.setBackgroundColor(panel);for(int i=0;i<loadErrorView.getChildCount();i++){View child=loadErrorView.getChildAt(i);if(child instanceof Button){((Button)child).setTextColor(onAction);child.setBackgroundTintList(android.content.res.ColorStateList.valueOf(action));}else if(child instanceof TextView)((TextView)child).setTextColor(i==0?text:muted);}}
     }
 
     private boolean connected() {

@@ -1,21 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-const root=path.resolve(import.meta.dirname,'..'),file=path.join(root,'site/index.html');
-let html=fs.readFileSync(file,'utf8').replaceAll('./neutral-theme.js','./theme-system.js');
-html=html.replace(/((?:src|href)="\.\/[^"?]+\.(?:css|js|mjs))\?v=[^" ]+/g,'$1?v=vibrant-13.1');
-html=html.replace(/(<meta name="theme-color" content=")[^"]+/, '$1#6d28d9');
-fs.writeFileSync(file,html);
-const theme=path.join(root,'site/theme-system.css');
-fs.writeFileSync(theme,fs.readFileSync(theme,'utf8').replaceAll('--ui-hero-muted:#e9ddff','--ui-hero-muted:#f0eaff'));
-for(const name of ['index.html','homepage-rebrand.js']){
- const target=path.join(root,'site',name);let text=fs.readFileSync(target,'utf8');
- text=text.replaceAll('Compre extintores e solicite instalação, manutenção e outros serviços de segurança.','Consulte extintores e solicite instalação, manutenção e outros serviços de segurança.');
- text=text.replaceAll('Compre extintores e peça recarga','Consulte extintores e peça recarga');
- if(name==='index.html')text=text.replace(/(href="\.\/icons\/[^"?]+\.png)(?:\?[^" ]*)?/g,'$1?v=vibrant-13.1');
- fs.writeFileSync(target,text);
+const root=path.resolve(import.meta.dirname,'..'),site=path.join(root,'site');
+const {version,light,dark}=JSON.parse(fs.readFileSync(path.join(import.meta.dirname,'theme-palette.json'),'utf8'));
+const tokens=values=>Object.entries(values).map(([key,value])=>`--ui-${key}:${value}`).join(';');
+const stylesheet=path.join(site,'theme-system.css');let css=fs.readFileSync(stylesheet,'utf8');
+css=css.replace(/:root\{color-scheme:light;[^}]+\}/,`:root{color-scheme:light;${tokens(light)}}`).replace(/:root\[data-theme="dark"\]\{color-scheme:dark;[^}]+\}/,`:root[data-theme="dark"]{color-scheme:dark;${tokens(dark)}}`);fs.writeFileSync(stylesheet,css);
+for(const name of fs.readdirSync(site)){
+ if(!/\.(?:html|js|mjs)$/.test(name))continue;
+ const file=path.join(site,name);let text=fs.readFileSync(file,'utf8');text=text.replace(/(\.(?:css|js|mjs|png|svg)\?v=)[a-zA-Z0-9._-]+/g,'$1'+version);fs.writeFileSync(file,text);
 }
-const manifestPath=path.join(root,'site/manifest.webmanifest'),manifest=JSON.parse(fs.readFileSync(manifestPath,'utf8'));
-manifest.icons.forEach(icon=>icon.src=icon.src.split('?')[0]+'?v=vibrant-13.1');
-fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2)+'\n');
-const videos=path.join(root,'site/employee-video-upload.js');fs.writeFileSync(videos,fs.readFileSync(videos,'utf8').replaceAll('Para cada peça substituído','Para cada peça substituída'));
-console.log('Tema vibrante conectado; referências de cache atualizadas.');
+const manifestFile=path.join(site,'manifest.webmanifest'),manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));manifest.theme_color=light.bg;manifest.background_color=light.bg;manifest.icons.forEach(icon=>icon.src=icon.src.split('?')[0]+'?v='+version);fs.writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
+const darkManifest={...manifest,theme_color:dark.bg,background_color:dark.bg,icons:manifest.icons.map(icon=>({...icon,src:icon.src.replace(/(icon-(?:maskable-)?(?:192|512))\.png/,'$1-dark.png')}))};fs.writeFileSync(path.join(site,'manifest-dark.webmanifest'),JSON.stringify(darkManifest,null,2)+'\n');
+console.log('Identidade '+version+' e referências de cache atualizadas.');

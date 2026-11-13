@@ -4,7 +4,7 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .service-draft-return{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px;padding:14px 16px;border:1px solid #e4e4e4;border-radius:12px;background:#f7f7f7;color:#222222}
+    .service-draft-return{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px;padding:14px 16px;border:1px solid var(--ui-border,#c8d8e3);border-radius:12px;background:var(--ui-raised,#e0eaf2);color:var(--ui-text,#193142)}
     .service-draft-return p{margin:0;font-size:13px}
     .service-draft-return button{flex:none}
     @media(max-width:620px){.service-draft-return{align-items:flex-start;flex-direction:column}}

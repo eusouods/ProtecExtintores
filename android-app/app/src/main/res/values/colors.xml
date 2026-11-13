@@ -1,7 +1,10 @@
 <resources>
-    <color name="protec_primary">#6D28D9</color>
-    <color name="protec_background">#F8F9FC</color>
-    <color name="protec_surface">#FFFFFF</color>
-    <color name="protec_text">#202033</color>
-    <color name="protec_muted">#626278</color>
+    <color name="protec_primary">#0876BD</color>
+    <color name="protec_background">#E9F0F5</color>
+    <color name="protec_surface">#F9FCFF</color>
+    <color name="protec_text">#193142</color>
+    <color name="protec_muted">#466173</color>
+    <color name="protec_on_primary">#FFFFFF</color>
+    <color name="protec_logo">#0E90ED</color>
+    <color name="protec_bar">#E9F0F5</color>
 </resources>
