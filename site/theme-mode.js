@@ -29,10 +29,10 @@
     if(document.documentElement.dataset.theme!==mode){document.documentElement.classList.add('theme-changing');document.documentElement.dataset.theme = mode;requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('theme-changing')));}
     document.documentElement.style.colorScheme=mode;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = mode === 'dark' ? '#14241c' : '#e9f0f5';
+    if (meta) meta.content = mode === 'dark' ? '#1d1815' : '#edf4fa';
     const appleBar=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(appleBar)appleBar.content=mode==='dark'?'black-translucent':'default';
-    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const href=new URL('./icons/icon-192'+(mode==='dark'?'-dark':'')+'.png?v=blue-mint-15',assetRoot).href;if(link.href!==href)link.href=href;});
-    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=blue-mint-15',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
+    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const href=new URL('./icons/icon-192'+(mode==='dark'?'-dark':'')+'.png?v=line-art-17',assetRoot).href;if(link.href!==href)link.href=href;});
+    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=cold-warm-16',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
     const button = document.querySelector('.theme-toggle');
     if (!button) return;
     const dark = mode === 'dark';

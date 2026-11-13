@@ -1,4 +1,4 @@
-import './service-management.mjs?v=blue-mint-15';
+import './service-management.mjs?v=line-art-17';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled} from './service-rules.mjs';
@@ -100,6 +100,7 @@ function scheduleRender(){clearTimeout(renderTimer);renderTimer=setTimeout(rende
 function render(){
   if(!profile||!active||localStorage.getItem(roleKey)!==profile.role||accountToken!==localStorage.getItem(tokenKey))return;
   const root=document.getElementById('employeePortal');if(!root||root.classList.contains('hidden'))return;
+  document.getElementById('sessionRestoreNotice')?.remove();
   root.classList.add('offline-enabled');
   if(locked){if(!root.querySelector('[data-offline-locked]')){root.innerHTML='<section class="offline-locked" data-offline-locked><h1>Acesso bloqueado</h1><p>Desbloqueie o aparelho para consultar os serviços.</p><button class="btn" id="offlineUnlock">Desbloquear</button><button class="btn btn-soft" onclick="logout()">Sair da conta</button></section>';root.querySelector('#offlineUnlock').onclick=async()=>{try{await nativeCall('unlock');locked=false;showPortal()}catch(e){notify(e.message)}}}return}
   let bar=root.querySelector('#offlineToolbar');if(!bar){bar=document.createElement('section');bar.id='offlineToolbar';bar.className='offline-toolbar';root.querySelector('main')?.prepend(bar)}
@@ -215,7 +216,7 @@ async function technical(service){
  assertAllowed();if(isPaused(service))throw Error('Retome o serviço antes de registrar peças e vídeos.');
  const key=`draft:${active}:technical:${service.id}`,draft=await vault.get(key)||{items:service.items.map(i=>({notes:i.notes || '',parts:i.replacedParts || [],videos:{}}))},parts=[...new Set([...PART_NAMES,...profile.costCatalog.map(i=>i.name)])];
  draft.basis ||= basisFor(service.id);
- openModal('Peças, notas e vídeos · '+esc(service.code),`<p>Cada peça trocada precisa de seu próprio vídeo, com até 60 segundos e 50 MB. Escolha vídeos já disponíveis no aparelho.</p><p class="offline-save-state" data-draft-state>Dados recuperados do aparelho</p>${service.items.map((item,i)=>`<section class="offline-form-section" data-technical-item="${i}"><h3>Equipamento ${i+1} · ${esc(item.type)} ${esc(item.kg || '')}</h3><label>Observação técnica<textarea data-notes maxlength="3000">${esc(draft.items[i]?.notes || '')}</textarea></label><div class="offline-parts">${parts.map(part=>`<label><input type="checkbox" data-piece="${esc(part)}" ${draft.items[i]?.parts?.includes(part)?'checked':''}>${esc(part)}</label>`).join('')}</div><div data-video-slots></div></section>`).join('')}`,async()=>{
+ openModal('Peças, notas e vídeos · '+esc(service.code),`<p>Cada peça trocada precisa de seu próprio vídeo, com até 60 segundos e 50 MB. Escolha vídeos já disponíveis no aparelho.</p><p class="offline-save-state" data-draft-state>Dados recuperados do aparelho</p>${service.items.map((item,i)=>`<section class="offline-form-section" data-technical-item="${i}"><h3>Equipamento ${i+1} · ${esc(item.type)} ${esc(item.kg || '')}</h3><label>Observação técnica<textarea data-notes maxlength="3000">${esc(draft.items[i]?.notes || '')}</textarea></label><div class="offline-parts">${parts.map(part=>`<label><input type="checkbox" data-piece="${esc(part)}" ${draft.items[i]?.parts?.includes(part)?'checked':''}>${window.protecArtwork.artwork({name:part},'tiny')}<span>${esc(part)}</span></label>`).join('')}</div><div data-video-slots></div></section>`).join('')}`,async()=>{
    if(pendingVideos)throw Error('Aguarde a confirmação de que os vídeos foram guardados.');
    await saves;for(let i=0;i<draft.items.length;i++){
      const item=draft.items[i];for(const part of item.parts){if(!item.videos?.[part]&&!service.items[i].replacementMedia?.[part]?.url)throw Error(`Guarde o vídeo de ${part} no equipamento ${i+1}.`)}

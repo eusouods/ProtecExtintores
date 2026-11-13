@@ -4,7 +4,9 @@ const root=path.resolve(import.meta.dirname,'..'),site=path.join(root,'site');
 const {version,light,dark}=JSON.parse(fs.readFileSync(path.join(import.meta.dirname,'theme-palette.json'),'utf8'));
 const tokens=values=>Object.entries(values).map(([key,value])=>`--ui-${key}:${value}`).join(';');
 const stylesheet=path.join(site,'theme-system.css');let css=fs.readFileSync(stylesheet,'utf8');
-css=css.replace(/:root\{color-scheme:light;[^}]+\}/,`:root{color-scheme:light;${tokens(light)}}`).replace(/:root\[data-theme="dark"\]\{color-scheme:dark;[^}]+\}/,`:root[data-theme="dark"]{color-scheme:dark;${tokens(dark)}}`);fs.writeFileSync(stylesheet,css);
+css=css.replace(/:root\{color-scheme:light;[^}]+\}/,`:root{color-scheme:light;${tokens(light)}}`).replace(/:root\[data-theme="dark"\]\{color-scheme:dark;[^}]+\}/,`:root[data-theme="dark"]{color-scheme:dark;${tokens(dark)}}`);
+css=css.replace(/@media print\{[^\n]+\}/,`@media print{:root,:root[data-theme="dark"]{${Object.entries(light).map(([key,value])=>`--ui-${key}:${value}!important`).join(';')}}html:root body{background:#fff!important;color:${light.text}!important}html:root body :is(.receipt-paper,.service-order){background:#fff!important;color:${light.text}!important;box-shadow:none!important}}`);
+fs.writeFileSync(stylesheet,css);
 for(const name of fs.readdirSync(site)){
  if(!/\.(?:html|js|mjs)$/.test(name))continue;
  const file=path.join(site,name);let text=fs.readFileSync(file,'utf8');text=text.replace(/(\.(?:css|js|mjs|png|svg)\?v=)[a-zA-Z0-9._-]+/g,'$1'+version);fs.writeFileSync(file,text);

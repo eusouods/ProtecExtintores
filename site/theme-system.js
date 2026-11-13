@@ -1,10 +1,11 @@
-/* Tema vibrante único, carregado após os módulos funcionais. */
+/* Identidade fria no claro e quente no escuro, carregado após os módulos funcionais. */
 (() => {
-  const link = document.createElement('link');
+  const existing=document.getElementById('protec-theme-system');
+  const link = existing || document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = new URL('./theme-system.css?v=vibrant-13.1', document.currentScript.src).href;
+  link.href = new URL('./theme-system.css?v=line-art-17', document.currentScript.src).href;
   link.id = 'protec-theme-system';
-  document.head.append(link);
+  if(!existing)document.head.append(link);
   const decorateStatuses = root => {
     if(!root)return;
     const selector='.status,.admin-record-status,.badge';

@@ -71,7 +71,7 @@ public class MainActivity extends Activity {
         progressBar.setMax(100);
         progressBar.setIndeterminate(false);
         progressBar.setProgressTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.protec_primary)));
-        progressBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x0014241C));
+        progressBar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0x001D1815));
 
         root.addView(webView, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
@@ -314,15 +314,15 @@ public class MainActivity extends Activity {
     public void applyAppearance(String mode) {
         if (!"light".equals(mode) && !"dark".equals(mode)) return;
         boolean dark="dark".equals(mode);
-        int background=android.graphics.Color.parseColor(dark?"#14241C":"#E9F0F5");
-        int panel=android.graphics.Color.parseColor(dark?"#203329":"#F9FCFF");
-        int text=android.graphics.Color.parseColor(dark?"#EDFFF5":"#193142");
-        int muted=android.graphics.Color.parseColor(dark?"#ACC9B7":"#466173");
-        int action=android.graphics.Color.parseColor(dark?"#41E887":"#0876BD");
-        int onAction=android.graphics.Color.parseColor(dark?"#12271C":"#FFFFFF");
+        int background=android.graphics.Color.parseColor(dark?"#1D1815":"#EDF4FA");
+        int panel=android.graphics.Color.parseColor(dark?"#29211C":"#F9FCFF");
+        int text=android.graphics.Color.parseColor(dark?"#F5E9DC":"#20374A");
+        int muted=android.graphics.Color.parseColor(dark?"#C7B09B":"#526B80");
+        int action=android.graphics.Color.parseColor(dark?"#E7AA74":"#226B99");
+        int onAction=android.graphics.Color.parseColor(dark?"#2C1D12":"#FFFFFF");
         getSharedPreferences("protec-appearance",MODE_PRIVATE).edit().putString("mode",mode).apply();
         getWindow().setStatusBarColor(background);
-        getWindow().setNavigationBarColor(!dark && Build.VERSION.SDK_INT<26?android.graphics.Color.parseColor("#193142"):background);
+        getWindow().setNavigationBarColor(!dark && Build.VERSION.SDK_INT<26?android.graphics.Color.parseColor("#20374A"):background);
         int flags=getWindow().getDecorView().getSystemUiVisibility();
         flags=dark?flags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR:flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
         if(Build.VERSION.SDK_INT>=26)flags=dark?flags & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR:flags | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
