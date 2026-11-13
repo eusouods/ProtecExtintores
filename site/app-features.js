@@ -1757,7 +1757,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=operations-23';
+  style.href = './professional-updates.css?v=team-billing-24';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');

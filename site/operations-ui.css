@@ -165,4 +165,20 @@ html:root body :is(.ops-admin-home,.ops-order-detail,.ops-team-summary) button:f
  html:root body :is(#dashboard,.ops-order-detail) table[data-ops-cards] .icon-btn{min-height:44px;white-space:normal;text-align:center}
  html:root body :is(#dashboard,.ops-order-detail) .table-wrap:has(table[data-ops-cards]){overflow:visible;padding:10px;max-width:100%}
 }
+html:root body section[data-team-legacy][hidden]{display:none!important}
+html:root body .ops-wallet-summary{display:flex;align-items:center;justify-content:space-between;gap:16px}
+html:root body .ops-wallet-summary h2{font-size:17px;margin:0 0 5px}
+html:root body .ops-wallet-summary p{margin:0;color:var(--ui-muted);font-size:12px}
+html:root body .ops-bill,html:root body .ops-billing-role{padding:18px;margin:16px 0;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-panel)}
+html:root body :is(.ops-bill,.ops-billing-role)>header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
+html:root body :is(.ops-wallet,.ops-pix,.ops-billing-role) h2{font-size:21px;margin:8px 0 12px}
+html:root body :is(.ops-wallet,.ops-pix,.ops-billing-role) h3{font-size:16px;margin:12px 0 8px}
+html:root body :is(.ops-wallet,.ops-pix,.ops-billing-role) p{font-size:13px;line-height:1.65;margin:8px 0;overflow-wrap:anywhere}
+html:root body :is(.ops-wallet,.ops-pix,.ops-billing-role) details{padding:12px 0}
+html:root body :is(.ops-wallet,.ops-pix,.ops-billing-role) summary{font-size:13px;font-weight:800;min-height:36px;cursor:pointer}
+html:root body .ops-pix{text-align:center;max-width:650px;margin:auto}
+html:root body .ops-pix-qr{display:block;width:min(256px,100%);height:auto;aspect-ratio:1;object-fit:contain;margin:18px auto;image-rendering:pixelated;border-radius:0;color-scheme:only light;forced-color-adjust:none;filter:none!important;opacity:1!important;mix-blend-mode:normal}
+html:root body .ops-pix textarea{text-align:left;min-height:100px;word-break:break-all;width:100%;font-size:12px;font-family:monospace}
+html:root body .ops-pix .form-field{text-align:left}
+@media(max-width:650px){html:root body .ops-wallet-summary,html:root body :is(.ops-bill,.ops-billing-role)>header{align-items:stretch;flex-direction:column}html:root body .ops-wallet-summary .btn{width:100%}html:root body :is(.ops-bill,.ops-billing-role){padding:14px}html:root body .ops-pix-qr{width:min(240px,100%)}}
 @media(prefers-reduced-motion:reduce){html:root body :is(.ops-admin-home,.ops-order-detail,.ops-team-summary) *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

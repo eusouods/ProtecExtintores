@@ -1,5 +1,5 @@
 // Shared, deterministic rules. The server is authoritative for ownership and time.
-import {PART_NAMES, cancelled, completed, missingVideos} from './service-rules.mjs';
+import {PART_NAMES, cancelled, completed, missingVideos,teamBase} from './service-rules.mjs';
 export const uuid = value => /^[a-zA-Z0-9_-]{8,80}$/.test(String(value || ''));
 export function fail(message, status = 400) { throw Object.assign(new Error(message), {status}); }
 const text = (value, max = 3000) => String(value ?? '').trim().slice(0, max);
@@ -37,11 +37,11 @@ export function applyOperation(state, actor, op, at) {
       for(let i=0;i<qty;i++) items.push({type,kg,serial:'',unitPrice,status:actor.role==='employee'?'Recebido':'Solicitado',notes:'',replacedParts:[],replacementMedia:{},history:[]});
       price+=qty*unitPrice;
     }
-    if (String(data.serviceAmount ?? '').trim()!=='') {
-      price=Number(data.serviceAmount);
-      if (!Number.isFinite(price) || price<0 || price>1000000) fail('Valor de serviço inválido.');
-    }
+    let retailAmount=null;
+    if (String(data.serviceAmount ?? '').trim()!=='') {retailAmount=Number(data.serviceAmount);if (!Number.isFinite(retailAmount)||retailAmount<0||retailAmount>1000000)fail('Valor cobrado do cliente inválido.');}
     service={id:op.serviceId,code:'FS-'+op.serviceId.replace(/-/g,'').slice(-10).toUpperCase(),date,createdAt:at,clientName:name,clientEmail:email,clientPhone:phone,serviceType,notes:text(data.notes),parts:text(data.parts,1000),items,price:Math.round(price*100)/100,basePrice:Math.round(price*100)/100,employeeId:actor.role==='employee'?actor.id:'',employeeName:actor.role==='employee'?actor.name:'',sellerId:actor.role==='seller'?actor.id:'',sellerName:actor.role==='seller'?actor.name:'',registeredBy:actor.name,registeredByRole:actor.role,status:actor.role==='employee'?'Recebido':'Solicitado',nextMaintenanceMonth:`${Number(date.slice(0,4))+1}${date.slice(4,7)}`};
+    service.billingVersion=2;service.billingOwner={role:actor.role,id:actor.id,name:actor.name||actor.username};service.retailAmount=retailAmount;
+    const internal=teamBase(state,service);service.price=internal.amountCents/100;service.basePrice=service.price;
     if(state.services.some(s=>s.code===service.code))fail('Código já utilizado. A ordem foi preservada para revisão.',409);
     state.services.push(service); event('Ordem registrada','Registro recebido do aparelho.');
     return service;

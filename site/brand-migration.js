@@ -24,7 +24,7 @@
 (() => {
   'use strict';
   const assetRoot=new URL('./',document.currentScript.src);
-  const identity='official-logo-19',relative='icons/company-logo.png?v=operations-23';
+  const identity='official-logo-19',relative='icons/company-logo.png?v=team-billing-24';
   const official=new URL(relative,assetRoot).href;
   let current=official,scheduled=false;
   const escape=value=>String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -1,7 +1,7 @@
-import {cents,PART_NAMES,technicalView,sellerView,captureFinance,missingVideos,completed,cancelled} from '../../site/service-rules.mjs';
+import {cents,PART_NAMES,technicalView,sellerView,teamView,billingOwner,captureFinance,missingVideos,completed,cancelled} from '../../site/service-rules.mjs';
 import {isPaused} from '../../site/offline-rules.mjs';
 export const allowedParts = state => [...new Set([...PART_NAMES,...(state.costCatalog || []).filter(item=>item.active !== false && item.technicalPart).map(item=>item.name)])];
-export const employeeHistory = (state,id) => (state.services || []).filter(service=>service.employeeId === id || (!service.employeeId && !completed(service) && !cancelled(service))).map(technicalView);
+export const employeeHistory = (state,id) => (state.services || []).filter(service=>service.employeeId === id || service.billingOwner?.role==='employee'&&service.billingOwner.id===id || (!service.employeeId && !completed(service) && !cancelled(service))).map(service=>teamView(service,'employee',id));
 export const sellerHistory = (state,id) => (state.services || []).filter(service=>service.sellerId === id).map(sellerView);
 const cleanText = (value,max=150) => String(value || '').trim().slice(0,max);
 const requirePolicy = policy => {
@@ -47,8 +47,25 @@ export async function handleOperations(request,env,context) {
     item.active=false;item.removedAt=at;
   }else if(data.action==='policy'){
     const policy=requirePolicy(data.policy);
-    if(data.sellerId){const seller=(state.sellers || []).find(item=>item.id===data.sellerId);if(!seller)throw Error('Vendedor não encontrado.');seller.billingPolicy=policy}
-    else state.settings.sellerBillingPolicy=policy;
+    const role=data.role||'seller',id=data.personId||data.sellerId;if(!['seller','employee'].includes(role))throw Error('Perfil inválido.');
+    if(id){const person=(state[role==='employee'?'employees':'sellers'] || []).find(item=>item.id===id);if(!person)throw Error('Pessoa não encontrada.');if(data.inherit)delete person.billingPolicy;else person.billingPolicy=policy}
+    else state.settings[role==='employee'?'employeeBillingPolicy':'sellerBillingPolicy']=policy;
+  }else if(data.action==='team-config'){
+    if(!['employee','seller'].includes(data.role))throw Error('Perfil inválido.');
+    const inherited=String(data.discountPercent??'').trim()==='',percent=Number(data.discountPercent);
+    if((inherited&&!data.personId)||!inherited&&(!Number.isFinite(percent)||percent<=0||percent>=100))throw Error('Defina um desconto maior que zero e menor que 100%.');
+    const policy=data.mode==='inherit'&&data.personId?null:requirePolicy({mode:data.mode,weekday:data.weekday});
+    if(data.personId){const person=(state[data.role==='employee'?'employees':'sellers']||[]).find(p=>p.id===data.personId);if(!person)throw Error('Pessoa não encontrada.');if(inherited)delete person.teamPricing;else person.teamPricing={discountPercent:percent};if(policy)person.billingPolicy=policy;else delete person.billingPolicy;}
+    else{state.settings.teamPricing ||= {};state.settings.teamPricing[data.role]={discountPercent:percent};state.settings[data.role==='employee'?'employeeBillingPolicy':'sellerBillingPolicy']=policy;}
+  }else if(data.action==='team-rate'){
+    if(!['employee','seller'].includes(data.role))throw Error('Perfil inválido.');
+    const percent=Number(data.discountPercent);if(!data.inherit&&(!Number.isFinite(percent)||percent<=0||percent>=100))throw Error('O desconto deve ser maior que zero e menor que 100%.');
+    if(data.personId){const person=(state[data.role==='employee'?'employees':'sellers']||[]).find(p=>p.id===data.personId);if(!person)throw Error('Pessoa não encontrada.');if(data.inherit)delete person.teamPricing;else person.teamPricing={discountPercent:percent}}
+    else{state.settings.teamPricing ||= {};state.settings.teamPricing[data.role]={discountPercent:percent};}
+  }else if(data.action==='team-quote'){
+    const service=state.services.find(s=>s.id===data.serviceId);if(!service||service.closed||cancelled(service)||service.billingVersion!==2)throw Error('Defina o valor interno antes de finalizar esta ordem.');
+    service.internalBaseCents=cents(data.amount);if(service.internalBaseCents<=0)throw Error('Informe um valor interno maior que zero.');
+    service.history ||= [];service.history.push({at,by:session.username,action:'Valor interno da manutenção definido',description:'Valor base definido pelo administrador, independente do preço cobrado ao cliente.'});
   }else if(data.action==='service-items'){
     const service=(state.services || []).find(item=>item.id===data.serviceId);
     if(!service||service.closed||cancelled(service))throw Error('Ajuste os itens antes de finalizar o serviço.');
@@ -68,7 +85,8 @@ export async function handleOperations(request,env,context) {
     const reference=cleanText(data.reference,300);if(reference.length<3)throw Error('Informe comprovante, referência ou observação do recebimento.');
     const selected=ids.map(id=>(state.services || []).find(item=>item.id===id));
     if(selected.some(service=>!service?.finance||!service.closed||cancelled(service)||!['pending','not-applicable'].includes(service.finance.payment.status)))throw Error('Há uma ordem inválida ou já paga. Atualize a tela.');
-    if(new Set(selected.map(service=>service.sellerId||'')).size!==1)throw Error('Confirme um vendedor ou um grupo de recebimentos diretos por vez.');
+    if(selected.some(s=>s.finance.settlementId))throw Error('Registre o recebimento pelo acerto Pix completo.');
+    if(new Set(selected.map(service=>{const owner=service.finance.payer||billingOwner(service);return owner?owner.role+':'+owner.id:'direct'})).size!==1)throw Error('Confirme um responsável por pagamento por vez.');
     const batchId=crypto.randomUUID();
     for(const service of selected){service.finance.payment={status:'paid',paidAt:at,by:session.username,reference,batchId};service.history ||= [];service.history.push({at,action:'Recebimento confirmado pelo administrador',description:reference,by:session.username})}
     await saveState(env,state,session.username,{settlement:true});return json({ok:true,state:await readState(env)});

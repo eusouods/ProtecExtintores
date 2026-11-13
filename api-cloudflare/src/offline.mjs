@@ -1,5 +1,5 @@
 import {applyOperation,uuid,fail} from '../../site/offline-rules.mjs';
-import {technicalView,sellerView} from '../../site/service-rules.mjs';
+import {technicalView,sellerView,teamView,teamDiscount} from '../../site/service-rules.mjs';
 const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(b=>b.toString(16).padStart(2,'0')).join('');
 export const serviceVersion=service=>hash(JSON.stringify({technical:technicalView(service),sellerId:service.sellerId || '',price:Number(service.price || 0),clientPhone:service.clientPhone || '',clientEmail:service.clientEmail || ''}));
 const accountKey=session=>`${session.role}:${session.employee_id || session.seller_id}`;
@@ -12,8 +12,8 @@ async function actorFor(env,state,session){
   if(!exists||!person||person.active===false)fail('Conta indisponível. Procure o administrador.',403);
   return {id,role:session.role,username:session.username,name:person.name || session.username};
 }
-async function view(service,role){return {...(role==='seller'?sellerView(service):technicalView(service)),syncVersion:await serviceVersion(service),clientPhone:service.clientPhone || '',clientEmail:service.clientEmail || ''}}
-async function receiptResponse(receipt,state,actor,at){const recorded=JSON.parse(receipt.result),service=state.services.find(s=>s.id===recorded.service.id),owned=service&&(actor.role==='employee'?service.employeeId===actor.id:service.sellerId===actor.id);return{ok:true,operationId:recorded.operationId,serverAt:at,duplicate:true,service:owned?await view(service,actor.role):null}}
+async function view(service,role,id){return {...teamView(service,role,id),syncVersion:await serviceVersion(service),clientPhone:service.clientPhone || '',clientEmail:service.clientEmail || ''}}
+async function receiptResponse(receipt,state,actor,at){const recorded=JSON.parse(receipt.result),service=state.services.find(s=>s.id===recorded.service.id),owned=service&&(actor.role==='employee'?(service.employeeId===actor.id||service.billingOwner?.role==='employee'&&service.billingOwner.id===actor.id):service.sellerId===actor.id);return{ok:true,operationId:recorded.operationId,serverAt:at,duplicate:true,service:owned?await view(service,actor.role,actor.id):null}}
 export async function handleOffline(request,env,context){
   const url=new URL(request.url),path=url.pathname;
   if(!path.startsWith('/api/offline/'))return null;
@@ -29,8 +29,8 @@ export async function handleOffline(request,env,context){
     }
     const actor=await actorFor(env,state,session),key=accountKey(session);
     if(path==='/api/offline/bootstrap'&&request.method==='GET'){
-      const own=state.services.filter(s=>actor.role==='employee'?s.employeeId===actor.id:s.sellerId===actor.id),hours=Math.max(1,Math.min(168,Number(state.settings.offlineHours)||72));
-      return json({accountKey:key,actor,role:actor.role,username:actor.username,preparedAt:now(),offlineUntil:new Date(Date.now()+hours*3600000).toISOString(),settings:{company:state.settings.company,stages:state.settings.stages,offlineHours:hours},types:state.types || [],available:actor.role==='employee'?state.services.filter(s=>!s.employeeId&&!s.closed&&!s.cancelledAt).map(technicalView):[],costCatalog:(state.costCatalog || []).filter(i=>i.active!==false&&i.technicalPart).map(i=>({name:i.name,technicalPart:true})),services:await Promise.all(own.map(s=>view(s,actor.role)))});
+      const own=state.services.filter(s=>actor.role==='employee'?(s.employeeId===actor.id||s.billingOwner?.role==='employee'&&s.billingOwner.id===actor.id):s.sellerId===actor.id),hours=Math.max(1,Math.min(168,Number(state.settings.offlineHours)||72));
+      return json({accountKey:key,actor,role:actor.role,username:actor.username,preparedAt:now(),offlineUntil:new Date(Date.now()+hours*3600000).toISOString(),settings:{company:state.settings.company,stages:state.settings.stages,offlineHours:hours,teamPricing:{[actor.role]:{discountPercent:teamDiscount(state,{role:actor.role,id:actor.id})}}},types:state.types || [],available:actor.role==='employee'?state.services.filter(s=>!s.employeeId&&!s.closed&&!s.cancelledAt).map(technicalView):[],costCatalog:(state.costCatalog || []).filter(i=>i.active!==false&&i.technicalPart).map(i=>({name:i.name,technicalPart:true})),services:await Promise.all(own.map(s=>view(s,actor.role,actor.id)))});
     }
     if(!['/api/offline/sync','/api/offline/media'].includes(path)||request.method!=='POST')fail('Não encontrado.',404);
     let op,file;
@@ -46,7 +46,7 @@ export async function handleOffline(request,env,context){
     if(existing&&(actor.role==='employee'?existing.employeeId!==actor.id:existing.sellerId!==actor.id))return json({error:'Esta ordem não está mais atribuída à sua conta. Seus registros locais foram preservados.',conflict:true},403);
     let expected=op.baseVersion;
     if(op.previousId){const prior=await env.DB.prepare('SELECT result FROM offline_receipts WHERE account_id=? AND operation_id=?').bind(key,op.previousId).first();if(!prior)fail('A operação anterior ainda não foi recebida.',409);const result=JSON.parse(prior.result);if(result.service.id!==op.serviceId)fail('Sequência inválida.');expected=result.service.syncVersion}
-    if(existing&&await serviceVersion(existing)!==expected)return json({error:'Esta ordem mudou no sistema. Seus registros locais foram preservados para revisão.',conflict:true,current:await view(existing,actor.role)},409);
+    if(existing&&await serviceVersion(existing)!==expected)return json({error:'Esta ordem mudou no sistema. Seus registros locais foram preservados para revisão.',conflict:true,current:await view(existing,actor.role,actor.id)},409);
     const original=structuredClone(op);
     if(op.kind==='media'){
       if(path!=='/api/offline/media'||!file||typeof file.arrayBuffer!=='function'||!file.size||file.size>50*1024*1024)fail('Envie um vídeo de até 50 MB.');
@@ -64,7 +64,7 @@ export async function handleOffline(request,env,context){
     const service=applyOperation(state,actor,op,now());
     // The receipt and app state commit in the same D1 transaction. A lost HTTP response
     // can therefore be retried without creating a second order or stock movement.
-    const response={ok:true,operationId:op.id,serverAt:now(),service:await view(service,actor.role)};
+    const response={ok:true,operationId:op.id,serverAt:now(),service:await view(service,actor.role,actor.id)};
     const compactReceipt={ok:true,operationId:op.id,serverAt:response.serverAt,service:{id:service.id,syncVersion:response.service.syncVersion}};
     try{await saveState(env,state,(await env.DB.prepare('SELECT username FROM admin_auth WHERE id=1').first()).username,{offlineReceipt:{account:key,id:original.id,hash:digest,result:JSON.stringify(compactReceipt)}})}catch(error){const committed=await env.DB.prepare('SELECT request_hash,result FROM offline_receipts WHERE account_id=? AND operation_id=?').bind(key,original.id).first();if(committed?.request_hash===digest)return json(await receiptResponse(committed,await readState(env),actor,now()));throw error}
     return json(response);
