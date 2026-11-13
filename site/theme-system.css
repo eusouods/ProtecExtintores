@@ -134,6 +134,21 @@ html:root body .admin-intro-total small{color:var(--ui-muted,#526b80)!important}
 @media print{:root,:root[data-theme="dark"]{--ui-bg:#edf4fa!important;--ui-panel:#f9fcff!important;--ui-raised:#dce9f3!important;--ui-hover:#d1e2ef!important;--ui-text:#20374a!important;--ui-muted:#526b80!important;--ui-border:#c5d8e6!important;--ui-control:#6b879a!important;--ui-action:#226b99!important;--ui-action-hover:#1b567c!important;--ui-action-text:#ffffff!important;--ui-selected:#dce9f3!important;--ui-focus:#226b99!important;--ui-accent:#226b99!important;--ui-success:#226b99!important;--ui-success-bg:#dce9f3!important;--ui-success-line:#226b99!important;--ui-warning:#20374a!important;--ui-warning-bg:#dce9f3!important;--ui-warning-line:#6b879a!important;--ui-hero:#edf4fa!important;--ui-hero-end:#dce9f3!important;--ui-on-hero:#20374a!important;--ui-hero-muted:#526b80!important;--ui-brand:#226b99!important;--ui-panel-rgb:249 252 255!important;--ui-accent-rgb:34 107 153!important;--ui-ink-rgb:32 55 74!important;--ui-scrim-rgb:17 14 12!important;--ui-shadow:0 10px 28px rgb(32 55 74 / 7%)!important;--ui-art:#bad5e8!important;--ui-art-ink:#2a6085!important}html:root body{background:#fff!important;color:#20374a!important}html:root body :is(.receipt-paper,.service-order){background:#fff!important;color:#20374a!important;box-shadow:none!important}}
 }
 @layer protecNeutral {
+html:root body .brand-mark{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;flex-shrink:0;filter:none!important;overflow:visible}
+html:root body .brand-mark::before,html:root body .brand-mark::after{display:none!important}
+html:root body .brand-mark>img.company-logo{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:contain!important;border-radius:0!important;filter:none!important;opacity:1!important}
+html:root body .company-team-brand{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%}
+html:root body .company-team-brand>div,html:root body .company-team-brand>b{min-width:0;overflow-wrap:anywhere}
+html:root body .company-team-brand .brand-mark{width:38px!important;height:38px!important}
+html:root body .company-access-logo{margin:0 0 20px;text-align:center}
+html:root body .company-access-logo img.company-logo{display:inline-block;object-fit:contain;filter:none!important}
+html:root body .admin-top .crumb{display:flex;align-items:center;gap:10px;min-width:0}
+html:root body .brand-mark.company-admin-logo{display:none!important;width:30px!important;height:30px!important}
+html:root body .receipt-brand{display:flex;align-items:center;gap:10px}
+html:root body .receipt-brand img.company-logo{width:44px!important;height:44px!important;object-fit:contain;filter:none!important}
+html:root body .order-head img.company-logo{width:52px!important;height:52px!important;object-fit:contain;filter:none!important;margin-bottom:8px}
+@media(max-width:900px){html:root body .brand-mark.company-admin-logo{display:inline-flex!important}}
+@media(max-width:650px){html:root body :is(.employee-top,.seller-top){flex-wrap:wrap!important;gap:12px!important}html:root body .company-team-brand .brand-mark{width:34px!important;height:34px!important}html:root body .company-team-brand{flex:1 1 190px}html:root body .company-team-brand>b{font-size:12px}}
 html:root body .catalog-browser{display:block;width:100%;scroll-margin-top:105px}
 html:root body .catalog-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;color:var(--ui-muted)!important;font-size:12px}
 html:root body .catalog-breadcrumb [aria-current=page]{font-weight:600;color:var(--ui-text)!important;overflow-wrap:anywhere}

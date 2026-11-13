@@ -1,7 +1,7 @@
 /* Public shell only. Authenticated API data and media belong to the per-account vault. */
-const CACHE='protecextintores-catalog-groups-v18';
+const CACHE='protecextintores-official-logo-v19';
 const root=new URL('./',self.location.href);
-const CORE=['./','index.html','offline-services.mjs?v=catalog-groups-18','offline-vault.mjs','offline-rules.mjs','offline-services.css','service-rules.mjs','service-management.mjs?v=catalog-groups-18','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png'];
+const CORE=['./','index.html','offline-services.mjs?v=official-logo-19','offline-vault.mjs','offline-rules.mjs','offline-services.css','service-rules.mjs','service-management.mjs?v=official-logo-19','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png'];
 async function prepareShell(){
  const cache=await caches.open(CACHE),response=await fetch(new URL('index.html',root),{cache:'reload'});
  if(!response.ok)throw Error('Não foi possível baixar a tela inicial.');

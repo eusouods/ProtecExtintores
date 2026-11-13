@@ -40,7 +40,7 @@ O primeiro login e a sincronização exigem internet. A versão 1.1 permite regi
 
 ## Aparência e uso
 
-O APK 1.1.4 usa azul-gelo e azul-petróleo no modo claro, e café, cobre e âmbar suave no modo escuro. Inclui as novas ilustrações vetoriais e os arquivos consolidados na cópia offline do site. O ícone, a barra de carregamento, a tela de falha de conexão e as barras do aplicativo usam a mesma identidade. O tema selecionado no site também atualiza a aparência nativa. A área do site respeita as barras do sistema e o recorte de tela no Android 15.
+O APK 1.1.5 usa azul-gelo e azul-petróleo no modo claro, e café, cobre e âmbar suave no modo escuro. Inclui as novas ilustrações vetoriais e os arquivos consolidados na cópia offline do site. O ícone, a barra de carregamento, a tela de falha de conexão e as barras do aplicativo usam a mesma identidade. O tema selecionado no site também atualiza a aparência nativa. A área do site respeita as barras do sistema e o recorte de tela no Android 15.
 
 O catálogo e os painéis de administrador, funcionário e vendedor continuam sendo os do site publicado. Atualizações publicadas no site chegam ao aplicativo pelo mesmo endereço, sujeitas ao cache do site. Um ZIP de código-fonte não instala no celular: primeiro gere o APK pelo fluxo acima.
 

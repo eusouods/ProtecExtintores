@@ -1,11 +1,14 @@
 {
-  "version": 18,
+  "version": 19,
   "assets": [
     "app-features.js",
     "brand-migration.js",
     "commerce-no-logistics.js",
     "config.js",
     "extintor-original.svg",
+    "icons/company-logo.png",
+    "icons/favicon-16.png",
+    "icons/favicon-32.png",
     "icons/icon-192-dark.png",
     "icons/icon-192.png",
     "icons/icon-512-dark.png",

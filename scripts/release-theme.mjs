@@ -9,7 +9,7 @@ css=css.replace(/@media print\{[^\n]+\}/,`@media print{:root,:root[data-theme="d
 fs.writeFileSync(stylesheet,css);
 for(const name of fs.readdirSync(site)){
  if(!/\.(?:html|js|mjs)$/.test(name))continue;
- const file=path.join(site,name);let text=fs.readFileSync(file,'utf8');text=text.replace(/(\.(?:css|js|mjs|png|svg)\?v=)[a-zA-Z0-9._-]+/g,'$1'+version);fs.writeFileSync(file,text);
+ const file=path.join(site,name);let text=fs.readFileSync(file,'utf8');text=text.replace(/(\.(?:css|js|mjs|png|svg|webmanifest)\?v=)[a-zA-Z0-9._-]+/g,'$1'+version);fs.writeFileSync(file,text);
 }
 const manifestFile=path.join(site,'manifest.webmanifest'),manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));manifest.theme_color=light.bg;manifest.background_color=light.bg;manifest.icons.forEach(icon=>icon.src=icon.src.split('?')[0]+'?v='+version);fs.writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
 const darkManifest={...manifest,theme_color:dark.bg,background_color:dark.bg,icons:manifest.icons.map(icon=>({...icon,src:icon.src.replace(/(icon-(?:maskable-)?(?:192|512))\.png/,'$1-dark.png')}))};fs.writeFileSync(path.join(site,'manifest-dark.webmanifest'),JSON.stringify(darkManifest,null,2)+'\n');

@@ -1,4 +1,4 @@
-import './service-management.mjs?v=catalog-groups-18';
+import './service-management.mjs?v=official-logo-19';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled} from './service-rules.mjs';

@@ -29,6 +29,7 @@ import android.net.http.SslError;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -228,7 +229,16 @@ public class MainActivity extends Activity {
         panel.setPadding(dp(24), dp(24), dp(24), dp(24));
         panel.setBackgroundColor(getColor(R.color.protec_surface));
 
+        ImageView companyLogo = new ImageView(this);
+        companyLogo.setImageResource(getApplicationInfo().icon);
+        companyLogo.setContentDescription("ProtecExtintores");
+        companyLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(76), dp(76));
+        logoParams.setMargins(0, 0, 0, dp(20));
+        panel.addView(companyLogo, logoParams);
+
         TextView title = new TextView(this);
+        title.setTag("load-error-title");
         title.setText("Não foi possível abrir a ProtecExtintores");
         title.setTextColor(getColor(R.color.protec_text));
         title.setTextSize(20);
@@ -330,7 +340,7 @@ public class MainActivity extends Activity {
         if(appRoot!=null)appRoot.setBackgroundColor(background);
         if(webView!=null)webView.setBackgroundColor(background);
         if(progressBar!=null)progressBar.setProgressTintList(android.content.res.ColorStateList.valueOf(action));
-        if(loadErrorView!=null){loadErrorView.setBackgroundColor(panel);for(int i=0;i<loadErrorView.getChildCount();i++){View child=loadErrorView.getChildAt(i);if(child instanceof Button){((Button)child).setTextColor(onAction);child.setBackgroundTintList(android.content.res.ColorStateList.valueOf(action));}else if(child instanceof TextView)((TextView)child).setTextColor(i==0?text:muted);}}
+        if(loadErrorView!=null){loadErrorView.setBackgroundColor(panel);for(int i=0;i<loadErrorView.getChildCount();i++){View child=loadErrorView.getChildAt(i);if(child instanceof Button){((Button)child).setTextColor(onAction);child.setBackgroundTintList(android.content.res.ColorStateList.valueOf(action));}else if(child instanceof TextView)((TextView)child).setTextColor("load-error-title".equals(child.getTag())?text:muted);}}
     }
 
     private boolean connected() {

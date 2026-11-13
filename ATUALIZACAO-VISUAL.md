@@ -1,6 +1,25 @@
-# Catálogo por categorias, tipos e opções — versão 18 / Android 1.1.4
+# Logo oficial, catálogo e temas — versão 19 / Android 1.1.5
 
 A combinação aprovada na prévia foi aplicada ao site: azul-gelo e azul-petróleo no claro; café, cobre e âmbar suave no escuro.
+
+## Logo oficial da empresa
+
+O logo enviado pela empresa foi aplicado preservando suas cores e composição. Foram ajustadas apenas a margem transparente e as dimensões para os diferentes usos.
+
+- Página inicial, rodapé, login, painel admin e cabeçalhos de funcionário e vendedor.
+- Identificação do admin no celular e tela de bloqueio do acesso offline.
+- Ordem de serviço, comprovante, impressão e notificações do navegador.
+- Favicons de 16 e 32 pixels, ícones de instalação e atalho no iPhone/iPad.
+- Metadados de compartilhamento do site.
+- Ícone Android tradicional e adaptativo, além da tela de erro de conexão.
+
+O logo tem as mesmas cores nos dois temas. O desenho técnico usado no catálogo continua sendo uma referência do equipamento; a marca da empresa identifica a interface e os documentos.
+
+`site/icons/company-logo.png` é o arquivo central de 1024 × 1024 pixels. As versões menores e os recursos Android foram exportados dessa mesma imagem. Ícones adaptativos e maskable têm área de segurança para o recorte do sistema.
+
+A revisão foi feita em 66 telas e pop-ups nos dois temas. Também foram conferidos o carregamento dos logos, os favicons, o cabeçalho admin em 320 pixels, a ordem de serviço e o logo dentro da janela de impressão. As referências dos recursos XML Android foram verificadas e o Java compilou contra API 35/AndroidX. A geração completa do APK e a aparência no aparelho dependem do workflow e de teste no dispositivo.
+
+Para atualizar o ícone de um aplicativo já instalado, publique o projeto e gere **um novo APK 1.1.5** pelo GitHub Actions. O ZIP continua sendo código-fonte.
 
 ## Catálogo agrupado
 
@@ -20,7 +39,7 @@ No admin, abra **Produtos → Adicionar produto** ou **Editar**:
 4. Use **Nome da opção** para capacidades em litros, medidas de placas, diâmetros, comprimentos e outras especificações. Exemplo: `10 L`, `20 × 30 cm` ou `15 m · 1½ pol`.
 5. Ative ou oculte cada opção separadamente. Se um grupo ficar sem opções ativas, ele desaparece da vitrine.
 
-Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **89 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.4 pelo workflow Android.
+Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **96 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.5 pelo workflow Android.
 
 A navegação nova foi verificada em 36 combinações de tela, tema e largura, incluindo 320 pixels. Foram conferidos agrupamento sem perda ou repetição de itens, ordenação dos pesos, ocultação de opções, navegação de retorno, referência do orçamento e gravação dos novos campos pela API local. A revisão visual completa cobriu 66 telas e pop-ups nos dois temas, sem falhas de contraste detectadas, cores fora da paleta ou transbordamento horizontal.
 
@@ -36,7 +55,7 @@ O cadastro foi conferido com gravação e recarga pela API local: criação, sel
 
 ## Pacote com menos de 100 arquivos
 
-`ProtecExtintores.zip` contém **89 arquivos**, incluindo o site, a API, o projeto Android e os workflows. Vinte scripts foram reunidos em `site/app-features.js` e onze folhas de estilo em `site/site-styles.css`, preservando a ordem de execução e de estilos. Os comentários `SOURCE` identificam cada seção para manutenção. As ilustrações ficam em `site/product-art.js`; todas são vetoriais e locais, sem bibliotecas ou imagens baixadas da internet.
+`ProtecExtintores.zip` contém **96 arquivos**, incluindo o site, a API, o projeto Android e os workflows. Vinte scripts foram reunidos em `site/app-features.js` e onze folhas de estilo em `site/site-styles.css`, preservando a ordem de execução e de estilos. Os comentários `SOURCE` identificam cada seção para manutenção. As ilustrações ficam em `site/product-art.js`; todas são vetoriais e locais, sem bibliotecas ou imagens baixadas da internet.
 
 Extraia o ZIP e envie os arquivos e as pastas que estão dentro de `ProtecExtintores` para a raiz do repositório. Inclua a pasta `.github`. O ZIP é o pacote de código, não deve ser enviado como substituto dos arquivos extraídos. Ao atualizar um clone local, substitua a pasta `site` pela nova para retirar os arquivos antigos já consolidados; eles não são necessários nesta versão.
 
@@ -59,8 +78,8 @@ Extraia o ZIP e envie os arquivos e as pastas que estão dentro de `ProtecExtint
 - Formulários, tabelas, navegação, cards, filtros, foco de teclado, mensagens, pop-ups e estados de seleção.
 - Ordens, peças, vídeos, pinturas, pausa/retomada, histórico, custos e pendências offline.
 - Cabeçalhos de apresentação claros no tema claro e escuros no tema escuro, com texto ajustado ao fundo.
-- Ícones de instalação, manifestos, favoritos e cache `catalog-groups-18`.
-- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.4.
+- Ícones de instalação, manifestos, favoritos e cache `official-logo-19`.
+- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.5.
 - A preferência do sistema é usada no primeiro acesso; a seleção manual fica salva.
 - Impressões usam papel claro e texto escuro para manter a legibilidade.
 

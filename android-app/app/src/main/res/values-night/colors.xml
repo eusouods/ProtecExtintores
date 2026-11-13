@@ -7,4 +7,5 @@
     <color name="protec_on_primary">#2C1D12</color>
     <color name="protec_logo">#E7AA74</color>
     <color name="protec_bar">#1D1815</color>
+    <color name="protec_icon_background">#242426</color>
 </resources>

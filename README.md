@@ -1,6 +1,6 @@
 # Documentação da ProtecExtintores
 
-**Identidade atual: azul-gelo e petróleo no modo claro; café, cobre e âmbar no modo escuro — Android 1.1.4.** Ilustrações vetoriais padronizadas para equipamentos e peças. O pacote completo contém **89 arquivos**, abaixo do limite de 100 arquivos por envio. Leia `ATUALIZACAO-VISUAL.md` para as imagens e instruções de publicação. O pacote preserva os recursos de ordens offline e pausa/retomada descritos em `ATUALIZACAO-OFFLINE.md`.
+**Identidade atual: azul-gelo e petróleo no modo claro; café, cobre e âmbar no modo escuro — Android 1.1.5.** Ilustrações vetoriais padronizadas para equipamentos e peças. O pacote completo contém **96 arquivos**, abaixo do limite de 100 arquivos por envio. Leia `ATUALIZACAO-VISUAL.md` para as imagens e instruções de publicação. O pacote preserva os recursos de ordens offline e pausa/retomada descritos em `ATUALIZACAO-OFFLINE.md`.
 
 **Recursos operacionais: ordens offline e pausa de serviço.** A configuração inicial desses recursos está em `ATUALIZACAO-OFFLINE.md`. Os textos consolidados abaixo descrevem versões anteriores.
 
