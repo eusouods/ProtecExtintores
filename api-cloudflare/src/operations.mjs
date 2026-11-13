@@ -67,8 +67,8 @@ export async function handleOperations(request,env,context) {
     if(!ids.length||ids.length>500)throw Error('Selecione as ordens a quitar.');
     const reference=cleanText(data.reference,300);if(reference.length<3)throw Error('Informe comprovante, referência ou observação do recebimento.');
     const selected=ids.map(id=>(state.services || []).find(item=>item.id===id));
-    if(selected.some(service=>!service?.finance||!service.sellerId||!service.closed||cancelled(service)||service.finance.payment.status!=='pending'))throw Error('Há uma ordem inválida ou já paga. Atualize a tela.');
-    if(new Set(selected.map(service=>service.sellerId)).size!==1)throw Error('Quite um vendedor por vez.');
+    if(selected.some(service=>!service?.finance||!service.closed||cancelled(service)||!['pending','not-applicable'].includes(service.finance.payment.status)))throw Error('Há uma ordem inválida ou já paga. Atualize a tela.');
+    if(new Set(selected.map(service=>service.sellerId||'')).size!==1)throw Error('Confirme um vendedor ou um grupo de recebimentos diretos por vez.');
     const batchId=crypto.randomUUID();
     for(const service of selected){service.finance.payment={status:'paid',paidAt:at,by:session.username,reference,batchId};service.history ||= [];service.history.push({at,action:'Recebimento confirmado pelo administrador',description:reference,by:session.username})}
     await saveState(env,state,session.username,{settlement:true});return json({ok:true,state:await readState(env)});

@@ -1,5 +1,5 @@
 {
-  "version": 22,
+  "version": 23,
   "assets": [
     "app-features.js",
     "brand-migration.js",
@@ -24,6 +24,8 @@
     "offline-services.mjs",
     "offline-vault.mjs",
     "operations-center.js",
+    "operations-ui.css",
+    "operations-ui.mjs",
     "product-art.js",
     "professional-updates.css",
     "pwa-register.js",

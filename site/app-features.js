@@ -41,6 +41,12 @@
     db=next;
     saveLocal();
   }
+  function clearPrivateState(){
+    const settings=db.settings||{},products=(db.products||[]).filter(p=>p.active!==false&&p.visible!==false).map(p=>Object.fromEntries(['id','name','type','kg','model','price','description','image','video','category','sku','artwork','artworkKind','catalogFamily','catalogType','catalogGroup','variantLabel','referenceStyle','illustrationKind','quoteOnly'].filter(key=>p[key]!==undefined).map(key=>[key,p[key]])));
+    db={settings:{...initial.settings,...Object.fromEntries(['company','logo','whatsapp','instagram','shopEnabled','servicesEnabled'].map(key=>[key,settings[key]??initial.settings[key]]))},types:structuredClone(initial.types),employees:[],sellers:[],clients:[],extinguishers:[],services:[],orders:[],cart:[],products};
+    // Only the administrative browser snapshot is removed. The encrypted team vault is separate.
+    localStorage.removeItem(KEY);
+  }
   window.save = function() {
     saveLocal();
     const token = localStorage.getItem(tokenKey);
@@ -61,6 +67,7 @@
     authGeneration++;verifiedToken='';resetSessionRecovery();
     const token = localStorage.getItem(tokenKey);
     if (API_ENABLED && token) apiCall('/api/logout','POST').catch(()=>{});
+    clearPrivateState();
     [tokenKey, roleKey, nameKey].forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(roleKey);
     showStore();
@@ -80,8 +87,8 @@
       localStorage.setItem(tokenKey,data.token); localStorage.setItem(roleKey,data.role); localStorage.setItem(nameKey,data.username || username);
       sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(roleKey);
       resetSessionRecovery();
-      if (data.role === 'employee')renderEmployee(data.username,data.services || []);
-      else if (data.role === 'seller')renderSeller(data);
+      if (data.role === 'employee'){clearPrivateState();db.settings={...db.settings,...data.settings};renderEmployee(data.username,data.services || []);}
+      else if (data.role === 'seller'){clearPrivateState();db.settings={...db.settings,...data.settings};renderSeller(data);}
       else {applyAdminState(data.state);showDashboard();}
       verifiedToken=data.token;
     } catch (e) { if(generation!==authGeneration)return;error.textContent = e.message || 'Não foi possível acessar o painel.'; error.classList.remove('hidden'); }
@@ -231,6 +238,7 @@
         if(window.offlineServices?.locked){clearSessionNotice();return;}
         if(r.status===401){
           verifiedToken='';resetSessionRecovery();
+          clearPrivateState();
           [tokenKey,roleKey,nameKey].forEach(k=>localStorage.removeItem(k));
           sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);
           showStore();originalShowLogin();
@@ -254,8 +262,8 @@
         if(d.role==='admin'){
           applyAdminState(d.state);showDashboard();
         }else if(d.role==='employee'){
-          db.settings={...db.settings,...d.settings};renderEmployee(d.username,d.services||[]);
-        }else renderSeller(d);
+          clearPrivateState();db.settings={...db.settings,...d.settings};renderEmployee(d.username,d.services||[]);
+        }else {clearPrivateState();db.settings={...db.settings,...d.settings};renderSeller(d);}
         verifiedToken=token;clearSessionNotice();
       }catch(error){
         if(!current())return;
@@ -269,7 +277,7 @@
   window.addEventListener('online',retrySession);
   window.addEventListener('pageshow',retrySession);
   document.addEventListener('visibilitychange',retrySession);
-  window.addEventListener('storage',e=>{if(e.key!==tokenKey)return;authGeneration++;verifiedToken='';resetSessionRecovery();sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);showStore();if(e.newValue)bootstrap();});
+  window.addEventListener('storage',e=>{if(e.key!==tokenKey)return;authGeneration++;verifiedToken='';resetSessionRecovery();clearPrivateState();sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);showStore();if(e.newValue)bootstrap();});
 
   document.querySelectorAll('.login-note').forEach(n=>n.textContent='Acesso protegido para administrador, funcionários e vendedores.');
   document.querySelectorAll('.side-nav button[data-page="users"]').forEach(b=>{b.querySelector('.navtext').textContent='Acessos da equipe';});
@@ -1749,7 +1757,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=session-restore-22';
+  style.href = './professional-updates.css?v=operations-23';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');

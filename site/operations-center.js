@@ -133,7 +133,7 @@
 
   function mountAdminOverview() {
     const host = document.getElementById('content');
-    if (!host || window.page !== 'overview' || host.querySelector('.ops-quick-actions')) return;
+    if (!host || window.page !== 'overview' || host.querySelector('.ops-quick-actions,.ops-admin-home')) return;
     const pending = services().filter(awaitingReview).length;
     const upcoming = services().filter(service => dateFromMonth(service.nextMaintenanceMonth)).length;
     const quick = document.createElement('section'); quick.className = 'panel ops-quick-actions';

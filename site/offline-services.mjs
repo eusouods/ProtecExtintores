@@ -1,4 +1,5 @@
-import './service-management.mjs?v=session-restore-22';
+import './service-management.mjs?v=operations-23';
+import {openOrderDetail} from './operations-ui.mjs?v=operations-23';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled} from './service-rules.mjs';
@@ -8,7 +9,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
 const rawApi=window.apiCall;
-let profile=null,ops=[],results={},services=[],active='',preparing=null,syncing=false,renderTimer,tab='active',query='',locked=false,offline=false,needsLogin=false,serial=Promise.resolve(),lastStamp=0,submissionBasis=null,accountToken='',nativeSyncing=false,nativeKind='';
+let profile=null,ops=[],results={},services=[],active='',preparing=null,syncing=false,renderTimer,tab='active',query='',locked=false,offline=false,needsLogin=false,serial=Promise.resolve(),lastStamp=0,submissionBasis=null,accountToken='',nativeSyncing=false,nativeKind='',upload=null,nativeTransfer=null,lastSyncAt='';
 const names={create:'Nova ordem',technical:'Peças e observações',painting:'Pintura',stage:'Etapa',pause:'Pausa',resume:'Retomada',media:'Vídeo de peça',complete:'Conclusão da execução'};
 function summary(op){const p=op.payload || {};return `<dl>${[['Cliente',p.clientName],['Serviço',p.serviceType],['Data',p.date],['Motivo',p.reason],['Etapa',p.status],['Observações',p.notes],['Pinturas',p.quantity],['Equipamento',Number.isInteger(p.itemIndex)?p.itemIndex+1:null],['Peças',p.parts?.join?.(', ') || (typeof p.parts==='string'?p.parts:'')],['Peça do vídeo',p.part],['Arquivo',p.name]].filter(([,v])=>v!==undefined&&v!==null&&v!=='').map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}${Array.isArray(p.items)?`<dt>Equipamentos</dt><dd>${p.items.map(i=>`${esc(i.type)} ${esc(i.kg)} × ${i.qty}`).join('<br>')}</dd>`:''}</dl>`}
 function basisFor(id){return{serviceId:id,accountKey:active,baseVersion:services.find(s=>s.id===id)?.syncVersion || '',previousId:ops.filter(o=>o.serviceId===id&&!results[o.id]?.ok&&!results[o.id]?.discarded).at(-1)?.id || ''}}
@@ -17,15 +18,30 @@ const opPrefix=()=>`op:${active}:`,resultKey=id=>`result:${active}:${id}`;
 const notify=message=>window.toast?.(message);
 const friendly=error=>/quota|space|disk/i.test(error?.message || '')?'Não há espaço suficiente no aparelho. O registro não foi confirmado.':error?.message || 'Não foi possível salvar no aparelho.';
 const reply=data=>new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
-async function network(path,options={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),options.body instanceof FormData?180000:15000);try{return await fetch(base+path,{...options,signal:controller.signal,headers:{...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),Authorization:'Bearer '+(localStorage.getItem(tokenKey)||''),...options.headers}})}finally{clearTimeout(timer)}}
+async function network(path,options={}){
+ const headers={...(options.body instanceof FormData?{}:{'Content-Type':'application/json'}),Authorization:'Bearer '+(localStorage.getItem(tokenKey)||''),...options.headers};
+ if(options.body instanceof FormData)return new Promise((resolve,reject)=>{
+  const transfer=upload,xhr=new XMLHttpRequest();xhr.open(options.method||'POST',base+path);xhr.timeout=180000;
+  Object.entries(headers).forEach(([key,value])=>xhr.setRequestHeader(key,value));
+  xhr.upload.onprogress=event=>{if(upload&&upload===transfer){upload.loaded=event.loaded;upload.total=event.lengthComputable?event.total:0;scheduleRender()}};
+  xhr.onload=()=>resolve(new Response(xhr.responseText,{status:xhr.status||502,headers:{'Content-Type':xhr.getResponseHeader('Content-Type')||'application/json'}}));
+  xhr.onerror=()=>reject(Error('Envio interrompido. O vídeo continua salvo no aparelho.'));
+  xhr.ontimeout=()=>reject(Error('O envio demorou além do esperado. O vídeo continua no aparelho para uma nova tentativa.'));
+  xhr.send(options.body);
+ });
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{return await fetch(base+path,{...options,signal:controller.signal,headers})}finally{clearTimeout(timer)}
+}
 const withSerial=fn=>{const task=serial.then(fn);serial=task.catch(()=>{});return task};
 async function hydrate(){
   if(!active)return;
   profile=await vault.get('profile:'+active);if(!profile)return;
   accountToken=(await vault.get('auth:'+active))?.token || '';
-  if(vault.native()){const nativeState=await vault.get('sync-state:'+active);if(nativeState?.needsLogin)needsLogin=true;nativeSyncing=Boolean(nativeState?.syncing&&Date.now()-nativeState.at<300000);nativeKind=nativeState?.kind || '';}
+  if(vault.native()){const nativeState=await vault.get('sync-state:'+active);if(nativeState?.needsLogin)needsLogin=true;nativeSyncing=Boolean(nativeState?.syncing&&Date.now()-nativeState.at<300000);nativeKind=nativeState?.kind || '';nativeTransfer=nativeSyncing?{serviceId:nativeState.serviceId,kind:nativeKind,loaded:Number(nativeState.loaded)||0,total:Number(nativeState.total)||0}:null;}
   ops=await Promise.all((await vault.keys(opPrefix())).map(k=>vault.get(k)));ops=ops.filter(Boolean).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
   results={};for(const op of ops){const r=await vault.get(resultKey(op.id));if(r)results[op.id]=r}
+  const savedSync=await vault.get('last-sync:'+active);lastSyncAt=savedSync?.at||'';
+  const confirmed=Object.values(results).filter(r=>r.ok&&r.serverAt).map(r=>r.serverAt).sort().at(-1);
+  if(confirmed&&confirmed>lastSyncAt){lastSyncAt=confirmed;await vault.put('last-sync:'+active,{at:confirmed})}
   const current=structuredClone(profile);
   for(const op of ops){const r=results[op.id];if(r?.ok&&r.service&&r.serverAt>profile.preparedAt){const i=current.services.findIndex(s=>s.id===r.service.id);if(i<0)current.services.push(r.service);else current.services[i]=r.service}}
   services=replayLocal(current,ops,results);
@@ -86,17 +102,25 @@ async function sync(){
       let body,path='/api/offline/sync';
       if(op.kind==='media'){path='/api/offline/media';body=new FormData();body.append('operation',JSON.stringify(op));body.append('file',await vault.blobGet(op.payload.blobKey,op.payload.mime),op.payload.name || 'video.mp4')}
       else body=JSON.stringify(op);
-      const r=await network(path,{method:'POST',body,headers:{Authorization:'Bearer '+syncToken}}),data=await r.json();
+      upload={serviceId:op.serviceId,kind:op.kind,loaded:0,total:0};scheduleRender();
+      const r=await network(path,{method:'POST',body,headers:{Authorization:'Bearer '+syncToken}}),data=await r.json();upload=null;
       if(active!==syncAccount)break;
       if(r.status===401||r.status===403&&!data.conflict){needsLogin=true;break}
       if(!r.ok){if(data.conflict||r.status===400||r.status===404){await vault.put(resultKey(op.id),{error:data.error,conflict:true,current:data.current || null});blocked.add(op.serviceId)}else break}
       else{await vault.put(resultKey(op.id),data);if(op.kind==='media')await vault.remove(op.payload.blobKey)}
       await hydrate();
-    }offline=false}catch(error){offline=true;notify(error.message || 'Envio interrompido. Os registros continuam no aparelho.')}finally{syncing=false;scheduleRender()}
+    }offline=false}catch(error){offline=true;notify(error.message || 'Envio interrompido. Os registros continuam no aparelho.')}finally{syncing=false;upload=null;scheduleRender()}
   };
   if(navigator.locks)await navigator.locks.request('protec-sync:'+active,{ifAvailable:true},lock=>lock?work():undefined);else await work();
 }
 function scheduleRender(){clearTimeout(renderTimer);renderTimer=setTimeout(render,40)}
+function syncStatus(id){
+ const pending=ops.filter(op=>op.serviceId===id&&!results[op.id]?.ok&&!results[op.id]?.discarded);
+ if(pending.some(op=>results[op.id]?.conflict))return {state:'attention',label:'Precisa de atenção'};
+ if(pending.length&&needsLogin)return {state:'attention',label:'Entre novamente para enviar'};
+ if(pending.length&&(upload||nativeTransfer)?.serviceId===id)return {state:'sending',label:(upload||nativeTransfer).kind==='media'?'Enviando vídeo':'Enviando registros'};
+ return pending.length?{state:'local',label:'Salvo no aparelho · aguardando envio'}:{state:'synced',label:'Confirmado no sistema'};
+}
 function render(){
   if(!profile||!active||localStorage.getItem(roleKey)!==profile.role||accountToken!==localStorage.getItem(tokenKey))return;
   const root=document.getElementById('employeePortal');if(!root||root.classList.contains('hidden'))return;
@@ -106,8 +130,14 @@ function render(){
   let bar=root.querySelector('#offlineToolbar');if(!bar){bar=document.createElement('section');bar.id='offlineToolbar';bar.className='offline-toolbar';root.querySelector('main')?.prepend(bar)}
   const pending=ops.filter(o=>!results[o.id]?.ok&&!results[o.id]?.discarded),videos=pending.filter(o=>o.kind==='media'),errors=pending.filter(o=>results[o.id]?.conflict);
   const label=needsLogin?'Entre novamente para enviar':!allowed()?'Acesso offline vencido':offline||!navigator.onLine?'Sem conexão · salvando no aparelho':syncing||nativeSyncing?nativeKind==='media'?'Enviando vídeos…':'Enviando registros…':'Acesso ao trabalho offline';
-  const signature=JSON.stringify([label,pending.length,videos.length,errors.length,profile.preparedAt]);
-  if(bar.dataset.state!==signature){bar.dataset.state=signature;bar.innerHTML=`<div><strong>${esc(label)}</strong><p>${new Set(pending.map(o=>o.serviceId)).size} ordem(ns) e ${videos.length} vídeo(s) aguardando envio${errors.length?' · '+errors.length+' precisa(m) de revisão':''}</p><p>Dados conferidos em ${esc(new Date(profile.preparedAt).toLocaleString('pt-BR'))} · acesso até ${esc(new Date(profile.offlineUntil).toLocaleString('pt-BR'))}</p></div><div class="offline-actions"><button type="button" class="btn btn-small" data-offline-action="prepare">Preparar offline</button><button type="button" class="btn btn-small btn-soft" data-offline-action="sync">Sincronizar agora</button><button type="button" class="btn btn-small btn-soft" data-offline-action="queue">Pendências</button>${vault.native()?'<button type="button" class="btn btn-small btn-soft" data-offline-action="lock">Bloqueio do aparelho</button>':''}${needsLogin?'<button type="button" class="btn btn-small btn-soft" data-offline-action="login">Entrar novamente</button>':''}</div>`;bar.querySelectorAll('[data-offline-action]').forEach(b=>b.onclick=()=>action(b.dataset.offlineAction))}
+  const transfer=upload||(nativeSyncing?nativeTransfer:null);
+  const signature=JSON.stringify([label,pending.length,videos.length,errors.length,profile.preparedAt,lastSyncAt,transfer?.kind,transfer?.total?Math.floor(transfer.loaded/transfer.total*100):null]);
+  if(bar.dataset.state!==signature){
+    bar.dataset.state=signature;
+    const percent=transfer?.total?Math.min(99,Math.floor(transfer.loaded/transfer.total*100)):null;
+    bar.innerHTML=`<div><strong>${esc(label)}</strong><p>${pending.length?`${new Set(pending.map(o=>o.serviceId)).size} ordem(ns) e ${videos.length} vídeo(s) aguardando confirmação`:'Nenhum envio pendente neste aparelho.'}${errors.length?' · '+errors.length+' precisa(m) de revisão':''}</p>${transfer?.kind==='media'?`<progress class="ops-upload-progress" max="100" ${percent!==null?'value="'+percent+'"':''} aria-label="Progresso do envio do vídeo"></progress><span class="ops-upload-caption">${percent!==null?percent+'% enviado · aguardando confirmação':'Enviando vídeo · seus dados permanecem no aparelho'}</span>`:''}<p>Última confirmação de envio: ${lastSyncAt?esc(new Date(lastSyncAt).toLocaleString('pt-BR')):'nenhum envio registrado neste aparelho'}</p><details><summary>Conferência e prazo offline</summary><p>Dados conferidos em ${esc(new Date(profile.preparedAt).toLocaleString('pt-BR'))} · acesso até ${esc(new Date(profile.offlineUntil).toLocaleString('pt-BR'))}</p></details></div><div class="offline-actions"><button type="button" class="btn btn-small" data-offline-action="prepare">Preparar offline</button><button type="button" class="btn btn-small btn-soft" data-offline-action="sync" ${syncing||nativeSyncing?'disabled':''}>Sincronizar agora</button><button type="button" class="btn btn-small btn-soft" data-offline-action="queue" aria-label="Pendências">Pendências${pending.length?' ('+pending.length+')':''}</button>${vault.native()?'<button type="button" class="btn btn-small btn-soft" data-offline-action="lock">Bloqueio do aparelho</button>':''}${needsLogin?'<button type="button" class="btn btn-small btn-soft" data-offline-action="login">Entrar novamente</button>':''}</div>`;
+    bar.querySelectorAll('[data-offline-action]').forEach(b=>b.onclick=()=>action(b.dataset.offlineAction));
+  }
   if(profile.role==='employee')renderWorkbench();else if(window.sellerPortalState){window.sellerPortalState.services=services;window.renderSellerServicesList?.();root.querySelectorAll('.seller-service-status').forEach(card=>{const s=services.find(s=>card.textContent.includes(s.code));if(s?.localPending&&!card.querySelector('.offline-badge')){const b=document.createElement('p');b.className='offline-badge is-pending';b.textContent='Salvo neste aparelho · aguardando envio';card.append(b)}})}
 }
 async function action(name){try{
@@ -122,7 +152,7 @@ function renderWorkbench(){
   const host=document.getElementById('employeeCards');if(!host)return;
   const own=services,available=(!offline&&navigator.onLine?profile.available || []:[]),all=own.concat(available),list=all.filter(s=>tab==='history'?completed(s)||cancelled(s):tab==='paused'?isPaused(s):!completed(s)&&!cancelled(s)&&!isPaused(s));
   const signature=JSON.stringify([all,tab,query,results]);if(host.dataset.offlineState===signature&&host.querySelector('[data-offline-workbench]'))return;host.dataset.offlineState=signature;
-  host.innerHTML=`<div data-service-workbench data-offline-workbench><div class="offline-tabs">${[['active','Em execução / disponíveis'],['paused','Pausados'],['history','Meu histórico']].map(([key,label])=>`<button type="button" class="btn btn-soft btn-small" data-tab="${key}" aria-pressed="${tab===key}">${label}</button>`).join('')}</div><label>Buscar serviço<input class="offline-search" type="search" value="${esc(query)}" data-offline-search></label>${list.map(s=>`<article class="employee-service" data-offline-service="${esc(s.id)}"><header class="employee-service-head"><div><b>${esc(s.code)}</b><p>${esc(s.clientName || 'Cliente não informado')} · ${esc(s.serviceType)}</p></div><span class="offline-badge ${s.localPending?'is-pending':''}">${esc(statusOf(s))}</span></header><div class="employee-service-body service-detail-item"><p>${s.items.length} equipamento(s) · ${s.paintingQuantity || 0} pintura(s)</p>${s.localPending?'<p class="offline-state">Salvo neste aparelho · aguardando confirmação do sistema</p>':''}${isPaused(s)?`<p>Pausa: ${esc(s.pauseReason)} · ${esc(new Date(s.pausedAt).toLocaleString('pt-BR'))}</p>`:''}<div class="offline-actions offline-service-actions"><button type="button" class="btn btn-soft btn-small" data-action="details">Detalhes e histórico</button>${!s.employeeId?'<button type="button" class="btn btn-small" data-action="claim">Aceitar serviço</button>':!completed(s)&&!cancelled(s)?isPaused(s)?'<button type="button" class="btn btn-small" data-action="resume">Retomar serviço</button>':'<button type="button" class="btn btn-soft btn-small" data-action="pause">Pausar serviço</button><button type="button" class="btn btn-soft btn-small" data-action="technical">Peças, notas e vídeos</button><button type="button" class="btn btn-soft btn-small" data-action="painting">Quantidade de pinturas</button><button type="button" class="btn btn-soft btn-small" data-action="stage">Atualizar etapa</button><button type="button" class="btn btn-small" data-action="complete">Concluir execução</button>':''}</div></div></article>`).join('') || '<p class="empty">Nenhum serviço neste filtro.</p>'}</div>`;
+  host.innerHTML=`<div data-service-workbench data-offline-workbench><div class="offline-tabs">${[['active','Em execução / disponíveis'],['paused','Pausados'],['history','Meu histórico']].map(([key,label])=>`<button type="button" class="btn btn-soft btn-small" data-tab="${key}" aria-pressed="${tab===key}">${label}</button>`).join('')}</div><label>Buscar serviço<input class="offline-search" type="search" value="${esc(query)}" data-offline-search></label>${list.map(s=>`<article class="employee-service" data-offline-service="${esc(s.id)}"><header class="employee-service-head"><div><b>${esc(s.code)}</b><p>${esc(s.clientName || 'Cliente não informado')} · ${esc(s.serviceType)}</p></div><span class="offline-badge ${s.localPending?'is-pending':''}">${esc(statusOf(s))}</span></header><div class="employee-service-body service-detail-item"><p>${s.items.length} equipamento(s) · ${s.paintingQuantity || 0} pintura(s)</p><p><span data-sync-state="${syncStatus(s.id).state}">${esc(syncStatus(s.id).label)}</span></p>${isPaused(s)?`<p>Pausa: ${esc(s.pauseReason)} · ${esc(new Date(s.pausedAt).toLocaleString('pt-BR'))}</p>`:''}<div class="offline-actions offline-service-actions"><button type="button" class="btn btn-soft btn-small" data-action="details">Detalhes e histórico</button>${!s.employeeId?'<button type="button" class="btn btn-small" data-action="claim">Aceitar serviço</button>':!completed(s)&&!cancelled(s)?isPaused(s)?'<button type="button" class="btn btn-small" data-action="resume">Retomar serviço</button>':'<button type="button" class="btn btn-soft btn-small" data-action="pause">Pausar serviço</button><button type="button" class="btn btn-soft btn-small" data-action="technical">Peças, notas e vídeos</button><button type="button" class="btn btn-soft btn-small" data-action="painting">Quantidade de pinturas</button><button type="button" class="btn btn-soft btn-small" data-action="stage">Atualizar etapa</button><button type="button" class="btn btn-small" data-action="complete">Concluir execução</button>':''}</div></div></article>`).join('') || '<p class="empty">Nenhum serviço neste filtro.</p>'}</div>`;
   host.querySelectorAll('[data-tab]').forEach(b=>{const key=b.dataset.tab,count=all.filter(s=>key==='history'?completed(s)||cancelled(s):key==='paused'?isPaused(s):!completed(s)&&!cancelled(s)&&!isPaused(s)).length;b.setAttribute('aria-label',b.textContent);b.insertAdjacentHTML('beforeend',` <span aria-hidden="true">(${count})</span>`);b.onclick=()=>{tab=key;renderWorkbench()}});
   const search=host.querySelector('[data-offline-search]');const filter=()=>host.querySelectorAll('[data-offline-service]').forEach(card=>card.hidden=!card.textContent.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));search.oninput=()=>{query=search.value;filter()};filter();
   host.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>staffAction(b.dataset.action,b.closest('[data-offline-service]').dataset.offlineService).catch(e=>notify(friendly(e))));
@@ -140,8 +170,11 @@ async function staffAction(action,id){
   if(action==='complete')return serviceModal(id,'Concluir execução',`<p>Confirme a quantidade de pinturas. Os vídeos obrigatórios precisam estar guardados no aparelho antes de concluir.</p><label class="form-field">Quantidade de pinturas<input name="quantity" type="number" min="0" max="${s.items.length}" required value="${s.paintingQuantity || 0}"></label><p>A conclusão ficará pendente até o sistema receber os registros e vídeos. A aprovação será feita pelo administrador.</p>`,async f=>{await enqueue('painting',id,{quantity:Number(f.get('quantity'))});await enqueue('complete',id,{});notify('Conclusão salva. O envio e a revisão podem ser acompanhados nas pendências.');return true},'Concluir no aparelho');
 }
 function details(s){
-  openModal('Detalhes · '+esc(s.code),`<p><b>${esc(statusOf(s))}</b> · ${esc(s.clientName)}</p><p>${esc(s.notes || '')}</p>${s.items.map((item,i)=>`<section class="offline-item"><h3>Equipamento ${i+1} · ${esc(item.type)} ${esc(item.kg || '')}</h3><p>${esc(item.notes || '')}</p><p>Peças: ${esc((item.replacedParts || []).join(', ') || 'Nenhuma')}</p>${Object.entries(item.replacementMedia || {}).map(([part,media])=>`<p>${esc(part)} <button type="button" class="btn btn-soft btn-small" data-watch="${esc(media.url)}" data-part="${esc(part)}">Assistir vídeo</button></p>`).join('')}</section>`).join('')}<details class="offline-details" open><summary>Histórico do serviço</summary><ol>${(s.history || []).map(e=>`<li><b>${esc(e.action || e.status)}</b> · ${esc(new Date(e.at).toLocaleString('pt-BR'))}<br>${esc(e.description || '')} ${esc(e.by || '')}</li>`).join('')}</ol></details>`,()=>true,'Fechar');
-  document.querySelectorAll('[data-watch]').forEach(b=>b.onclick=async()=>{try{const url=b.dataset.watch;let blob;if(url.startsWith('local:')){const op=ops.find(o=>o.id===url.slice(6));if(!op)throw Error('Vídeo não encontrado no aparelho.');blob=await vault.blobGet(op.payload.blobKey,op.payload.mime)}else{const parsed=new URL(url),api=new URL(base);if(parsed.origin!==api.origin||!parsed.pathname.startsWith('/media/service-media/'))throw Error('Endereço de vídeo inválido.');const r=await network(parsed.pathname);if(!r.ok)throw Error('Conecte-se e entre novamente para assistir ao vídeo enviado.');blob=await r.blob()}const player=document.createElement('video');player.controls=true;player.playsInline=true;player.className='offline-video-preview';player.src=URL.createObjectURL(blob);b.replaceWith(player);player.addEventListener('emptied',()=>URL.revokeObjectURL(player.src),{once:true})}catch(e){notify(e.message)}});
+  return openOrderDetail(s,{onAction:(action,id)=>staffAction(action,id).catch(error=>notify(friendly(error))),readVideo:async url=>{
+    if(url.startsWith('local:')){const op=ops.find(o=>o.id===url.slice(6));if(!op)throw Error('Vídeo não encontrado no aparelho.');return vault.blobGet(op.payload.blobKey,op.payload.mime)}
+    const parsed=new URL(url),api=new URL(base);if(parsed.origin!==api.origin||!parsed.pathname.startsWith('/media/service-media/'))throw Error('Endereço de vídeo inválido.');
+    const r=await network(parsed.pathname);if(!r.ok)throw Error('Conecte-se e entre novamente para assistir ao vídeo enviado.');return r.blob();
+  }});
 }
 async function openQueue(){
  await hydrate();const pending=ops.filter(o=>!results[o.id]?.ok&&!results[o.id]?.discarded);
@@ -162,7 +195,7 @@ async function reviewConflict(id){
 }
 async function showPortal(){if(!profile)return;locked=false;db.settings={...db.settings,...profile.settings};db.types=profile.types;const data={...profile,services};if(profile.role==='employee')window.renderEmployeePortal(profile.username,services);else window.renderSellerPortal(data);scheduleRender()}
 const originalLogout=window.logout;
-window.logout=function(){window.closeModal?.();if(vault.native())nativeCall('logout').catch(()=>{});const old=active;if(old){vault.remove('auth:'+old).catch(()=>{});vault.put('active',null).catch(()=>{});if(vault.native())nativeCall('stopSync',{accountKey:old}).catch(()=>{})}active='';profile=null;services=[];ops=[];results={};originalLogout()};
+window.logout=function(){window.closeModal?.();if(vault.native())nativeCall('logout').catch(()=>{});const old=active;if(old){vault.remove('auth:'+old).catch(()=>{});vault.put('active',null).catch(()=>{});if(vault.native())nativeCall('stopSync',{accountKey:old}).catch(()=>{})}active='';profile=null;services=[];ops=[];results={};upload=null;nativeTransfer=null;lastSyncAt='';originalLogout()};
 window.apiCall=async function(path,method='GET',data=null){
  if(locked&&path==='/api/session')return new Response(JSON.stringify({error:'Desbloqueie o aparelho para abrir os serviços.'}),{status:403,headers:{'Content-Type':'application/json'}});
  const r=await rawApi(path,method,data).catch(async error=>{if(path==='/api/session'&&allowed())return reply({...profile,services});if(active&&['/api/employee/services','/api/seller/services'].includes(path)&&method==='GET'){offline=true;return reply({services})}throw error});
@@ -182,7 +215,7 @@ window.completeEmployeeService=id=>staffAction('complete',id);
 window.chooseEmployeeNextStep=id=>staffAction('painting',id);
 window.advanceEmployeeService=(id,status)=>enqueue('stage',id,{status});
 window.acceptEmployeeService=id=>staffAction('claim',id);
-window.offlineServices={prepare,sync,get services(){return services},get ready(){return Boolean(allowed())},get locked(){return locked},vault};
+window.offlineServices={prepare,sync,statusFor:syncStatus,openDetails:id=>{const s=services.find(s=>s.id===id)||(profile?.available||[]).find(s=>s.id===id);if(s)details(s)},get services(){return services},get ready(){return Boolean(allowed())},get locked(){return locked},vault};
 let lastNativeTheme='';
 const syncNativeTheme=()=>{const mode=document.documentElement.dataset.theme==='dark'?'dark':'light';if(vault.native()&&mode!==lastNativeTheme){lastNativeTheme=mode;nativeCall('theme',{mode}).catch(()=>{});}};
 new MutationObserver(syncNativeTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});syncNativeTheme();

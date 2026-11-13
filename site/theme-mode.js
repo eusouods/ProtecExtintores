@@ -11,6 +11,7 @@
     const selectors = [
       '#modalRoot .customer-panel-tabs',
       '#dashboard.app:not(.hidden) .admin-top-right',
+      '.employee-portal:not(.hidden) .ops-team-header',
       '.employee-portal:not(.hidden) .employee-header-actions',
       '.employee-portal:not(.hidden) .employee-top',
       '#employeePortal:not(.hidden) .seller-top .employee-header-actions',
@@ -31,8 +32,8 @@
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = mode === 'dark' ? '#1d1815' : '#edf4fa';
     const appleBar=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(appleBar)appleBar.content=mode==='dark'?'black-translucent':'default';
-    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const icon=link.rel==='apple-touch-icon'?'icon-192':link.sizes.value==='16x16'?'favicon-16':'favicon-32';const href=new URL('./icons/'+icon+'.png?v=session-restore-22',assetRoot).href;if(link.href!==href)link.href=href;});
-    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=session-restore-22',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
+    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const icon=link.rel==='apple-touch-icon'?'icon-192':link.sizes.value==='16x16'?'favicon-16':'favicon-32';const href=new URL('./icons/'+icon+'.png?v=operations-23',assetRoot).href;if(link.href!==href)link.href=href;});
+    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=operations-23',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
     const button = document.querySelector('.theme-toggle');
     if (!button) return;
     const dark = mode === 'dark';

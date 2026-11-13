@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {dueDate,estimateFinance,preserveAndCapture,missingVideos,sellerView} from '../site/service-rules.mjs';
 import {employeeHistory,handleOperations} from '../api-cloudflare/src/operations.mjs';
+import {summarizeFinance} from '../site/operations-ui.mjs';
 const state={settings:{sellerBillingPolicy:{mode:'weekly',weekday:5}},sellers:[{id:'s1',name:'Vendedor'}],costCatalog:[{id:'c1',name:'ABC',kg:'6',category:'Serviço',unitCost:20,salePrice:50},{id:'c2',name:'Válvula M30',unitCost:10,salePrice:25},{id:'c3',name:'Pintura',unitCost:5,salePrice:15}],services:[]};
 const service={id:'work',sellerId:'s1',employeeId:'e1',date:'2026-11-11',price:100,items:[{type:'ABC',kg:'6',unitPrice:50,status:'Concluído',replacedParts:['Válvula M30'],replacementMedia:{'Válvula M30':{url:'https://test/media/service-media/a.mp4'}}},{type:'ABC',kg:'6',unitPrice:50,status:'Concluído',replacedParts:[]}],paintingQuantity:1,employeeCompletedAt:'2026-11-11T14:00:00Z'};
 assert.equal(dueDate('2026-11-11T14:00:00Z',{mode:'weekly',weekday:5}),'2026-11-13');
@@ -24,4 +25,15 @@ const denied=await handleOperations(new Request('https://test/api/admin/operatio
 let saved;ctx.auth=async()=>({username:'admin',role:'admin'});ctx.saveState=async(_env,s)=>{saved=s};
 const paid=await handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid',serviceIds:['work'],reference:'PIX recebido'})}),{},ctx);assert.equal(paid.status,200);assert.equal(saved.services[0].finance.payment.status,'paid');
 await assert.rejects(()=>handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid',serviceIds:['work'],reference:'duplicado'})}),{},ctx),/já paga/);
+// Uma ordem direta finalizada ainda precisa de confirmação de recebimento.
+const direct=structuredClone(saved.services[0]);direct.id='direct';direct.sellerId='';direct.finance.payment={status:'not-applicable'};direct.finance.dueDate='';saved.services.push(direct);
+const unpaid=structuredClone(direct);unpaid.id='unpaid';unpaid.finance.revenueCents=30000;unpaid.finance.profitCents=20000;saved.services.push(unpaid);
+let summary=summarizeFinance(saved.services,'2026-11-13');assert.equal(summary.received,14000);assert.equal(summary.realized,8500);assert.equal(summary.unrecorded,2);assert.equal(summary.receivable,44000);
+const receipt=await handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid',serviceIds:['direct'],reference:'Recebimento direto conferido'})}),{},ctx);assert.equal(receipt.status,200);assert.equal(direct.finance.payment.status,'paid');
+summary=summarizeFinance(saved.services);assert.equal(summary.received,28000);assert.equal(summary.realized,17000);assert.equal(summary.receivable,30000);
+const incompletePaid=structuredClone(direct);incompletePaid.id='missing-cost';incompletePaid.finance.costsComplete=false;
+const cancelledPaid=structuredClone(direct);cancelledPaid.cancelledAt=new Date().toISOString();
+const unclosed=structuredClone(direct);unclosed.closed=false;
+summary=summarizeFinance([...saved.services,incompletePaid,cancelledPaid,unclosed]);assert.equal(summary.received,42000);assert.equal(summary.realized,17000);assert.equal(summary.missing,1);
+await assert.rejects(()=>handleOperations(new Request('https://test/api/admin/operations',{method:'POST',body:JSON.stringify({action:'mark-paid',serviceIds:['direct'],reference:'Duplicado direto'})}),{},ctx),/já paga/);
 console.log('Regras verificadas: histórico, cobrança semanal/conclusão, fuso horário, custos, snapshots, vídeos, permissão e quitação sem duplicidade.');
