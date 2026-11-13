@@ -1,6 +1,22 @@
 # Documentação da ProtecExtintores
 
-**Identidade atual: azul-gelo e petróleo no modo claro; café, cobre e âmbar no modo escuro — Android 1.1.7.** Ilustrações vetoriais padronizadas para equipamentos e peças. O pacote completo contém **96 arquivos**, abaixo do limite de 100 arquivos por envio. Leia `ATUALIZACAO-VISUAL.md` para as imagens e instruções de publicação. O pacote preserva os recursos de ordens offline e pausa/retomada descritos em `ATUALIZACAO-OFFLINE.md`.
+**Identidade atual: azul-gelo e petróleo no modo claro; café, cobre e âmbar no modo escuro — Android 1.1.8.** Ilustrações vetoriais padronizadas para equipamentos e peças. O pacote completo contém **96 arquivos**, abaixo do limite de 100 arquivos por envio. Leia `ATUALIZACAO-VISUAL.md` para as imagens e instruções de publicação. O pacote preserva os recursos de ordens offline e pausa/retomada descritos em `ATUALIZACAO-OFFLINE.md`.
+
+## Correção de acesso ao painel — versão 22 / Android 1.1.8
+
+O cache do navegador deixou de ser uma condição para abrir o painel administrativo ou salvar no servidor. Uma falha de espaço no cache podia produzir o aviso “Não foi possível confirmar sua sessão agora”, mesmo com a API confirmando o acesso. O painel também aceita coleções opcionais ausentes em estados antigos.
+
+A restauração repete consultas interrompidas, limita o tempo de espera e tenta novamente quando a conexão retorna ou o aplicativo volta ao primeiro plano. O aviso permite repetir a consulta, fechar ou entrar novamente. Respostas antigas não encerram uma conta recém-autenticada. Uma sessão realmente expirada abre o login e oculta o painel, preservando os registros locais da equipe. Falhas na preparação offline não invalidam um login confirmado.
+
+Para publicar esta correção:
+
+1. Extraia `ProtecExtintores.zip` e substitua os arquivos correspondentes do repositório pelo conteúdo da pasta `ProtecExtintores`, mantendo sua estrutura. Aguarde o workflow de publicação do site terminar.
+2. Abra o site conectado à internet para receber a atualização. Não apague os dados do navegador ou do aplicativo: os rascunhos e vídeos offline permanecem no aparelho.
+3. Para atualizar a cópia embutida no Android, gere o APK 1.1.8 pelo GitHub Actions e instale a atualização sobre a versão existente, com a mesma assinatura. Não desinstale o aplicativo se houver registros pendentes.
+
+Esta correção não altera a API, as credenciais, os dados do banco, as ilustrações ou as cores. Não exige comandos no Cloudflare nem migração. O ZIP contém o código-fonte; o APK é gerado pelo workflow Android.
+
+Validação: restauração, recarga, cache indisponível, repetição e reconexão, novo login durante uma consulta anterior, expiração de acesso e estado legado foram testados em navegador com telas de computador e celular. O fluxo de ordens offline, vídeos e sincronização também é verificado localmente. Não foi realizado teste em aparelho físico nesta atualização.
 
 **Recursos operacionais: ordens offline e pausa de serviço.** A configuração inicial desses recursos está em `ATUALIZACAO-OFFLINE.md`. Os textos consolidados abaixo descrevem versões anteriores.
 

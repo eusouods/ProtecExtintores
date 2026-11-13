@@ -1,4 +1,4 @@
-# Ilustrações refinadas, catálogo e temas — versão 21 / Android 1.1.7
+# Ilustrações refinadas, catálogo e temas — versão 22 / Android 1.1.8
 
 A combinação aprovada na prévia foi aplicada ao site: azul-gelo e azul-petróleo no claro; café, cobre e âmbar suave no escuro.
 
@@ -20,7 +20,7 @@ As referências foram redesenhadas com proporções mais equilibradas, contornos
 
 Foram revisadas 26 referências selecionáveis e cinco variações automáticas. As 78 combinações de desenho e tamanho foram verificadas nos dois temas, de 320 a 1280 pixels, sem figuras cortadas ou transbordamento. A revisão de 66 telas e pop-ups e os testes do catálogo agrupado também passaram. O logo oficial e suas cores foram preservados.
 
-O pacote continua com **96 arquivos**. Os desenhos são vetoriais e locais; esta atualização não adiciona arquivos de imagens por produto. Gere o APK 1.1.7 para atualizar também a cópia offline embutida no aplicativo.
+O pacote continua com **96 arquivos**. Os desenhos são vetoriais e locais; esta atualização não adiciona arquivos de imagens por produto. Gere o APK 1.1.8 para atualizar também a cópia offline embutida no aplicativo.
 
 ## Logo oficial da empresa
 
@@ -39,7 +39,7 @@ O logo tem as mesmas cores nos dois temas. O desenho técnico usado no catálogo
 
 A revisão foi feita em 66 telas e pop-ups nos dois temas. Também foram conferidos o carregamento dos logos, os favicons, o cabeçalho admin em 320 pixels, a ordem de serviço e o logo dentro da janela de impressão. As referências dos recursos XML Android foram verificadas e o Java compilou contra API 35/AndroidX. A geração completa do APK e a aparência no aparelho dependem do workflow e de teste no dispositivo.
 
-Para atualizar o ícone de um aplicativo já instalado, publique o projeto e gere **um novo APK 1.1.7** pelo GitHub Actions. O ZIP continua sendo código-fonte.
+Para atualizar o ícone de um aplicativo já instalado, publique o projeto e gere **um novo APK 1.1.8** pelo GitHub Actions. O ZIP continua sendo código-fonte.
 
 ## Catálogo agrupado
 
@@ -59,7 +59,7 @@ No admin, abra **Produtos → Adicionar produto** ou **Editar**:
 4. Use **Nome da opção** para capacidades em litros, medidas de placas, diâmetros, comprimentos e outras especificações. Exemplo: `10 L`, `20 × 30 cm` ou `15 m · 1½ pol`.
 5. Ative ou oculte cada opção separadamente. Se um grupo ficar sem opções ativas, ele desaparece da vitrine.
 
-Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **96 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.7 pelo workflow Android.
+Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **96 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.8 pelo workflow Android.
 
 A navegação nova foi verificada em 36 combinações de tela, tema e largura, incluindo 320 pixels. Foram conferidos agrupamento sem perda ou repetição de itens, ordenação dos pesos, ocultação de opções, navegação de retorno, referência do orçamento e gravação dos novos campos pela API local. A revisão visual completa cobriu 66 telas e pop-ups nos dois temas, sem falhas de contraste detectadas, cores fora da paleta ou transbordamento horizontal.
 
@@ -98,8 +98,8 @@ Extraia o ZIP e envie os arquivos e as pastas que estão dentro de `ProtecExtint
 - Formulários, tabelas, navegação, cards, filtros, foco de teclado, mensagens, pop-ups e estados de seleção.
 - Ordens, peças, vídeos, pinturas, pausa/retomada, histórico, custos e pendências offline.
 - Cabeçalhos de apresentação claros no tema claro e escuros no tema escuro, com texto ajustado ao fundo.
-- Ícones de instalação, manifestos, favoritos e cache `valve-art-21`.
-- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.7.
+- Ícones de instalação, manifestos, favoritos e cache `session-restore-22`.
+- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.8.
 - A preferência do sistema é usada no primeiro acesso; a seleção manual fica salva.
 - Impressões usam papel claro e texto escuro para manter a legibilidade.
 

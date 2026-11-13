@@ -1,4 +1,4 @@
-import './service-management.mjs?v=valve-art-21';
+import './service-management.mjs?v=session-restore-22';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled} from './service-rules.mjs';
@@ -166,8 +166,10 @@ window.logout=function(){window.closeModal?.();if(vault.native())nativeCall('log
 window.apiCall=async function(path,method='GET',data=null){
  if(locked&&path==='/api/session')return new Response(JSON.stringify({error:'Desbloqueie o aparelho para abrir os serviços.'}),{status:403,headers:{'Content-Type':'application/json'}});
  const r=await rawApi(path,method,data).catch(async error=>{if(path==='/api/session'&&allowed())return reply({...profile,services});if(active&&['/api/employee/services','/api/seller/services'].includes(path)&&method==='GET'){offline=true;return reply({services})}throw error});
- if(path==='/api/login'&&r.ok){const d=await r.clone().json();if(['employee','seller'].includes(d.role)){localStorage.setItem(tokenKey,d.token);localStorage.setItem(roleKey,d.role);locked=false;await prepare(true);scheduleSync()}}
- if(path==='/api/session'&&r.ok){const d=await r.clone().json();if(['employee','seller'].includes(d.role)&&(!profile||profile.username!==d.username||accountToken!==localStorage.getItem(tokenKey)))await prepare(true);}
+ // Authentication and offline preparation are independent: a vault/connection failure
+ // must not turn a successful login into a session error. Existing drafts stay intact.
+ if(path==='/api/login'&&r.ok){const d=await r.clone().json();if(['employee','seller'].includes(d.role)){localStorage.setItem(tokenKey,d.token);localStorage.setItem(roleKey,d.role);locked=false;try{await prepare(true);scheduleSync()}catch{notify('Acesso confirmado. A preparação offline será retomada quando a conexão estiver disponível.')}}}
+ if(path==='/api/session'&&r.ok){const d=await r.clone().json();if(['employee','seller'].includes(d.role)&&(!profile||profile.username!==d.username||accountToken!==localStorage.getItem(tokenKey)))try{await prepare(true)}catch{notify('Acesso confirmado. A preparação offline está pendente.');}}
  if(path==='/api/session'&&r.status===401&&allowed()){needsLogin=true;return reply({...profile,services})}
  if(active&&accountToken===localStorage.getItem(tokenKey)&&method==='GET'&&['/api/employee/services','/api/seller/services'].includes(path)){if(r.ok){if(!preparing&&Date.now()-Date.parse(profile.preparedAt)>20000)prepare(true).catch(()=>{});return reply({services:profile.role==='employee'?services.concat(offline?[]:profile.available || []):services})}if(allowed())return reply({services})}
  return r;
@@ -180,7 +182,7 @@ window.completeEmployeeService=id=>staffAction('complete',id);
 window.chooseEmployeeNextStep=id=>staffAction('painting',id);
 window.advanceEmployeeService=(id,status)=>enqueue('stage',id,{status});
 window.acceptEmployeeService=id=>staffAction('claim',id);
-window.offlineServices={prepare,sync,get services(){return services},get ready(){return Boolean(profile&&!locked&&accountToken===localStorage.getItem(tokenKey))},vault};
+window.offlineServices={prepare,sync,get services(){return services},get ready(){return Boolean(allowed())},get locked(){return locked},vault};
 let lastNativeTheme='';
 const syncNativeTheme=()=>{const mode=document.documentElement.dataset.theme==='dark'?'dark':'light';if(vault.native()&&mode!==lastNativeTheme){lastNativeTheme=mode;nativeCall('theme',{mode}).catch(()=>{});}};
 new MutationObserver(syncNativeTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});syncNativeTheme();

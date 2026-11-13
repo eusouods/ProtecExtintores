@@ -10,12 +10,37 @@
     localStorage.setItem(tokenKey,sessionStorage.getItem(tokenKey));
     if(sessionStorage.getItem(roleKey))localStorage.setItem(roleKey,sessionStorage.getItem(roleKey));
   }
-  window.apiCall = function(path, method = 'GET', data = null) {
+  window.apiCall = async function(path, method = 'GET', data = null) {
     const headers = {'Content-Type':'application/json'};
     const token = localStorage.getItem(tokenKey);
     if (token) headers.Authorization = 'Bearer ' + token;
-    return fetch(API_BASE_URL + path, {method, headers, ...(data ? {body:JSON.stringify(data)} : {})});
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
+    try {
+      return await fetch(API_BASE_URL + path, {method, headers, signal:controller.signal, cache:'no-store', ...(data ? {body:JSON.stringify(data)} : {})});
+    } finally { clearTimeout(timer); }
   };
+  // The server is authoritative. A full browser cache must not block login or a server save.
+  const saveLocalBase=window.saveLocal;
+  window.saveLocal=function(){
+    try { saveLocalBase(); window.protecCacheUnavailable=false; return true; }
+    catch(error){
+      if(!window.protecCacheUnavailable)console.warn('ProtecExtintores: cache local indisponível; os dados continuam no servidor.',error?.name || 'StorageError');
+      window.protecCacheUnavailable=true;
+      return false;
+    }
+  };
+  let authGeneration=0,loginGeneration=0,verifiedToken='',restoreTimer=null,restoreFailures=0,sessionPending=false;
+  function clearSessionNotice(){document.getElementById('sessionRestoreNotice')?.remove();}
+  function resetSessionRecovery(){clearTimeout(restoreTimer);restoreTimer=null;restoreFailures=0;sessionPending=false;clearSessionNotice();}
+  function applyAdminState(state){
+    if(!state||typeof state!=='object'||Array.isArray(state)||!state.settings||typeof state.settings!=='object'||Array.isArray(state.settings)||!Array.isArray(state.services))throw Error('A API não retornou os dados completos do painel.');
+    for(const key of ['employees','sellers','types','clients','extinguishers','products','orders','cart'])if(state[key]!=null&&!Array.isArray(state[key]))throw Error('A API retornou um cadastro inválido.');
+    const next={...state,settings:{...initial.settings,...state.settings,password:''}};
+    for(const key of ['employees','sellers','types','clients','extinguishers','services','products','orders','cart'])next[key]=Array.isArray(state[key])?state[key]:[];
+    db=next;
+    saveLocal();
+  }
   window.save = function() {
     saveLocal();
     const token = localStorage.getItem(tokenKey);
@@ -33,6 +58,7 @@
     }).catch(e => { toast(e.message || 'Falha ao salvar'); return false; });
   };
   window.logout = function() {
+    authGeneration++;verifiedToken='';resetSessionRecovery();
     const token = localStorage.getItem(tokenKey);
     if (API_ENABLED && token) apiCall('/api/logout','POST').catch(()=>{});
     [tokenKey, roleKey, nameKey].forEach(k => localStorage.removeItem(k));
@@ -42,22 +68,31 @@
   window.renderEmployeePortal=renderEmployee;window.renderSellerPortal=renderSeller;
   window.loginPersistente = async function(event) {
     event.preventDefault(); event.stopImmediatePropagation();
+    const generation=++authGeneration;loginGeneration=generation;resetSessionRecovery();
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
     const error = document.getElementById('loginError'); error.classList.add('hidden');
     try {
       const response = await apiCall('/api/login','POST',{username,password});
       const data = await apiJson(response); if (!response.ok) throw Error(data.error || 'Usuário ou senha incorretos.');
+      if(generation!==authGeneration)return;
+      if(!data.token||!['admin','employee','seller'].includes(data.role))throw Error('A API retornou um acesso inválido.');
       localStorage.setItem(tokenKey,data.token); localStorage.setItem(roleKey,data.role); localStorage.setItem(nameKey,data.username || username);
       sessionStorage.removeItem(tokenKey); sessionStorage.removeItem(roleKey);
-      if (data.role === 'employee') return renderEmployee(data.username,data.services || []);
-      if (data.role === 'seller') return renderSeller(data);
-      db = data.state; db.settings.password = ''; saveLocal(); showDashboard();
-    } catch (e) { error.textContent = e.message || 'Não foi possível acessar o painel.'; error.classList.remove('hidden'); }
+      resetSessionRecovery();
+      if (data.role === 'employee')renderEmployee(data.username,data.services || []);
+      else if (data.role === 'seller')renderSeller(data);
+      else {applyAdminState(data.state);showDashboard();}
+      verifiedToken=data.token;
+    } catch (e) { if(generation!==authGeneration)return;error.textContent = e.message || 'Não foi possível acessar o painel.'; error.classList.remove('hidden'); }
+    finally {if(loginGeneration===generation)loginGeneration=0;}
   };
   document.getElementById('loginForm').addEventListener('submit',loginPersistente,true);
   const originalShowLogin=window.showLogin;
-  window.showLogin=function(){if(localStorage.getItem(tokenKey)){bootstrap();return;}originalShowLogin();};
+  window.showLogin=function(){
+    if(localStorage.getItem(tokenKey)&&!sessionPending){verifiedToken='';bootstrap();return;}
+    authGeneration++;resetSessionRecovery();originalShowLogin();
+  };
 
   const employeeState = window.employeePortalState = {username:'',services:[],timer:null,known:new Set()};
   function groupEmployeeItems(items) {
@@ -149,8 +184,8 @@
   window.deleteSellerUser=async function(id){if(!confirm('Remover este acesso de vendedor?'))return;const r=await apiCall('/api/admin/sellers?id='+encodeURIComponent(id),'DELETE');if(r.ok)loadSellerUsers();};
   const oldCreateEmployee=window.createEmployeeUser;
   window.createEmployeeUser=async function(e){e.preventDefault();const f=e.target;const data=Object.fromEntries(new FormData(f));data.password=data.password||'';try{const r=await apiCall('/api/admin/users','POST',data),d=await apiJson(r);if(!r.ok)throw Error(d.error||'Erro ao criar usuário');f.reset();loadEmployeeUsers();toast('Acesso de funcionário criado');}catch(err){toast(err.message)}};
-  let bootstrapPromise=null;
-  function showSessionRestoreError(){
+  let bootstrapRun=null;
+  function showSessionRestoreError(panelError=false){
     if(window.offlineServices?.ready && document.querySelector('#employeePortal:not(.hidden)'))return;
     let notice=document.getElementById('sessionRestoreNotice');
     if(!notice){
@@ -159,42 +194,82 @@
       notice.style.cssText='position:fixed;z-index:30;left:50%;bottom:20px;transform:translateX(-50%);width:min(520px,calc(100% - 32px));padding:16px 18px;background:var(--ui-panel,#f9fcff);color:var(--ui-text,#20374a);border:1px solid var(--ui-border,#c5d8e6);border-radius:12px;box-shadow:0 12px 36px rgb(var(--ui-scrim-rgb,17 14 12) / 0.267);font:14px Nunito,system-ui,sans-serif';
       document.body.appendChild(notice);
     }
-    notice.innerHTML='<div style="font-weight:700;margin-bottom:6px">Não foi possível confirmar sua sessão agora.</div><div style="color:var(--ui-text,#20374a);font-size:12px;margin-bottom:12px">Seu acesso foi mantido. Confira a conexão e tente novamente.</div><button type="button" class="btn btn-small" id="retrySessionRestore">Tentar novamente</button>';
-    document.getElementById('retrySessionRestore').onclick=()=>{notice.remove();bootstrap();};
+    notice.innerHTML=`<div style="font-weight:700;margin-bottom:6px">${panelError?'Não foi possível abrir o painel.':'Conexão com o painel interrompida.'}</div><div style="font-size:12px;margin-bottom:12px">${panelError?'Seu acesso foi validado. Tente abrir o painel novamente.':'Vamos tentar reconectar automaticamente. Você também pode entrar novamente.'}</div><div style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn-small" id="retrySessionRestore">Tentar novamente</button><button type="button" class="btn btn-soft btn-small" id="loginSessionRestore">Entrar novamente</button><button type="button" class="btn btn-soft btn-small" id="dismissSessionRestore" aria-label="Fechar aviso de conexão">Fechar</button></div>`;
+    document.getElementById('retrySessionRestore').onclick=()=>{clearTimeout(restoreTimer);restoreTimer=null;notice.remove();bootstrap();};
+    document.getElementById('loginSessionRestore').onclick=()=>{authGeneration++;verifiedToken='';resetSessionRecovery();originalShowLogin();};
+    document.getElementById('dismissSessionRestore').onclick=()=>notice.remove();
   }
   if(window.bootstrap) window.bootstrap=async function(){
-    if(bootstrapPromise)return bootstrapPromise;
-    bootstrapPromise=(async()=>{
-      try {const r=await apiCall('/api/public');if(r.ok){const d=await apiJson(r);db.settings={...db.settings,...d.settings};db.products=d.products||db.products;renderPublic();}}catch{}
-      addInventoryNav();
-      document.getElementById('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});syncBrand();renderPublic();document.getElementById('year').textContent=new Date().getFullYear();
-      const token=localStorage.getItem(tokenKey);
-      if(!token||!API_ENABLED){showPublicPage('home');return;}
+    if(loginGeneration&&loginGeneration===authGeneration)return;
+    const token=localStorage.getItem(tokenKey),generation=authGeneration;
+    if(bootstrapRun?.token===token&&bootstrapRun.generation===generation)return bootstrapRun.promise;
+    const run={token,generation};
+    bootstrapRun=run;
+    const current=()=>generation===authGeneration&&token===localStorage.getItem(tokenKey);
+    run.promise=(async()=>{
+      // The public catalogue must not delay authentication or overwrite an authenticated state.
+      if(API_ENABLED)apiCall('/api/public').then(async r=>{
+        if(!r.ok)return;const d=await apiJson(r);
+        if(!current()||token&&verifiedToken===token)return;
+        db.settings={...db.settings,...d.settings};db.products=d.products||db.products;renderPublic();
+      }).catch(()=>{});
+      try {
+        addInventoryNav();
+        document.getElementById('today').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});syncBrand();renderPublic();document.getElementById('year').textContent=new Date().getFullYear();
+      } catch(error){console.warn('ProtecExtintores: não foi possível atualizar a página pública.',error?.name || 'RenderError');}
+      if(!token||!API_ENABLED){resetSessionRecovery();showPublicPage('home');return;}
+      let d;
       try{
-        const r=await apiCall('/api/session');
+        let r;
+        for(let attempt=0;attempt<2;attempt++){
+          try {r=await apiCall('/api/session');if(![408,502,503,504].includes(r.status)||attempt===1)break;}
+          catch(error){if(attempt===1)throw error;}
+          if(!current())return;
+          await new Promise(resolve=>setTimeout(resolve,600));
+        }
+        if(!current())return;
+        if(window.offlineServices?.locked){clearSessionNotice();return;}
         if(r.status===401){
+          verifiedToken='';resetSessionRecovery();
           [tokenKey,roleKey,nameKey].forEach(k=>localStorage.removeItem(k));
           sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);
-          showPublicPage('home');return;
+          showStore();originalShowLogin();
+          const error=document.getElementById('loginError');error.textContent='Sua sessão expirou. Entre novamente para continuar. Seus registros locais foram preservados.';error.classList.remove('hidden');return;
         }
         if(!r.ok)throw Error('A API está temporariamente indisponível (HTTP '+r.status+').');
-        const d=await apiJson(r);
+        d=await apiJson(r);
+        if(!current())return;
         if(!['admin','employee','seller'].includes(d.role))throw Error('A resposta da sessão não é válida.');
+      }catch(error){
+        if(!current())return;
+        sessionPending=true;showSessionRestoreError();
+        clearTimeout(restoreTimer);
+        if(restoreFailures<3){const delay=[10000,30000,60000][restoreFailures++];restoreTimer=setTimeout(()=>{restoreTimer=null;if(sessionPending&&!document.hidden&&current())bootstrap();},delay);}
+        return;
+      }
+      try {
         localStorage.setItem(roleKey,d.role);localStorage.setItem(nameKey,d.username||'');
+        resetSessionRecovery();
+        if(verifiedToken===token)return;
         if(d.role==='admin'){
-          if(!d.state)throw Error('A API não retornou os dados do painel.');
-          db=d.state;db.settings.password='';saveLocal();showDashboard();
+          applyAdminState(d.state);showDashboard();
         }else if(d.role==='employee'){
           db.settings={...db.settings,...d.settings};renderEmployee(d.username,d.services||[]);
         }else renderSeller(d);
-        document.getElementById('sessionRestoreNotice')?.remove();
+        verifiedToken=token;clearSessionNotice();
       }catch(error){
-        showPublicPage('home');showSessionRestoreError();
+        if(!current())return;
+        sessionPending=true;showSessionRestoreError(true);
+        console.warn('ProtecExtintores: sessão validada, mas a abertura do painel falhou.',error?.name || 'RenderError');
       }
-    })().finally(()=>{bootstrapPromise=null;});
-    return bootstrapPromise;
+    })().finally(()=>{if(bootstrapRun===run)bootstrapRun=null;});
+    return run.promise;
   };
-  window.addEventListener('storage',e=>{if(e.key===tokenKey&&!e.newValue){sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);showStore();}else if(e.key===tokenKey&&e.newValue&&document.getElementById('dashboard').classList.contains('hidden')){bootstrap();}});
+  const retrySession=()=>{if(sessionPending&&!document.hidden&&localStorage.getItem(tokenKey)){clearTimeout(restoreTimer);restoreTimer=null;bootstrap();}};
+  window.addEventListener('online',retrySession);
+  window.addEventListener('pageshow',retrySession);
+  document.addEventListener('visibilitychange',retrySession);
+  window.addEventListener('storage',e=>{if(e.key!==tokenKey)return;authGeneration++;verifiedToken='';resetSessionRecovery();sessionStorage.removeItem(tokenKey);sessionStorage.removeItem(roleKey);showStore();if(e.newValue)bootstrap();});
 
   document.querySelectorAll('.login-note').forEach(n=>n.textContent='Acesso protegido para administrador, funcionários e vendedores.');
   document.querySelectorAll('.side-nav button[data-page="users"]').forEach(b=>{b.querySelector('.navtext').textContent='Acessos da equipe';});
@@ -1674,7 +1749,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=valve-art-21';
+  style.href = './professional-updates.css?v=session-restore-22';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');
