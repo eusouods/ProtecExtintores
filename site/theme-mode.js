@@ -2,8 +2,10 @@
 (() => {
   'use strict';
   const key = 'protec-theme-mode';
-  let mode = 'light';
-  try { mode = localStorage.getItem(key) === 'dark' ? 'dark' : 'light'; } catch {}
+  const assetRoot=new URL('./',document.currentScript.src);
+  const systemTheme=window.matchMedia('(prefers-color-scheme: dark)');
+  let mode = systemTheme.matches ? 'dark' : 'light';
+  try { const saved=localStorage.getItem(key);if(saved==='dark'||saved==='light')mode=saved; } catch {}
 
   function host() {
     const selectors = [
@@ -11,22 +13,26 @@
       '#dashboard.app:not(.hidden) .admin-top-right',
       '.employee-portal:not(.hidden) .employee-header-actions',
       '.employee-portal:not(.hidden) .employee-top',
-      '.seller-top .employee-header-actions',
-      '.seller-top',
+      '#employeePortal:not(.hidden) .seller-top .employee-header-actions',
+      '#employeePortal:not(.hidden) .seller-top',
       '#login.admin-entry:not(.hidden) .login-main',
       '#store:not(.hidden) .topbar'
     ];
     for (const selector of selectors) {
       const element = document.querySelector(selector);
-      if (element) return element;
+      if (element && element.getClientRects().length) return element;
     }
     return document.body;
   }
 
   function apply() {
-    document.documentElement.dataset.theme = mode;
+    if(document.documentElement.dataset.theme!==mode){document.documentElement.classList.add('theme-changing');document.documentElement.dataset.theme = mode;requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('theme-changing')));}
+    document.documentElement.style.colorScheme=mode;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = mode === 'dark' ? '#111118' : '#6d28d9';
+    if (meta) meta.content = mode === 'dark' ? '#14241c' : '#e9f0f5';
+    const appleBar=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(appleBar)appleBar.content=mode==='dark'?'black-translucent':'default';
+    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const href=new URL('./icons/icon-192'+(mode==='dark'?'-dark':'')+'.png?v=blue-mint-15',assetRoot).href;if(link.href!==href)link.href=href;});
+    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=blue-mint-15',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
     const button = document.querySelector('.theme-toggle');
     if (!button) return;
     const dark = mode === 'dark';
@@ -74,6 +80,7 @@
       mode = event.newValue === 'dark' ? 'dark' : 'light';
       apply();
     });
+    systemTheme.addEventListener?.('change',event=>{try{if(localStorage.getItem(key))return;}catch{}mode=event.matches?'dark':'light';apply();});
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

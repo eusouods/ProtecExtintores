@@ -1,8 +1,8 @@
 /* Acabamento global: foco visível, movimento reduzido e ajustes de toque. */
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 img,video,svg{max-width:100%}
-:focus-visible{outline:3px solid #323232;outline-offset:2px;border-radius:4px}
-[data-theme="dark"] :focus-visible{outline-color:#afafaf}
+:focus-visible{outline:3px solid var(--ui-border,#c8d8e3);outline-offset:2px;border-radius:4px}
+[data-theme="dark"] :focus-visible{outline-color:var(--ui-border,#c8d8e3)}
 button,[role="button"],a.btn,.btn{touch-action:manipulation}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -11,6 +11,6 @@ button,[role="button"],a.btn,.btn{touch-action:manipulation}
 @media print{.topbar,.theme-toggle,.whatsapp-float{display:none!important}}
 
 /* Correções de tema: texto invisível no cartão do herói e cartão de destaque desalinhado. */
-#store .hero-card-bottom,#store .hero-card-bottom strong{color:#222222}
-html[data-theme="dark"] #store .hero-card-bottom,html[data-theme="dark"] #store .hero-card-bottom strong{color:#ffffff}
+#store .hero-card-bottom,#store .hero-card-bottom strong{color:var(--ui-text,#193142)}
+html[data-theme="dark"] #store .hero-card-bottom,html[data-theme="dark"] #store .hero-card-bottom strong{color:var(--ui-text,#193142)}
 #store .trust>span:first-child{padding-left:9px;border-left:2px solid var(--yellow)}
