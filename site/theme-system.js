@@ -3,7 +3,7 @@
   const existing=document.getElementById('protec-theme-system');
   const link = existing || document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = new URL('./theme-system.css?v=line-art-17', document.currentScript.src).href;
+  link.href = new URL('./theme-system.css?v=catalog-groups-18', document.currentScript.src).href;
   link.id = 'protec-theme-system';
   if(!existing)document.head.append(link);
   const decorateStatuses = root => {

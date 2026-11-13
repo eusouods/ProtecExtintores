@@ -247,7 +247,7 @@
   document.head.append(style);
   document.documentElement.classList.add('protec-catalog-mode');
 
-  const categoryOptions = ['Extintores','Placas e sinalização','Hidrantes e mangueiras','Iluminação de emergência','Acessórios de prevenção'];
+  const categoryOptions = ['Extintores','Placas e sinalização','Hidrantes e mangueiras','Iluminação de emergência','Peças e componentes','Acessórios de prevenção'];
   const imageSource = async form => {
     const file = form.get('imageFile');
     const uploaded = await fileData(file);
@@ -261,20 +261,124 @@
     } catch { throw Error('Use uma URL de imagem válida, iniciada por https:// ou http://.'); }
   };
   const quote = product => {
-    const message = `Olá! Gostaria de solicitar informações sobre: ${product.name}.`;
+    if(!product || product.catalogEnabled===false)return toast('Esta opção não está disponível no catálogo.');
+    const variant=catalogVariant(product,catalogIdentity(product).family);
+    const selection=[product.name,variant!==product.name?variant:'',product.model?'Modelo: '+product.model:'',product.sku?'Referência: '+product.sku:''].filter(Boolean).join(' · ');
+    const message = `Olá! Gostaria de solicitar informações sobre: ${selection}.`;
     const link = window.fogoWhatsAppLink?.(message);
     if (link) return window.open(link, '_blank', 'noopener');
     window.showPublicPage?.('service');
+    const details=document.querySelector('#customerServiceRequestForm [name="details"],form[onsubmit="submitMaintenanceRequest(event)"] [name="details"]');
+    if(details && !details.value.trim()){
+      details.value='Produto de interesse: '+selection+'.';details.dispatchEvent(new Event('input',{bubbles:true}));
+    }
     toast('Informe seus dados para solicitar um orçamento.');
   };
+  const catalogLocation={family:'',group:''};
+  const catalogText=value=>String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/₂/g,'2').toLowerCase().trim();
+  const catalogFamilies={
+    extinguishers:{name:'Extintores',description:'Escolha o agente extintor e depois o peso ou a capacidade.',art:{name:'Extintor ABC'}},
+    signs:{name:'Placas e sinalização',description:'Saídas, rotas de fuga, identificação e avisos.',art:{name:'Placa de sinalização'}},
+    hoses:{name:'Mangueiras e hidrantes',description:'Tipos, comprimentos, conexões e componentes.',art:{name:'Mangueira de incêndio'}},
+    lighting:{name:'Iluminação de emergência',description:'Consulte os modelos e as especificações disponíveis.',art:{name:'Iluminação de emergência'}},
+    parts:{name:'Peças e acessórios',description:'Válvulas, manômetros, suportes e outros componentes.',art:{name:'Válvula M30'}}
+  };
+  const catalogCount=(count,one,many)=>`${count} ${count===1?one:many}`;
+  const catalogOrder=new Intl.Collator('pt-BR',{numeric:true,sensitivity:'base'});
+  function catalogIdentity(product){
+    const category=catalogText(product.category),name=catalogText([product.name,product.type].filter(Boolean).join(' '));
+    const kind=window.protecArtwork.infer({...product,illustrationKind:'auto'});
+    let family,group,groupName,rank=10;
+    if(/placa|sinaliza/.test(category) || /^(?:placa|sinaliza)/.test(name)){family='signs';group='signs';groupName='Modelos de placas';}
+    else if(/ilumina|luminaria|luz de emergencia/.test(category+' '+name)){family='lighting';group='lighting';groupName='Iluminação de emergência';}
+    else if(/hidrante/.test(category) || /^(?:mangueira de incendio|esguicho|chave storz|adaptador storz|abrigo)/.test(name)){
+      family='hoses';
+      if(kind==='hose' || /^mangueira/.test(name)){
+        const type=name.match(/tipo\s*(\d+)/)?.[1];group=type?'hose-'+type:'hose';groupName=type?'Mangueira tipo '+type:'Mangueiras';rank=type?Number(type):0;
+      }else if(kind==='nozzle'){group='nozzles';groupName='Esguichos e difusores';}
+      else if(kind==='wrench'){group='keys';groupName='Chaves Storz';}
+      else if(kind==='valve'||kind==='valveCo2'){group='hydrant-valves';groupName='Válvulas para hidrante';}
+      else if(kind==='cabinet'){group='cabinets';groupName='Abrigos para mangueira';}
+      else{group='connections';groupName='Conexões e adaptadores';}
+    }else if(['extinguisher','co2','water'].includes(kind) || (/extintor/.test(category)&&!['valve','valveCo2','gauge','siphon','bracket','seal','nozzle'].includes(kind))){
+      family='extinguishers';
+      if(/\babc\b/.test(name)){group='abc';groupName='Pó químico ABC';rank=0;}
+      else if(/\bbc\b/.test(name)){group='bc';groupName='Pó químico BC';rank=1;}
+      else if(kind==='water'||/agua/.test(name)){group='water';groupName='Água pressurizada';rank=2;}
+      else if(kind==='co2'||/co\s*2|carbono/.test(name)){group='co2';groupName='CO₂';rank=3;}
+      else{groupName=product.type || 'Outros extintores';group='ext-'+catalogText(groupName);}
+    }else{
+      family='parts';
+      const groups={valve:['valve','Válvulas M30'],valveCo2:['valve-co2','Válvulas de CO₂'],gauge:['gauge','Manômetros'],siphon:['siphon','Sifões'],hose:['hoses','Mangueiras para extintor'],nozzle:['nozzles','Difusores'],seal:['seals','Vedações e lacres'],bracket:['brackets','Suportes para extintor'],alarm:['alarms','Alarmes e acionadores'],door:['doors','Portas corta-fogo'],wrench:['tools','Ferramentas']};
+      [group,groupName]=groups[kind] || ['other','Outros equipamentos e acessórios'];
+    }
+    if(String(product.catalogGroup || '').trim()){groupName=String(product.catalogGroup).trim();group='custom-'+catalogText(groupName);rank=10;}
+    return {family,group,groupName,rank};
+  }
+  function catalogVariant(product,family){
+    if(String(product.variantLabel || '').trim())return String(product.variantLabel).trim();
+    if(family==='extinguishers'){
+      if(String(product.kg ?? '').trim() && Number(product.kg)>0)return `${String(product.kg).replace('.',',')} kg`;
+      const capacity=String(product.name || '').match(/\b(\d+(?:[.,]\d+)?)\s*(kg|litros?|l)\b/i);
+      if(capacity)return capacity[1].replace('.',',')+' '+(/kg/i.test(capacity[2])?'kg':'L');
+    }
+    return product.name || product.model || 'Consultar especificação';
+  }
+  function groupCatalog(products){
+    const families=new Map();
+    for(const product of products || []){
+      if(product.catalogEnabled===false)continue;
+      const identity=catalogIdentity(product),definition=catalogFamilies[identity.family];
+      if(!families.has(identity.family))families.set(identity.family,{key:identity.family,...definition,items:[],groups:[]});
+      const family=families.get(identity.family);family.items.push(product);
+      let group=family.groups.find(item=>item.key===identity.group);
+      if(!group){group={key:identity.group,name:identity.groupName,rank:identity.rank,items:[]};family.groups.push(group);}
+      group.items.push(product);
+    }
+    return Object.keys(catalogFamilies).filter(key=>families.has(key)).map(key=>{
+      const family=families.get(key);family.groups.sort((a,b)=>a.rank-b.rank||catalogOrder.compare(a.name,b.name));
+      const quantity=product=>{
+        const weight=Number(String(product.kg || '').replace(',','.'));if(weight>0)return weight;
+        const capacity=String(product.variantLabel || product.name || '').match(/\b(\d+(?:[.,]\d+)?)\s*(?:kg|litros?|l)\b/i);return capacity?Number(capacity[1].replace(',','.')):Infinity;
+      };
+      for(const group of family.groups)group.items.sort((a,b)=>(key==='extinguishers' && quantity(a)!==quantity(b)?quantity(a)-quantity(b):0)||catalogOrder.compare(catalogVariant(a,key),catalogVariant(b,key))||catalogOrder.compare(a.model || a.name,b.model || b.name));
+      return family;
+    });
+  }
+  const catalogOptionFields=product=>`<div class="form-field"><label>Grupo / linha no catálogo (opcional)</label><input name="catalogGroup" maxlength="120" value="${esc(product?.catalogGroup || '')}" placeholder="Automático pelo tipo do produto"><small>Use o mesmo grupo nas opções que devem aparecer juntas.</small></div><div class="form-field"><label>Nome da opção (opcional)</label><input name="variantLabel" maxlength="160" value="${esc(product?.variantLabel || '')}" placeholder="Ex.: 6 kg, 20 × 30 cm ou 15 m · 1½ pol"></div><div class="form-field"><label>Peso do extintor em kg (opcional)</label><input name="kg" type="number" min="0.1" step="0.1" value="${esc(product?.kg || '')}" placeholder="Ex.: 6"><small>Para água, placas e outros itens, use o nome da opção com a unidade correta.</small></div>`;
+  const catalogOptionValues=form=>({catalogGroup:String(form.get('catalogGroup') || '').trim(),variantLabel:String(form.get('variantLabel') || '').trim(),kg:String(form.get('kg') || '').trim()});
+  function navigateCatalog(family='',group=''){
+    catalogLocation.family=family;catalogLocation.group=group;renderCatalog();
+    requestAnimationFrame(()=>{
+      const heading=document.querySelector('#publicProducts [data-catalog-heading]');heading?.focus({preventScroll:true});
+      document.getElementById('publicProducts')?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+    });
+  }
   const renderCatalog = () => {
     const host = document.getElementById('publicProducts');
     if (!host) return;
-    const visible = (db.products || []).filter(product => product.catalogEnabled !== false);
-    host.className = 'products catalog-grid';
-    host.innerHTML = visible.length ? visible.map(product => `<article class="catalog-card"><div class="catalog-media">${window.protecArtwork.media(product)}</div><div class="catalog-body"><span class="catalog-category">${esc(product.category || 'Catálogo')}</span><h3>${esc(product.name)}</h3><p>${esc(product.description || product.type || 'Equipamento de prevenção')}${product.model ? ` · ${esc(product.model)}` : ''}</p><button class="btn btn-small" type="button" data-catalog-product="${esc(product.id)}">Solicitar orçamento</button></div></article>`).join('') : '<div class="empty">O catálogo está sendo atualizado. Fale com a equipe para solicitar informações.</div>';
-    host.querySelectorAll('[data-catalog-product]').forEach(button => button.addEventListener('click', () => quote((db.products || []).find(product => product.id === button.dataset.catalogProduct))));
+    const families=groupCatalog(db.products),family=families.find(item=>item.key===catalogLocation.family);
+    if(!family){catalogLocation.family='';catalogLocation.group='';}
+    let group=family?.groups.find(item=>item.key===catalogLocation.group);
+    if(!group)catalogLocation.group='';
+    const direct=family && (family.key==='signs'||family.key==='lighting'||family.groups.length===1);
+    if(direct && family.groups.length===1)group=family.groups[0];
+    const products=group?.items || (direct?family.items:null);
+    const heading=group && !direct?group.name:family?.name || 'Explore por categoria';
+    const summary=products?`${catalogCount(products.length,'opção disponível','opções disponíveis')}. Escolha o peso, modelo ou especificação desejada.`:family?`${catalogCount(family.groups.length,'tipo disponível','tipos disponíveis')}. Selecione uma linha para ver as opções.`:'Selecione uma categoria para conhecer os tipos e modelos disponíveis.';
+    const crumbs=`<nav class="catalog-breadcrumb" aria-label="Navegação do catálogo">${family?'<button type="button" class="btn btn-soft btn-small" data-catalog-home>← Todas as categorias</button>':'<span>Catálogo de produtos</span>'}${family && group && !direct?`<span aria-hidden="true">/</span><button type="button" class="btn btn-soft btn-small" data-catalog-family="${family.key}">${esc(family.name)}</button>`:''}${family?`<span aria-current="page">${esc(heading)}</span>`:''}</nav>`;
+    let cards;
+    if(products)cards=products.map(product=>`<article class="catalog-card" data-catalog-option="${esc(product.id)}"><div class="catalog-media">${window.protecArtwork.media(product)}</div><div class="catalog-body"><span class="catalog-category">${esc(group?.name || family.name)}</span><h3>${esc(catalogVariant(product,family.key))}</h3>${catalogVariant(product,family.key)!==product.name?`<p class="catalog-product-name">${esc(product.name)}</p>`:''}<p>${esc(product.description || product.type || 'Equipamento de prevenção')}${product.model?` · ${esc(product.model)}`:''}</p><button class="btn btn-small" type="button" data-catalog-product="${esc(product.id)}">Solicitar orçamento</button></div></article>`).join('');
+    else if(family)cards=family.groups.map(item=>`<article class="catalog-card"><div class="catalog-media">${window.protecArtwork.media(item.items[0])}</div><div class="catalog-body"><span class="catalog-category">${esc(family.name)}</span><h3>${esc(item.name)}</h3><p>${catalogCount(item.items.length,'opção','opções')} de peso, capacidade ou modelo.</p><button class="btn btn-small" type="button" data-catalog-group="${esc(item.key)}">Ver opções <span aria-hidden="true">→</span></button></div></article>`).join('');
+    else cards=families.map(item=>`<article class="catalog-card"><div class="catalog-media">${window.protecArtwork.artwork(item.art)}</div><div class="catalog-body"><span class="catalog-category">${catalogCount(item.items.length,'opção','opções')}</span><h3>${esc(item.name)}</h3><p>${esc(item.description)}</p><button class="btn btn-small" type="button" data-catalog-family="${item.key}">Explorar ${esc(item.name.toLowerCase())} <span aria-hidden="true">→</span></button></div></article>`).join('');
+    host.className='catalog-browser';
+    host.innerHTML=families.length?`${crumbs}<div class="catalog-browser-heading"><h3 data-catalog-heading tabindex="-1">${esc(heading)}</h3><p aria-live="polite">${esc(summary)}</p></div><div class="products catalog-grid">${cards}</div>`:'<div class="empty">O catálogo está sendo atualizado. Fale com a equipe para solicitar informações.</div>';
+    host.querySelector('[data-catalog-home]')?.addEventListener('click',()=>navigateCatalog());
+    host.querySelectorAll('[data-catalog-family]').forEach(button=>button.addEventListener('click',()=>navigateCatalog(button.dataset.catalogFamily)));
+    host.querySelectorAll('[data-catalog-group]').forEach(button=>button.addEventListener('click',()=>navigateCatalog(family.key,button.dataset.catalogGroup)));
+    host.querySelectorAll('[data-catalog-product]').forEach(button => button.addEventListener('click', () => quote((db.products || []).find(product => product.id === button.dataset.catalogProduct && product.catalogEnabled!==false))));
   };
+  window.protecCatalog={group:groupCatalog,navigate:navigateCatalog,location:()=>({...catalogLocation})};
   const originalRenderPublic = window.renderPublic;
   window.renderPublic = function() { originalRenderPublic?.apply(this, arguments); renderCatalog(); };
   window.addToCart = () => toast('Este catálogo é exclusivo para consulta. Solicite um orçamento à equipe.');
@@ -284,7 +388,7 @@
 
   const catalogAdmin = host => {
     const products = db.products || [], active = products.filter(product => product.catalogEnabled !== false).length;
-    host.innerHTML = `<div class="page-title"><div><div class="eyebrow">Catálogo profissional</div><h1>Produtos em catálogo</h1><p>Controle a visibilidade e as imagens de referência da vitrine pública.</p></div><button class="btn btn-small" onclick="openProduct()">＋ Adicionar produto</button></div><div class="panel"><div class="panel-head"><div><h3>${active} produto(s) ativo(s)</h3><p>${products.length - active} item(ns) oculto(s) da vitrine.</p></div><button class="btn btn-soft btn-small" onclick="showStore('home')">Ver catálogo ↗</button></div>${products.length ? `<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Imagem</th><th>Vitrine</th><th>Ações</th></tr></thead><tbody>${products.map(product => `<tr><td><strong>${esc(product.name)}</strong><small>${esc(product.model || product.type || 'Sem referência')}</small></td><td>${esc(product.category || 'Catálogo')}</td><td><span class="product-reference-label">${window.protecArtwork.media(product,'small')}<span>${product.referenceStyle==='photo' && product.image ? 'Foto cadastrada' : 'Ilustração padronizada'}</span></span></td><td><label class="catalog-admin-status"><input type="checkbox" ${product.catalogEnabled !== false ? 'checked' : ''} onchange="toggleCatalogProduct('${esc(product.id)}',this.checked)">${product.catalogEnabled !== false ? 'Ativo' : 'Oculto'}</label></td><td><button class="icon-btn" onclick="editProduct('${esc(product.id)}')">Editar</button> <button class="icon-btn" onclick="del('products','${esc(product.id)}')">Excluir</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nenhum produto cadastrado no catálogo.</div>'}</div>`;
+    host.innerHTML = `<div class="page-title"><div><div class="eyebrow">Catálogo profissional</div><h1>Produtos em catálogo</h1><p>Organize grupos, pesos, modelos, imagens e visibilidade das opções do catálogo.</p></div><button class="btn btn-small" onclick="openProduct()">＋ Adicionar produto</button></div><div class="panel"><div class="panel-head"><div><h3>${active} produto(s) ativo(s)</h3><p>${products.length - active} item(ns) oculto(s) da vitrine.</p></div><button class="btn btn-soft btn-small" onclick="showStore('home')">Ver catálogo ↗</button></div>${products.length ? `<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Imagem</th><th>Vitrine</th><th>Ações</th></tr></thead><tbody>${products.map(product => `<tr><td><strong>${esc(product.name)}</strong><small>${esc(product.model || product.type || 'Sem referência')}</small></td><td>${esc(product.category || 'Catálogo')}</td><td><span class="product-reference-label">${window.protecArtwork.media(product,'small')}<span>${product.referenceStyle==='photo' && product.image ? 'Foto cadastrada' : 'Ilustração padronizada'}</span></span></td><td><label class="catalog-admin-status"><input type="checkbox" ${product.catalogEnabled !== false ? 'checked' : ''} onchange="toggleCatalogProduct('${esc(product.id)}',this.checked)">${product.catalogEnabled !== false ? 'Ativo' : 'Oculto'}</label></td><td><button class="icon-btn" onclick="editProduct('${esc(product.id)}')">Editar</button> <button class="icon-btn" onclick="del('products','${esc(product.id)}')">Excluir</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nenhum produto cadastrado no catálogo.</div>'}</div>`;
   };
   const originalRenderPage = window.renderPage;
   window.renderPage = function(target) {
@@ -301,10 +405,10 @@
     window.renderPage('products'); window.renderPublic(); toast(enabled ? 'Produto exibido no catálogo.' : 'Produto ocultado do catálogo.');
   };
   window.openProduct = function() {
-    const body = `<div class="form-grid">${field('Nome do produto','name',{required:true})}${field('Categoria','category',{options:categoryOptions.map(value => ({value,label:value}))})}${field('Tipo / especificação','type')}${field('Modelo ou referência','model')}${field('Código / SKU','sku')}${field('Descrição','description',{cls:'span2'})}${window.protecArtwork.editorFields()}<div class="form-field span2"><label>URL da imagem de referência</label><input name="imageUrl" type="url" placeholder="https://exemplo.com/imagem.jpg"><small>Opcional. Para exibir uma foto, selecione “Foto cadastrada” no estilo da referência. A ilustração funciona sem enviar arquivos.</small></div><div class="form-field span2"><label>Enviar imagem</label><label class="upload">Selecionar imagem<input type="file" hidden accept="image/*" name="imageFile"></label></div><label class="form-field span2"><span><input name="catalogEnabled" type="checkbox" checked> Exibir este produto no catálogo público</span></label></div>`;
+    const body = `<div class="form-grid">${field('Nome do produto','name',{required:true})}${field('Categoria','category',{options:categoryOptions.map(value => ({value,label:value}))})}${field('Tipo / especificação','type')}${field('Modelo ou referência','model')}${field('Código / SKU','sku')}${field('Descrição','description',{cls:'span2'})}${catalogOptionFields()}${window.protecArtwork.editorFields()}<div class="form-field span2"><label>URL da imagem de referência</label><input name="imageUrl" type="url" placeholder="https://exemplo.com/imagem.jpg"><small>Opcional. Para exibir uma foto, selecione “Foto cadastrada” no estilo da referência. A ilustração funciona sem enviar arquivos.</small></div><div class="form-field span2"><label>Enviar imagem</label><label class="upload">Selecionar imagem<input type="file" hidden accept="image/*" name="imageFile"></label></div><label class="form-field span2"><span><input name="catalogEnabled" type="checkbox" checked> Exibir este produto no catálogo público</span></label></div>`;
     openModal('Adicionar produto ao catálogo', body, async form => {
       const product = {id:id(),name:val(form,'name'),category:val(form,'category'),type:val(form,'type'),kg:'',model:val(form,'model'),sku:val(form,'sku'),description:val(form,'description'),price:0,image:await imageSource(form),video:'',catalogEnabled:form.get('catalogEnabled') === 'on'};
-      Object.assign(product,window.protecArtwork.editorValues(form,product.image));
+      Object.assign(product,window.protecArtwork.editorValues(form,product.image),catalogOptionValues(form));
       db.products = db.products || []; db.products.push(product);
       if (!await save()) { db.products = db.products.filter(item => item.id !== product.id); saveLocal(); return false; }
       window.renderPage('products'); window.renderPublic(); toast('Produto adicionado ao catálogo.');
@@ -313,11 +417,11 @@
   };
   window.editProduct = function(id) {
     const product = (db.products || []).find(item => item.id === id); if (!product) return;
-    const body = `<div class="form-grid">${field('Nome do produto','name',{required:true,value:product.name})}${field('Categoria','category',{options:categoryOptions.map(value => ({value,label:value,selected:value === product.category}))})}${field('Tipo / especificação','type',{value:product.type})}${field('Modelo ou referência','model',{value:product.model})}${field('Código / SKU','sku',{value:product.sku})}${field('Descrição','description',{cls:'span2',value:product.description})}${window.protecArtwork.editorFields(product)}<div class="form-field span2"><label>Nova URL da imagem</label><input name="imageUrl" type="url" placeholder="Mantenha vazio para preservar a imagem atual"></div><div class="form-field span2"><label>Atualizar imagem por arquivo</label><label class="upload">Selecionar imagem<input type="file" hidden accept="image/*" name="imageFile"></label></div><label class="form-field span2"><span><input name="catalogEnabled" type="checkbox" ${product.catalogEnabled !== false ? 'checked' : ''}> Exibir no catálogo público</span></label></div>`;
+    const body = `<div class="form-grid">${field('Nome do produto','name',{required:true,value:product.name})}${field('Categoria','category',{options:categoryOptions.map(value => ({value,label:value,selected:value === product.category}))})}${field('Tipo / especificação','type',{value:product.type})}${field('Modelo ou referência','model',{value:product.model})}${field('Código / SKU','sku',{value:product.sku})}${field('Descrição','description',{cls:'span2',value:product.description})}${catalogOptionFields(product)}${window.protecArtwork.editorFields(product)}<div class="form-field span2"><label>Nova URL da imagem</label><input name="imageUrl" type="url" placeholder="Mantenha vazio para preservar a imagem atual"></div><div class="form-field span2"><label>Atualizar imagem por arquivo</label><label class="upload">Selecionar imagem<input type="file" hidden accept="image/*" name="imageFile"></label></div><label class="form-field span2"><span><input name="catalogEnabled" type="checkbox" ${product.catalogEnabled !== false ? 'checked' : ''}> Exibir no catálogo público</span></label></div>`;
     openModal('Editar produto do catálogo', body, async form => {
       const image = await imageSource(form);
       const reference=window.protecArtwork.editorValues(form,image || product.image);
-      Object.assign(product,reference);
+      Object.assign(product,reference,catalogOptionValues(form));
       product.name = val(form,'name'); product.category = val(form,'category'); product.type = val(form,'type'); product.model = val(form,'model'); product.sku = val(form,'sku'); product.description = val(form,'description'); product.catalogEnabled = form.get('catalogEnabled') === 'on'; if (image) product.image = image;
       if (!await save()) return false;
       window.renderPage('products'); window.renderPublic(); toast('Produto atualizado.');

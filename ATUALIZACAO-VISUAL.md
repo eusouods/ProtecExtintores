@@ -1,6 +1,28 @@
-# Identidade fria e quente — ilustrações 17 / Android 1.1.3
+# Catálogo por categorias, tipos e opções — versão 18 / Android 1.1.4
 
 A combinação aprovada na prévia foi aplicada ao site: azul-gelo e azul-petróleo no claro; café, cobre e âmbar suave no escuro.
+
+## Catálogo agrupado
+
+O catálogo começa pelas famílias de produtos. Ao abrir **Extintores**, aparecem **Pó químico ABC**, **Pó químico BC**, **Água pressurizada** e **CO₂**, conforme os itens ativos. Ao abrir um tipo, aparecem os pesos e capacidades cadastrados, em ordem crescente.
+
+**Placas e sinalização** abre os modelos de placas. Mangueiras e hidrantes são separados por tipo e componente. Peças e acessórios são reunidos por componente, como válvulas, manômetros, sifões ou suportes. Iluminação aparece quando há produtos ativos dessa família. Não são criadas opções fictícias ou famílias vazias.
+
+Os botões **Todas as categorias** e o nome da família permitem voltar sem sair do catálogo. As imagens padronizadas e fotos cadastradas continuam sendo usadas. O orçamento pelo WhatsApp inclui a opção, o peso e o modelo escolhidos. Sem WhatsApp configurado, o produto preenche o campo de observações do formulário quando ele ainda está vazio.
+
+### Cadastrar pesos, modelos e variações
+
+No admin, abra **Produtos → Adicionar produto** ou **Editar**:
+
+1. Cadastre cada peso ou modelo como uma opção individual. Exemplo: um produto ABC de 4 kg e outro ABC de 6 kg.
+2. Informe o tipo em **Tipo / especificação** e o peso em **Peso do extintor em kg**. ABC, BC, água e CO₂ são identificados automaticamente.
+3. Use **Grupo / linha no catálogo** para reunir opções em um grupo com nome próprio; deixe vazio para agrupamento automático.
+4. Use **Nome da opção** para capacidades em litros, medidas de placas, diâmetros, comprimentos e outras especificações. Exemplo: `10 L`, `20 × 30 cm` ou `15 m · 1½ pol`.
+5. Ative ou oculte cada opção separadamente. Se um grupo ficar sem opções ativas, ele desaparece da vitrine.
+
+Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **89 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.4 pelo workflow Android.
+
+A navegação nova foi verificada em 36 combinações de tela, tema e largura, incluindo 320 pixels. Foram conferidos agrupamento sem perda ou repetição de itens, ordenação dos pesos, ocultação de opções, navegação de retorno, referência do orçamento e gravação dos novos campos pela API local. A revisão visual completa cobriu 66 telas e pop-ups nos dois temas, sem falhas de contraste detectadas, cores fora da paleta ou transbordamento horizontal.
 
 ## Ilustrações de produtos e peças
 
@@ -37,8 +59,8 @@ Extraia o ZIP e envie os arquivos e as pastas que estão dentro de `ProtecExtint
 - Formulários, tabelas, navegação, cards, filtros, foco de teclado, mensagens, pop-ups e estados de seleção.
 - Ordens, peças, vídeos, pinturas, pausa/retomada, histórico, custos e pendências offline.
 - Cabeçalhos de apresentação claros no tema claro e escuros no tema escuro, com texto ajustado ao fundo.
-- Ícones de instalação, manifestos, favoritos e cache `line-art-17`.
-- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.3.
+- Ícones de instalação, manifestos, favoritos e cache `catalog-groups-18`.
+- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.4.
 - A preferência do sistema é usada no primeiro acesso; a seleção manual fica salva.
 - Impressões usam papel claro e texto escuro para manter a legibilidade.
 
@@ -58,7 +80,7 @@ Esta atualização visual não exige migração do banco nem novo deploy da API.
 
 ## Conferência
 
-As combinações principais de texto e fundo passam pelo contraste de 4,5:1. A revisão em navegador cobriu 56 telas e pop-ups nos dois temas, em computador e celular, sem cores renderizadas fora da paleta, falhas de contraste detectadas ou transbordamento horizontal. As regras de serviços e de trabalho offline também foram verificadas.
+As combinações principais de texto e fundo passam pelo contraste de 4,5:1. A revisão em navegador cobriu 66 telas e pop-ups nos dois temas, em computador e celular, sem cores renderizadas fora da paleta, falhas de contraste detectadas ou transbordamento horizontal. As regras de serviços e de trabalho offline também foram verificadas.
 
 A regressão na API local e no navegador passou por preparo offline, rascunho, modo avião, pausa/urgência/retomada, reinício, vídeo real, conclusão, expiração de sessão, reenvio, conflitos e isolamento das contas. Os arquivos Java compilaram contra API 35 e AndroidX; os recursos XML e a correspondência entre a paleta nativa e a do site foram conferidos. O APK completo e um aparelho físico não foram testados nesta atualização.
 

@@ -1674,7 +1674,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=line-art-17';
+  style.href = './professional-updates.css?v=catalog-groups-18';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');
