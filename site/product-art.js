@@ -16,8 +16,8 @@
     hose: ['Mangueira de incêndio', '<circle cx="10" cy="11" r="7"/><circle cx="10" cy="11" r="3"/><path d="M10 18h7a4 4 0 0 0 4-4V6m-2-3h4v3h-4ZM3 20h14"/>'],
     nozzle: ['Esguicho ou difusor', '<path d="m4 17 5-5 3 3-5 5ZM8 11l3-3 5 5-3 3ZM10 7l3-3 7 7-3 3Zm6-2 3-3m0 5 3-3"/>'],
     light: ['Iluminação de emergência', '<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M7 9V6l-2-2m12 5V6l2-2M7 14h3m4 0h3M9 20v2m6-2v2M12 2v3M3 8 1 7m20 1 2-1"/>'],
-    valve: ['Válvula', '<path d="M4 9h16M7 6v6m10-6v6M12 4v5m0 0v8m-4 0h8v4H8ZM3 3h8m3 6 4-4h3"/><circle cx="12" cy="11" r="2"/>'],
-    valveCo2: ['Válvula de CO₂', '<path d="M3 5h12m-8 0v4m6-4v4M6 10h10v7H6ZM16 12h5v3h-5M9 17v4h4v-4M4 8v5H2"/><path d="m15 5 4-3"/>'],
+    valve: ['Válvula M30 de extintor', '<path d="M7 10 19 4c2-1 3 1 1 2l-10 7Zm2 3c5-1 10 1 12 3l-1 1c-4-2-7-2-10-2M8 14v4h6v-4m-6 4v4h6v-4M8 15H4v3h4"/><ellipse cx="17" cy="12" rx="2.5" ry="1.5"/>' ],
+    valveCo2: ['Válvula de gatilho CO₂', '<path d="M7 9 19 3c2-1 3 1 1 2l-10 7Zm2 3c5 0 10 2 12 5l-1 1c-3-3-7-3-10-3M8 14v4h6v-4m-5 4v5h5v-5M8 14H4v3h4"/><ellipse cx="17" cy="12" rx="1.5" ry="2.5"/>' ],
     gauge: ['Manômetro', '<circle cx="12" cy="10" r="8"/><path d="M12 10l4-4M6 10h1m5-6v1m5 5h1m-9 8v4h6v-4"/><circle cx="12" cy="10" r="1"/>'],
     siphon: ['Sifão', '<path d="M7 21V7a5 5 0 0 1 10 0v5m-6 9V7a1 1 0 0 1 2 0v5m0 0h4m-10 9h4"/>'],
     seal: ['Anel de vedação ou lacre', '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="m17 5 2-2m-1 3 3-1"/>'],
@@ -50,8 +50,9 @@
     hose:ground+'<circle class="art-fill" cx="39" cy="46" r="27"/><circle cx="39" cy="46" r="21"/><circle class="art-detail" cx="39" cy="46" r="15"/><circle cx="39" cy="46" r="8"/><path d="M39 73h30c11 0 14-5 14-15V34"/><path class="art-fill-strong" d="M77 18h12v18H77z"/><path class="art-detail" d="M77 23h12m-12 7h12M17 76h48"/>',
     nozzle:ground+'<path class="art-fill" d="m20 68 10 10 31-32-10-10Z"/><path d="m20 68 10 10 31-32-10-10ZM18 64l16 16-6 6-16-16Z"/><path class="art-fill-strong" d="m51 36 10 10 18-12-16-16-12 18Z"/><path d="m62 18 5-5 17 17-5 5"/><path class="art-detail" d="m27 59 10 10m-4-16 10 10m-4-16 10 10m-4-16 10 10m12-18 8-8"/><path d="m43 43-2-8 10-10 7 1"/>',
     light:ground+'<rect class="art-fill" x="12" y="33" width="72" height="39" rx="6"/><rect x="18" y="39" width="60" height="24" rx="3"/><path d="M25 33v-5h10v5m26 0v-5h10v5m-31 41h16"/><circle class="art-dot" cx="69" cy="67" r="1.3"/>'+Array.from({length:12},(_,i)=>`<rect class="art-led" x="${25+(i%6)*8}" y="${44+Math.floor(i/6)*9}" width="4" height="4" rx="1"/>`).join('')+'<path class="art-detail art-fine" d="M48 15v7m-23-4 3 6m43-6-3 6M7 39l-5-3m87 3 5-3"/>',
-    valve:ground+'<path class="art-fill" d="M35 38h27v21H35z"/><path d="M35 38h27v21H35Zm9-14v14m10-14v14M27 19h34l5 5H32l-5-5Z"/><path class="art-fill-strong" d="M43 59h13v21H43z"/><path class="art-detail" d="M43 65h13m-13 6h13m-13 5h13"/><circle class="art-label" cx="26" cy="45" r="10"/><path class="art-detail" d="m26 45 4-4"/><path d="M62 43h17v12H62m10-12v12m5-12v12"/>',
-    valveCo2:ground+'<path class="art-fill" d="M34 38h28v22H34z"/><path d="M34 38h28v22H34Zm14-15v15M28 18h40m-35-4v8m10-8v8m10-8v8m10-8v8"/><path class="art-fill-strong" d="M42 60h13v21H42z"/><path class="art-detail" d="M42 66h13m-13 6h13m-13 5h13"/><path d="M62 43h18v12H62m11-12v12m5-12v12M34 46H23v8h11"/>',
+    valve:ground+'<path class="art-fill" d="M30 48c-4 5-4 12-1 17v7h23V61l7-3v-8l-13-4Z"/><path class="art-fill-strong" d="M28 68c0-4 25-4 25 0v10c0 5-25 5-25 0Z"/><path class="art-detail" d="M29 71c6 3 17 3 23 0m-23 5c6 3 17 3 23 0M34 59l13 2"/><path class="art-fill-strong" d="M27 39c14-5 29-15 47-24 7-3 12 2 7 7L43 47c-4 3-10 3-15 0Z"/><path class="art-detail" d="M33 39c14-6 29-15 44-21"/><path class="art-fill" d="M32 48c17-3 38 0 50 9 3 3 0 7-3 5-13-8-27-9-42-7l-6-2Z"/><circle class="art-dot" cx="35" cy="48" r="2.2"/><path class="art-fill" d="M28 54H18l-2 5 2 5h10"/><ellipse class="art-label" cx="18" cy="59" rx="3.4" ry="5"/><path class="art-detail" d="M22 54v10m3-10v10"/><path d="m52 56 7-2 3 6-8 3"/><path class="art-detail" d="m57 55 2 6"/><ellipse cx="60" cy="48" rx="11" ry="4.3" transform="rotate(13 60 48)"/><path class="art-detail" d="m48 47 5-3"/>',
+    valveCo2:ground+'<path class="art-fill" d="M31 45c-4 5-4 13-1 18l3 7h20V50l-10-7Z"/><path class="art-fill-strong" d="M32 66c0-3 22-3 22 0v14c0 4-22 4-22 0Z"/><path class="art-detail" d="M33 70c5 2 15 2 20 0m-20 4c5 2 15 2 20 0m-20 4c5 2 15 2 20 0"/><path class="art-fill-strong" d="M28 36c14-5 29-15 46-24 8-4 13 2 8 8L44 44c-4 3-10 3-15 1Z"/><path class="art-detail" d="M34 36c14-6 27-14 44-21"/><path class="art-fill" d="M33 45c17 0 36 7 48 18 3 4 0 8-3 5-12-10-26-14-41-15l-6-3Z"/><circle class="art-dot" cx="35" cy="46" r="2.3"/><path class="art-fill" d="m30 50-13 2-2 5 3 5 13-1"/><ellipse class="art-label" cx="17" cy="57" rx="3.2" ry="4.8"/><path class="art-detail" d="M21 52v9m4-10v10"/><path class="art-fill-strong" d="m34 57 6-3 6 3v7l-6 3-6-3Z"/><path class="art-detail" d="m37 59 6 4"/><ellipse cx="61" cy="47" rx="7" ry="11" transform="rotate(-28 61 47)"/><path class="art-detail" d="m48 44 6-3"/>',
+    hydrantValve:ground+'<ellipse class="art-fill-strong" cx="47" cy="18" rx="18" ry="5"/><path class="art-detail" d="M29 18v4c0 7 36 7 36 0v-4m-18-4v9"/><path d="M47 27v12"/><path class="art-fill" d="M34 40h27v14h20v19H52c-12 0-18-7-18-17Z"/><path class="art-fill-strong" d="M37 67h18v15H37z"/><path class="art-detail" d="M37 72h18m-18 5h18M74 54v19m4-19v19"/>',
     gauge:ground+'<circle class="art-fill" cx="48" cy="39" r="26"/><circle cx="48" cy="39" r="21"/><path class="art-detail" d="m31 39 4 1m0-13 3 3m10-10v5m13 2-3 3m7 9-4 1"/><path class="art-symbol" d="m48 40 12-12"/><circle class="art-dot" cx="48" cy="40" r="3"/><path class="art-fill-strong" d="M41 65h14v10H41z"/><path d="M44 75h8v8h-8"/><path class="art-detail" d="M44 79h8"/>',
     siphon:ground+'<path class="art-fill-strong" d="M38 13h20v14H38z"/><path class="art-detail" d="M38 17h20m-20 5h20"/><path class="art-fill" d="M43 27h10v51l-10 6Z"/><path d="M43 27v57l10-6V27"/><path class="art-detail" d="M47 31v42m-4 11 10-6"/>',
     seal:ground+'<path class="art-fill" fill-rule="evenodd" d="M79 47a31 25 0 1 1-62 0 31 25 0 1 1 62 0Zm-9 0a22 16 0 1 0-44 0 22 16 0 1 0 44 0Z"/><ellipse cx="48" cy="47" rx="31" ry="25"/><ellipse cx="48" cy="47" rx="22" ry="16"/><path class="art-detail" d="M24 39c4-8 12-12 22-12m12 2 6 3M72 57c-5 6-12 9-20 10"/>',
@@ -68,8 +69,6 @@
   };
   // Em listas densas, reduza o detalhe e preserve uma silhueta legível.
   drawings.extinguisher[1]='<rect x="7" y="7" width="9" height="15" rx="3"/><path d="M10 7V4h4v3M9 3h8l1-1h-8L9 3Zm5 2c5 0 7 2 7 6v4m-1 0h2v5h-2ZM9 17h5"/>';
-  drawings.valve[1]='<rect x="8" y="10" width="9" height="6" rx="1"/><path d="M11 7v3m3-3v3M6 6h11l2-2H8L6 6Zm5 10v6h4v-6m2-5h5v4h-5M11 19h4"/><circle cx="5" cy="12" r="3"/>';
-  drawings.valveCo2[1]='<rect x="7" y="10" width="10" height="6" rx="1"/><path d="M12 6v4M5 5h14M8 3v4m8-4v4m-7 9v6h6v-6m2-5h5v4h-5M9 19h6"/>';
   drawings.siphon[1]='<path d="M9 2h6v5H9Zm1 5v15l4-2V7M9 4h6"/>';
   const escape = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const text = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/₂/g,'2').toLowerCase();
@@ -105,11 +104,13 @@
     const scale=['large','small','tiny'].includes(size)?size:'large';
     let variant=kind;
     const description=text([product.name,product.type,product.model].filter(Boolean).join(' '));
+    if(kind==='valve'&&/hidrante|angular/.test(description+' '+text(product.category)))variant='hydrantValve';
     if(kind==='extinguisher'&&/\bbc\b/.test(description)&&!/\babc\b/.test(description))variant='extinguisherBc';
     if(kind==='bracket'&&/piso/.test(description))variant='bracketFloor';
     if(kind==='alarm'&&/acionador|manual/.test(description))variant='callpoint';
     if(kind==='alarm'&&/detector/.test(description))variant='detector';
-    const full=scale!=='tiny',drawing=full?detailed[variant] || detailed[kind] || detailed.equipment:paths;
+    const compact=variant==='hydrantValve'?'<ellipse cx="12" cy="4" rx="5" ry="1.7"/><path d="M12 6v4M8 10h6v4h7v5H12c-3 0-4-2-4-5Zm1 9v4h5v-4"/>':paths;
+    const full=scale!=='tiny',drawing=full?detailed[variant] || detailed[kind] || detailed.equipment:compact;
     const accessibility=scale==='large'?`role="img" aria-label="${escape(label)} — ilustração de referência"`:'aria-hidden="true"';
     return `<span class="product-art product-art-${scale}" data-art-kind="${kind}" data-art-variant="${variant}" ${accessibility}><span class="product-art-disc"><svg class="product-art-figure" viewBox="0 0 ${full?'96 96':'24 24'}" fill="none" stroke="currentColor" stroke-width="${full?'2.2':'1.6'}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${drawing}</svg></span></span>`;
   }
