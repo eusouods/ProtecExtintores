@@ -1,4 +1,4 @@
-import './service-management.mjs?v=official-logo-19';
+import './service-management.mjs?v=refined-art-20';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled} from './service-rules.mjs';

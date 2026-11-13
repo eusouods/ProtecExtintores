@@ -159,14 +159,27 @@ html:root body .catalog-browser .catalog-card{min-width:0}
 html:root body .catalog-browser .catalog-body h3{overflow-wrap:anywhere}
 html:root body .catalog-browser .catalog-body p.catalog-product-name{font-weight:600;color:var(--ui-text)!important;margin:0}
 @media(max-width:650px){html:root body .catalog-browser{scroll-margin-top:85px}html:root body .catalog-browser-heading h3{font-size:22px}html:root body .catalog-breadcrumb{gap:8px}}
-html:root body .product-art{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;background:transparent!important;line-height:1}
+html:root body .product-art{box-sizing:border-box;max-width:100%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;background:transparent!important;line-height:1}
 html:root body .product-art-large{width:100%;padding:22px}
-html:root body .product-art-disc{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:164px;height:164px;border-radius:50%;background:var(--ui-art)!important;color:var(--ui-art-ink)!important}
-html:root body .product-art svg{display:block;width:84px;height:84px;color:var(--ui-art-ink)!important;fill:none;flex-shrink:0;max-width:none;filter:none;transform:none}
+html:root body .product-art-disc{position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:164px;height:164px;border-radius:50%;background:var(--ui-art)!important;color:var(--ui-art-ink)!important}
+html:root body .product-art-large .product-art-disc::before{content:"";position:absolute;inset:8px;border:1px solid rgb(var(--ui-accent-rgb) / 12%);border-radius:50%;pointer-events:none}
+html:root body .product-art-large .product-art-disc{width:min(164px,100%);height:auto;aspect-ratio:1}
+html:root body .product-art svg{position:relative;display:block;width:116px;height:116px;color:var(--ui-art-ink)!important;fill:none;flex-shrink:0;max-width:none;filter:none;transform:none}
+html:root body .product-art .art-fill{fill:currentColor!important;fill-opacity:.10}
+html:root body .product-art .art-fill-strong{fill:currentColor!important;fill-opacity:.22}
+html:root body .product-art .art-label{fill:var(--ui-panel)!important;fill-opacity:.82}
+html:root body .product-art .art-detail{stroke-width:1.25;opacity:.65}
+html:root body .product-art .art-symbol{stroke-width:2.9}
+html:root body .product-art .art-dot{fill:currentColor!important;stroke:none}
+html:root body .product-art .art-ground{fill:currentColor!important;fill-opacity:.09;stroke:none}
+html:root body .product-art .art-led{fill:currentColor!important;fill-opacity:.26;stroke-width:1.1}
+html:root body .product-art .art-letter{font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:7px;font-weight:650;letter-spacing:.3px;fill:var(--ui-text)!important;color:var(--ui-text)!important;stroke:none}
+html:root body .product-art-large svg{width:72%;height:auto;aspect-ratio:1}
 html:root body .product-art-small .product-art-disc{width:62px;height:62px}
-html:root body .product-art-small svg{width:34px;height:34px}
+html:root body .product-art-small svg{width:44px;height:44px}
+html:root body .product-art-small .art-fine{display:none}
 html:root body .product-art-tiny .product-art-disc{width:30px;height:30px}
-html:root body .product-art-tiny svg{width:19px;height:19px}
+html:root body .product-art-tiny svg{width:21px;height:21px}
 html:root body .product-reference-label{display:inline-flex;align-items:center;gap:10px;min-width:0}
 html:root body .product-art-editor{display:flex;align-items:center;gap:15px;background:var(--ui-raised)!important;padding:15px;border:1px solid var(--ui-border);border-radius:12px}
 html:root body .product-art-editor>div{min-width:0}

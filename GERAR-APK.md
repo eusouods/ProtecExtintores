@@ -2,7 +2,7 @@
 
 O projeto Android está na pasta `android-app`. A geração pela internet está preparada no workflow `.github/workflows/android-apk.yml`.
 
-Para ativar os recursos offline, publique a API conforme `ATUALIZACAO-OFFLINE.md`. A versão Android 1.1.5 inclui o site e as ilustrações atualizadas no pacote offline e exige um APK novo para atualizar essa cópia; as instruções estão em `ATUALIZACAO-VISUAL.md`.
+Para ativar os recursos offline, publique a API conforme `ATUALIZACAO-OFFLINE.md`. A versão Android 1.1.6 inclui o site e as ilustrações atualizadas no pacote offline e exige um APK novo para atualizar essa cópia; as instruções estão em `ATUALIZACAO-VISUAL.md`.
 
 1. Publique o conteúdo atualizado deste projeto no repositório `eusouods/ProtecExtintores`, preservando a pasta `.github`.
 2. No GitHub, selecione **Actions → Build Android APK → Run workflow → Run workflow**.

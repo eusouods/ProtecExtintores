@@ -1,6 +1,20 @@
-# Logo oficial, catálogo e temas — versão 19 / Android 1.1.5
+# Ilustrações refinadas, catálogo e temas — versão 20 / Android 1.1.6
 
 A combinação aprovada na prévia foi aplicada ao site: azul-gelo e azul-petróleo no claro; café, cobre e âmbar suave no escuro.
+
+## Refinamento dos desenhos
+
+As referências foram redesenhadas com proporções mais equilibradas, contornos consistentes, preenchimentos suaves, detalhes secundários e uma base de sombra discreta. Extintores têm cilindro, válvula, mangueira e identificação mais claros; manômetros, conexões, roscas, iluminação, placas, hidrantes e outros componentes recebem desenhos próprios.
+
+- Desenhos maiores usam a versão detalhada no catálogo e no destaque da página inicial.
+- Miniaturas do admin mantêm a silhueta e reduzem os detalhes finos.
+- Ícones de listas e seleção de peças usam a versão compacta para preservar a leitura.
+- ABC e BC têm identificações próprias. Suporte de piso, acionador manual e detector de fumaça recebem variações automáticas pelo nome.
+- Os mesmos nomes de ilustração do admin foram preservados, mantendo as escolhas já cadastradas.
+
+Foram revisadas 26 referências selecionáveis e quatro variações automáticas. As 78 combinações de desenho e tamanho foram verificadas nos dois temas, de 320 a 1280 pixels, sem figuras cortadas ou transbordamento. A revisão de 66 telas e pop-ups e os testes do catálogo agrupado também passaram. O logo oficial e suas cores foram preservados.
+
+O pacote continua com **96 arquivos**. Os desenhos são vetoriais e locais; esta atualização não adiciona arquivos de imagens por produto. Gere o APK 1.1.6 para atualizar também a cópia offline embutida no aplicativo.
 
 ## Logo oficial da empresa
 
@@ -19,7 +33,7 @@ O logo tem as mesmas cores nos dois temas. O desenho técnico usado no catálogo
 
 A revisão foi feita em 66 telas e pop-ups nos dois temas. Também foram conferidos o carregamento dos logos, os favicons, o cabeçalho admin em 320 pixels, a ordem de serviço e o logo dentro da janela de impressão. As referências dos recursos XML Android foram verificadas e o Java compilou contra API 35/AndroidX. A geração completa do APK e a aparência no aparelho dependem do workflow e de teste no dispositivo.
 
-Para atualizar o ícone de um aplicativo já instalado, publique o projeto e gere **um novo APK 1.1.5** pelo GitHub Actions. O ZIP continua sendo código-fonte.
+Para atualizar o ícone de um aplicativo já instalado, publique o projeto e gere **um novo APK 1.1.6** pelo GitHub Actions. O ZIP continua sendo código-fonte.
 
 ## Catálogo agrupado
 
@@ -39,7 +53,7 @@ No admin, abra **Produtos → Adicionar produto** ou **Editar**:
 4. Use **Nome da opção** para capacidades em litros, medidas de placas, diâmetros, comprimentos e outras especificações. Exemplo: `10 L`, `20 × 30 cm` ou `15 m · 1½ pol`.
 5. Ative ou oculte cada opção separadamente. Se um grupo ficar sem opções ativas, ele desaparece da vitrine.
 
-Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **96 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.5 pelo workflow Android.
+Não é necessário atualizar ou migrar a API para estes campos. O pacote completo continua com **96 arquivos**. Para atualizar também a cópia offline embutida no aplicativo, gere o APK 1.1.6 pelo workflow Android.
 
 A navegação nova foi verificada em 36 combinações de tela, tema e largura, incluindo 320 pixels. Foram conferidos agrupamento sem perda ou repetição de itens, ordenação dos pesos, ocultação de opções, navegação de retorno, referência do orçamento e gravação dos novos campos pela API local. A revisão visual completa cobriu 66 telas e pop-ups nos dois temas, sem falhas de contraste detectadas, cores fora da paleta ou transbordamento horizontal.
 
@@ -78,8 +92,8 @@ Extraia o ZIP e envie os arquivos e as pastas que estão dentro de `ProtecExtint
 - Formulários, tabelas, navegação, cards, filtros, foco de teclado, mensagens, pop-ups e estados de seleção.
 - Ordens, peças, vídeos, pinturas, pausa/retomada, histórico, custos e pendências offline.
 - Cabeçalhos de apresentação claros no tema claro e escuros no tema escuro, com texto ajustado ao fundo.
-- Ícones de instalação, manifestos, favoritos e cache `official-logo-19`.
-- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.5.
+- Ícones de instalação, manifestos, favoritos e cache `refined-art-20`.
+- Fundo de carregamento, tela de erro, progresso e barras nativas do Android 1.1.6.
 - A preferência do sistema é usada no primeiro acesso; a seleção manual fica salva.
 - Impressões usam papel claro e texto escuro para manter a legibilidade.
 
