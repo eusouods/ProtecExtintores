@@ -41,6 +41,7 @@ public final class OfflineSyncWorker extends Worker {
                 if(blocked.contains(serviceId)||(old!=null&&old.optBoolean("conflict"))){blocked.add(serviceId);continue;}
                 vault.put("sync-state:"+account,new JSONObject().put("syncing",true).put("kind",op.optString("kind")).put("serviceId",serviceId).put("at",System.currentTimeMillis()));
                 Reply reply=send(op,auth.getString("token"),vault,account);
+                if(reply.code==404&&!reply.data.optBoolean("conflict")){vault.put("sync-state:"+account,new JSONObject().put("syncing",false).put("apiUpdateRequired",true).put("message","A API precisa ser atualizada. Os registros continuam no aparelho."));return Result.retry();}
                 if(reply.code==401||reply.code==403&&!reply.data.optBoolean("conflict")){vault.put("sync-state:"+account,new JSONObject().put("needsLogin",true).put("message",reply.data.optString("error")));return Result.success();}
                 if(reply.code>=200&&reply.code<300){
                     vault.put(resultKey,reply.data);

@@ -1,6 +1,12 @@
-# Offline automático — versão 25 / Android 1.3.0
+# Offline automático — versão 26 / Android 1.3.1
 
 Esta entrega contém o site, a API e o projeto Android completos. O arquivo continua sendo `ProtecExtintores.zip`, com 99 arquivos. O ZIP contém código-fonte; o APK é gerado no GitHub Actions.
+
+## Correção do cadastro nesta versão
+
+O formulário não exige mais um preparo offline prévio. Ele tenta recuperar os dados automaticamente. Se a API antiga não tiver as rotas offline ou o armazenamento falhar, permite cadastro online, com confirmação do servidor. No admin, o formulário e o salvamento online corretos são preservados. Um aviso informa quando o modo offline depende da atualização do sistema. As permissões e o bloqueio da conta não são contornados.
+
+**Atualize o Worker Cloudflare com a API deste ZIP. Publicar o site no GitHub não atualiza a API.** O erro 404 na rota de preparo foi confirmado na API publicada. Os envios locais existentes permanecem preservados até o servidor ser atualizado.
 
 ## Atualizar
 
@@ -21,7 +27,7 @@ Esta entrega contém o site, a API e o projeto Android completos. O arquivo cont
 
 ## Usar sem apertar botão de preparação
 
-Entre com internet uma vez. Os dados permitidos à sua conta são guardados automaticamente. As telas do navegador são baixadas em segundo plano; aguarde **Telas disponíveis offline**. O APK 1.3.0 já inclui as telas. O login continua online: sair da conta exige conexão para entrar de novo.
+Entre com internet uma vez. Os dados permitidos à sua conta são guardados automaticamente. As telas do navegador são baixadas em segundo plano; aguarde **Telas disponíveis offline**. O APK 1.3.1 já inclui as telas. O login continua online: sair da conta exige conexão para entrar de novo.
 
 O padrão passa a ser acesso local até sair da conta, sem expirar em 72 horas. Contas com política limitada explicitamente configurada na API continuam respeitando esse limite. Uma sessão do servidor vencida impede o envio, mas permite continuar registrando no aparelho já autorizado. O painel indicará quando é necessário entrar novamente para sincronizar. A senha nunca é guardada no banco offline.
 

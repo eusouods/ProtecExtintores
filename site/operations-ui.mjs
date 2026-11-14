@@ -108,7 +108,7 @@ function enhanceTeam(){
  summary.querySelector('[data-ops-current]')?.addEventListener('click',()=>window.offlineServices?.openDetails(current.id));
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=automatic-offline-25',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=registration-recovery-26',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{

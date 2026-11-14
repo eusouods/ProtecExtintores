@@ -1,8 +1,37 @@
 # Documentação da ProtecExtintores
 
+## Cadastro recuperado — versão 26 / Android 1.3.1
+
+**Instruções da versão atual.** A versão 25 permanece documentada abaixo como histórico.
+
+### Correção do aviso que bloqueava o cadastro
+
+O site novo exige rotas de sincronização que a API antiga não possui. Na conferência do ambiente publicado, o site estava na versão 25 e a rota `/api/offline/bootstrap` retornava 404. Isso deixava o usuário autenticado sem perfil offline e bloqueava o formulário.
+
+- Funcionário e vendedor agora tentam recuperar o preparo automaticamente ao abrir o cadastro. Se a API de sincronização ainda não estiver publicada, podem cadastrar **online**, aguardando a confirmação do servidor. A ausência do cache não é tratada como ausência de login.
+- O admin abre o formulário administrativo. Sem suporte de sincronização na API, usa o salvamento online e exibe um aviso; não cria uma fila nova que a API antiga não consegue receber.
+- Falha de armazenamento também mantém o formulário online disponível, sem prometer salvamento offline. O offline volta automaticamente quando a API e o cofre estiverem disponíveis.
+- Filas já existentes são preservadas quando o servidor retorna 404 por falta da rota. Isso não transforma todos os registros em conflitos de negócio. Login expirado, conta bloqueada e bloqueio do aparelho continuam sendo respeitados.
+
+### Atualizar a API é necessário
+
+No PowerShell, dentro da pasta **ProtecExtintores/api-cloudflare** extraída deste ZIP:
+
+```powershell
+npm.cmd install
+npx.cmd wrangler d1 migrations apply protecextintores-db --remote
+npx.cmd wrangler deploy
+```
+
+Preserve seu `database_id`, bindings e segredos. Depois publique os arquivos novos do site no GitHub e gere uma **nova execução** do workflow **Build Android APK** para usar o APK 1.3.1. Não desinstale nem limpe o aplicativo com pendências.
+
+Até publicar a API atualizada, o modo offline completo e as funções novas de cobrança não estarão disponíveis no servidor antigo. O ZIP traz o código completo da API; alterar apenas os arquivos do GitHub não publica o Worker Cloudflare.
+
+Testado em API local e navegador móvel: criação online com rota offline ausente, recuperação de preparo, uso sem conexão após recuperação, envio duplo bloqueado, formulário correto para o admin e falha de armazenamento. Android físico ainda requer validação.
+
 ## Offline automático — versão 25 / Android 1.3.0
 
-**Instruções da versão atual.** Consulte também `ATUALIZACAO-OFFLINE.md`. Os blocos seguintes são históricos.
+**Histórico da versão 25.** O guia da versão 26 acima descreve a correção do cadastro.
 
 - Entre com internet uma vez. A preparação das telas e dos dados acontece automaticamente; não existe mais a etapa de apertar **Preparar offline**. No navegador, aguarde a indicação de telas disponíveis antes de sair da rede. O APK novo já inclui as telas.
 - O acesso local permanece até sair da conta, inclusive quando a sessão do servidor expira. A senha não é armazenada. Entrar novamente requer internet; uma sessão vencida impede o envio até nova autenticação, sem apagar o trabalho local.

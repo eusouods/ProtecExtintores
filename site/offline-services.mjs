@@ -1,5 +1,5 @@
-import './service-management.mjs?v=automatic-offline-25';
-import {openOrderDetail} from './operations-ui.mjs?v=automatic-offline-25';
+import './service-management.mjs?v=registration-recovery-26';
+import {openOrderDetail} from './operations-ui.mjs?v=registration-recovery-26';
 import {vault,nativeCall} from './offline-vault.mjs';
 import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges} from './offline-rules.mjs';
 import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture} from './service-rules.mjs';
@@ -9,6 +9,8 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
 const rawApi=window.apiCall;
+const onlineTeamRegistration=window.openTeamMaintenanceForm;
+let preparationIssue=null,registrationOpening=null,adminApiUnavailable=false,adminCapabilityCheck=null,adminCapabilityToken='',adminCapabilityAt=0,adminCapabilityState=null;
 let profile=null,ops=[],results={},services=[],active='',preparing=null,syncing=false,renderTimer,tab='active',query='',locked=false,offline=false,needsLogin=false,serial=Promise.resolve(),lastStamp=0,submissionBasis=null,accountToken='',nativeSyncing=false,nativeKind='',upload=null,nativeTransfer=null,lastSyncAt='';
 const names={claim:'Aceite de serviço',create:'Nova ordem',technical:'Peças e observações',painting:'Pintura',stage:'Etapa',pause:'Pausa',resume:'Retomada',media:'Vídeo de peça',complete:'Conclusão da execução'};
 function summary(op){const p=op.payload || {};return `<dl>${[['Cliente',p.clientName],['Serviço',p.serviceType],['Data',p.date],['Motivo',p.reason],['Etapa',p.status],['Observações',p.notes],['Pinturas',p.quantity],['Equipamento',Number.isInteger(p.itemIndex)?p.itemIndex+1:null],['Peças',p.parts?.join?.(', ') || (typeof p.parts==='string'?p.parts:'')],['Peça do vídeo',p.part],['Arquivo',p.name]].filter(([,v])=>v!==undefined&&v!==null&&v!=='').map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}${Array.isArray(p.items)?`<dt>Equipamentos</dt><dd>${p.items.map(i=>`${esc(i.type)} ${esc(i.kg)} × ${i.qty}`).join('<br>')}</dd>`:''}</dl>`}
@@ -37,7 +39,7 @@ async function hydrate(){
   profile=await vault.get('profile:'+active);if(!profile)return;
   accountToken=(await vault.get('auth:'+active))?.token || '';
   const preparedShell=await vault.get('shell:'+active);shellReady=vault.native()||preparedShell?.version===shellVersion;
-  if(vault.native()){const nativeState=await vault.get('sync-state:'+active);if(nativeState?.needsLogin)needsLogin=true;nativeSyncing=Boolean(nativeState?.syncing&&Date.now()-nativeState.at<300000);nativeKind=nativeState?.kind || '';nativeTransfer=nativeSyncing?{serviceId:nativeState.serviceId,kind:nativeKind,loaded:Number(nativeState.loaded)||0,total:Number(nativeState.total)||0}:null;}
+  if(vault.native()){const nativeState=await vault.get('sync-state:'+active);if(nativeState?.needsLogin)needsLogin=true;if(nativeState?.apiUpdateRequired)preparationIssue={token:accountToken,status:404,message:'A API precisa ser atualizada.'};nativeSyncing=Boolean(nativeState?.syncing&&Date.now()-nativeState.at<300000);nativeKind=nativeState?.kind || '';nativeTransfer=nativeSyncing?{serviceId:nativeState.serviceId,kind:nativeKind,loaded:Number(nativeState.loaded)||0,total:Number(nativeState.total)||0}:null;}
   ops=await Promise.all((await vault.keys(opPrefix())).map(k=>vault.get(k)));ops=ops.filter(Boolean).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
   results={};for(const op of ops){const r=await vault.get(resultKey(op.id));if(r)results[op.id]=r}
   const savedSync=await vault.get('last-sync:'+active);lastSyncAt=savedSync?.at||'';
@@ -57,11 +59,12 @@ async function prepare(quiet=false){
   preparing=(async()=>{
     const preparingToken=localStorage.getItem(tokenKey),r=await network('/api/offline/bootstrap');const data=await r.json();
     if(localStorage.getItem(tokenKey)!==preparingToken)throw Error('A conta mudou durante a atualização. Tente novamente.');
-    if(!r.ok){if([401,403].includes(r.status))needsLogin=true;if(r.status===403){locked=true;scheduleRender()}throw Error(data.error || 'Entre novamente para preparar o aparelho.')}
-    active=data.accountKey;profile=data;offline=false;needsLogin=false;
-    await vault.put('profile:'+active,data);await vault.put('active',{accountKey:active});
-    await vault.put('auth:'+active,{token:localStorage.getItem(tokenKey),accountKey:active});
-    await vault.put('sync-state:'+active,{needsLogin:false});
+    if(!r.ok){if([401,403].includes(r.status))needsLogin=true;if(r.status===403){locked=true;scheduleRender()}throw Object.assign(Error(data.error || 'Não foi possível carregar os dados offline.'),{status:r.status})}
+    if(!['employee','seller'].includes(data.role)||data.role!==localStorage.getItem(roleKey)||data.accountKey!==data.role+':'+data.actor?.id||!Array.isArray(data.types)||!Array.isArray(data.services))throw Error('A resposta do preparo offline está incompleta.');
+    data.costCatalog ||= [];data.available ||= [];
+    await vault.batch([{key:'profile:'+data.accountKey,value:data},{key:'active',value:{accountKey:data.accountKey}},{key:'auth:'+data.accountKey,value:{token:preparingToken,accountKey:data.accountKey}},{key:'sync-state:'+data.accountKey,value:{needsLogin:false}}]);
+    if(localStorage.getItem(tokenKey)!==preparingToken)throw Error('A conta mudou durante a preparação.');
+    active=data.accountKey;profile=data;offline=false;needsLogin=false;preparationIssue=null;renderAvailability();
     await hydrate();
     // Once a fresh server snapshot contains a confirmed action, its local receipt
     // no longer needs to carry a full service copy. Draft dependencies are preserved.
@@ -70,7 +73,16 @@ async function prepare(quiet=false){
     await hydrate();
     prepareShell(active).then(()=>scheduleRender()).catch(()=>scheduleRender());
     scheduleRender();return data;
-  })().finally(()=>preparing=null);return preparing;
+  })().catch(error=>{preparationIssue={token:localStorage.getItem(tokenKey),status:error.status||0,message:friendly(error)};renderAvailability();throw error;}).finally(()=>preparing=null);return preparing;
+}
+function renderAvailability(){
+ const team=['employee','seller'].includes(localStorage.getItem(roleKey)),root=team?document.querySelector('#employeePortal:not(.hidden) main'):document.querySelector('#dashboard:not(.hidden) #content')?.parentElement;
+ const issue=team?preparationIssue?.token===localStorage.getItem(tokenKey)&&(!allowed()||preparationIssue.status===404):adminApiUnavailable;
+ let bar=document.getElementById('offlineAvailability');
+ if(!root||!issue){bar?.remove();return;}
+ const message=team?preparationIssue?.status===401?'Entre novamente para atualizar o acesso. Seus registros locais estão preservados.':preparationIssue?.status===403?'O acesso ao trabalho offline não foi autorizado. Procure o administrador.':allowed()?'Os registros continuam salvos neste aparelho. O sistema precisa ser atualizado para receber os envios.':'Você pode registrar serviços com internet. O modo offline será liberado quando a conexão com o sistema estiver atualizada.':'Cadastro online disponível. A API precisa ser atualizada para liberar os envios offline. Os registros já salvos neste aparelho estão preservados.';
+ if(!bar){bar=document.createElement('section');bar.id='offlineAvailability';bar.className='offline-banner';root.prepend(bar);}
+ if(bar.dataset.message!==message){bar.dataset.message=message;bar.innerHTML='<strong>Modo offline indisponível no momento</strong><p>'+esc(message)+'</p>';}
 }
 async function enqueue(kind,serviceId,payload,basis=null){basis ||= submissionBasis?.serviceId===serviceId?submissionBasis:null;const account=active;return withSerial(async()=>{
   assertAllowed();await hydrate();
@@ -101,6 +113,7 @@ async function sync(){
       const r=await network(path,{method:'POST',body,headers:{Authorization:'Bearer '+syncToken}}),data=await r.json();upload=null;
       if(active!==syncAccount)break;
       if(r.status===401||r.status===403&&!data.conflict){needsLogin=true;break}
+      if(r.status===404&&!data.conflict){preparationIssue={token:syncToken,status:404,message:'A API precisa ser atualizada para receber os envios.'};renderAvailability();break;}
       if(!r.ok){if(data.conflict||r.status===400||r.status===404){await vault.put(resultKey(op.id),{error:data.error,conflict:true,current:data.current || null});blocked.add(op.serviceId)}else break}
       else{await vault.put(resultKey(op.id),data);if(op.kind==='media')await vault.remove(op.payload.blobKey)}
       await hydrate();
@@ -206,7 +219,10 @@ window.apiCall=async function(path,method='GET',data=null){
  if(active&&accountToken===localStorage.getItem(tokenKey)&&method==='GET'&&['/api/employee/services','/api/seller/services'].includes(path)){if(r.ok){if(!preparing&&Date.now()-Date.parse(profile.preparedAt)>20000)prepare(true).catch(()=>{});return reply({services:profile.role==='employee'?services.concat(offline?[]:profile.available || []):services})}if(allowed())return reply({services})}
  return r;
 };
-window.openTeamMaintenanceForm=role=>registration(role);
+window.openTeamMaintenanceForm=role=>{
+ if(registrationOpening)return registrationOpening;
+ registrationOpening=registration(role).catch(error=>notify(friendly(error))).finally(()=>registrationOpening=null);return registrationOpening;
+};
 window.renderEmployeeWorkbench=renderWorkbench;
 window.refreshEmployeePortal=()=>prepare(true).catch(error=>notify(error.message));
 window.employeeNote=(id)=>{const s=services.find(s=>s.id===id);if(s)technical(s).catch(e=>notify(friendly(e)))};
@@ -227,15 +243,35 @@ window.addEventListener('online',()=>{if(!['employee','seller'].includes(localSt
 window.addEventListener('offline',()=>{offline=true;scheduleRender()});
 window.addEventListener('protec-native-lock',()=>{locked=true;scheduleRender()});
 window.addEventListener('protec-native-unlock',()=>{locked=false;if(profile)showPortal();else initialize()});
-new MutationObserver(()=>{const root=document.getElementById('employeePortal');if(profile&&root&&!root.classList.contains('hidden')&&(!root.querySelector('#offlineToolbar')||profile.role==='employee'&&!root.querySelector('[data-offline-service]')))scheduleRender()}).observe(document.getElementById('employeePortal'),{childList:true,subtree:true});
+new MutationObserver(()=>{renderAvailability();const root=document.getElementById('employeePortal');if(profile&&root&&!root.classList.contains('hidden')&&(!root.querySelector('#offlineToolbar')||profile.role==='employee'&&!root.querySelector('[data-offline-service]')))scheduleRender()}).observe(document.getElementById('employeePortal'),{childList:true,subtree:true});
 setInterval(()=>{if(active&&!document.hidden)hydrate().catch(()=>{});},3000);
-setInterval(()=>{if(active&&!document.hidden&&navigator.onLine&&!locked)prepare(true).then(()=>sync()).catch(()=>{});},45000);
+setInterval(()=>{if(localStorage.getItem(tokenKey)&&['employee','seller'].includes(localStorage.getItem(roleKey))&&!document.hidden&&navigator.onLine&&!locked)prepare(true).then(()=>sync()).catch(()=>{});},45000);
 async function initialize(){try{if(vault.native()){const state=await nativeCall('lockState');locked=state.locked;if(locked){await nativeCall('unlock');locked=false}}const saved=await vault.get('active');active=saved?.accountKey || '';if(active&&['employee','seller'].includes(localStorage.getItem(roleKey))){await hydrate();if(profile&&localStorage.getItem(tokenKey)){if(allowed())await showPortal()}else active=''}await initializeAdminOffline();}catch(error){notify(friendly(error));if(locked)showInitialLock()}finally{window.protecOfflineLoaded=true;window.dispatchEvent(new Event('protec-offline-ready'));if(!locked&&localStorage.getItem(tokenKey)&&['employee','seller'].includes(localStorage.getItem(roleKey)))prepare(true).then(()=>{showPortal();scheduleSync()}).catch(()=>scheduleRender());}}
 function showInitialLock(){for(const id of ['store','login','dashboard'])document.getElementById(id)?.classList.add('hidden');const root=document.getElementById('employeePortal');root.classList.remove('hidden');root.innerHTML='<section class="offline-locked"><h1>ProtecExtintores</h1><p>Desbloqueie o aparelho para abrir seus serviços.</p><button type="button" class="btn" data-unlock-initial>Desbloquear aparelho</button></section>';root.querySelector('[data-unlock-initial]').onclick=()=>initialize();}
 initialize();
 
 async function registration(role){
- if(!profile||profile.role!==role)return notify('Entre na sua conta e prepare o aparelho com internet primeiro.');
+ const currentRole=localStorage.getItem(roleKey),token=localStorage.getItem(tokenKey);
+ if(!token)return notify('Entre na sua conta para registrar o serviço.');
+ if(currentRole==='admin')return window.openService();
+ if(!['employee','seller'].includes(currentRole))return notify('Entre com uma conta de funcionário ou vendedor.');
+ role=currentRole;
+ if(locked)throw Error(preparationIssue?.status===403?'O acesso desta conta não foi autorizado. Procure o administrador.':'Desbloqueie o aparelho para registrar o serviço.');
+ if(!allowed()||profile?.role!==role){
+  if(navigator.onLine){
+   try{await prepare(true);}catch(error){
+    if(token!==localStorage.getItem(tokenKey)||role!==localStorage.getItem(roleKey))throw Error('A conta mudou. Abra o formulário novamente.');
+    if([401,403].includes(error.status)||locked)throw Error(error.status===401?'Entre novamente para registrar o serviço.':error.message);
+    if(typeof onlineTeamRegistration!=='function')throw error;
+    onlineTeamRegistration(role);
+    const form=document.getElementById('editForm');
+    if(form&&!form.querySelector('[data-online-registration]')){const note=document.createElement('p');note.className='offline-banner';note.dataset.onlineRegistration='';note.textContent='Registro online: aguarde a confirmação do sistema antes de fechar este formulário. O modo offline será preparado automaticamente quando estiver disponível.';form.querySelector('.modal-body')?.prepend(note);}
+    return;
+   }
+  }else throw Error('Este aparelho ainda não recebeu os dados desta conta. Conecte-se uma vez para carregá-los automaticamente; não é necessário preparar manualmente.');
+ }
+ if(token!==localStorage.getItem(tokenKey)||role!==localStorage.getItem(roleKey))throw Error('A conta mudou. Abra o formulário novamente.');
+ assertAllowed();
  const formAccount=active;
  const key=`draft:${active}:create`,draft=await vault.get(key)||{date:new Date().toISOString().slice(0,10),items:[{type:'',kg:'',qty:1}]};
  draft.serviceId ||= crypto.randomUUID();
@@ -289,7 +325,7 @@ async function serviceModal(serviceId,title,body,onSave,label='Salvar'){
 function duration(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file);let settled=false,seeking=false;const timer=setTimeout(()=>done(Error('Não foi possível conferir a duração do vídeo.')),15000);const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);video.onloadedmetadata=video.onseeked=video.ondurationchange=video.onerror=null;video.removeAttribute('src');video.load();URL.revokeObjectURL(url);error?reject(error):resolve(value)};const check=()=>{if(Number.isFinite(video.duration)&&video.duration>0){done(null,video.duration);return}if(!seeking){seeking=true;video.currentTime=1e100}};video.preload='metadata';video.onloadedmetadata=check;video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)done(null,video.duration)};video.onseeked=()=>{const seconds=Number.isFinite(video.duration)?video.duration:video.currentTime;done(!Number.isFinite(seconds)||seconds<=0?Error('Duração de vídeo inválida.'):null,seconds)};video.onerror=()=>done(Error('Este aparelho não conseguiu ler o vídeo.'));video.src=url})}
 
 let shellPreparing=null,shellReady=false,shellError='';
-const shellVersion='automatic-offline-25';
+const shellVersion='registration-recovery-26';
 async function prepareShell(account=''){
  if(shellPreparing)return shellPreparing;
  if(shellReady&&(await vault.get('shell:'+account))?.version===shellVersion)return;
@@ -323,6 +359,7 @@ async function adminHydrate(){
  adminResults={};for(const op of adminOps){const r=await vault.get('result:'+adminAccount+':'+op.id);if(r)adminResults[op.id]=r;}
  for(const op of adminOps){const r=adminResults[op.id];if(r?.ok&&Number(r.revision)>Number(adminBase?.__rev||0)){applyAdminChanges(adminBase,r.delta,{force:true,canonical:true});adminLastSync=r.serverAt;}}
  const syncState=await vault.get('sync-state:'+adminAccount);if(syncState?.needsLogin)adminNeedsLogin=true;
+ if(syncState?.apiUpdateRequired){adminApiUnavailable=true;renderAvailability();}
  adminLastSync=(await vault.get('last-sync:'+adminAccount))?.at||adminLastSync;
  if(adminProfile){adminProfile.state=adminBase;if(JSON.stringify(persisted)!==JSON.stringify(adminProfile))await vault.put('admin-profile',adminProfile);}
  if(!adminBusy&&!syncState?.syncing){
@@ -337,6 +374,10 @@ async function adminHydrate(){
 }
 async function adminAccept(state,username,token){
  if(!token||token!==localStorage.getItem(tokenKey)||localStorage.getItem(roleKey)!=='admin')throw Error('A conta mudou durante a preparação offline.');
+ if(!state?.settings||typeof state.settings!=='object'||!Array.isArray(state.services)||!Array.isArray(state.products))throw Error('A API não retornou os dados completos do painel.');
+ const verified=await verifyAdminOfflineBackend(token);
+ if(!verified)throw Error('A API precisa ser atualizada para liberar o modo offline. O cadastro online continua disponível.');
+ if(Number(verified.__rev||0)>Number(state.__rev||0))state=verified;
  const old=await vault.get('admin-profile');
  adminProfile={state:structuredClone(state),username:username||old?.username||'admin',preparedAt:new Date().toISOString()};
  adminBase=structuredClone(state);adminNeedsLogin=false;
@@ -345,6 +386,18 @@ async function adminAccept(state,username,token){
  adminAuth=token;await adminHydrate();adminView=adminProject(adminBase);
  prepareShell(adminAccount).catch(()=>{});adminSchedule();
  return structuredClone(adminView);
+}
+async function verifyAdminOfflineBackend(token){
+ if(adminCapabilityToken===token&&Date.now()-adminCapabilityAt<30000)return adminCapabilityState;
+ if(adminCapabilityCheck){await adminCapabilityCheck.catch(()=>{});if(adminCapabilityToken===token&&Date.now()-adminCapabilityAt<30000)return adminCapabilityState;}
+ adminCapabilityCheck=(async()=>{
+  const r=await network('/api/offline/admin/bootstrap',{headers:{Authorization:'Bearer '+token}}),data=await r.json();
+  if(token!==localStorage.getItem(tokenKey)||localStorage.getItem(roleKey)!=='admin')throw Error('A conta mudou durante a atualização.');
+  if([404,405].includes(r.status)){adminCapabilityToken=token;adminCapabilityAt=Date.now();adminCapabilityState=null;adminApiUnavailable=true;renderAvailability();return null;}
+  if(!r.ok)throw Object.assign(Error(data.error||'Não foi possível conferir o modo offline.'),{status:r.status});
+  if(!data.state?.settings||!Array.isArray(data.state.services)||!Array.isArray(data.state.products))throw Error('A resposta de sincronização está incompleta.');
+  adminCapabilityToken=token;adminCapabilityAt=Date.now();adminCapabilityState=data.state;adminApiUnavailable=false;renderAvailability();return data.state;
+ })().finally(()=>adminCapabilityCheck=null);return adminCapabilityCheck;
 }
 async function initializeAdminOffline(){
  if(localStorage.getItem(roleKey)!=='admin'||!localStorage.getItem(tokenKey))return;
@@ -435,7 +488,10 @@ async function adminEnqueue(kind,payload,desired=null){return adminRun(async()=>
 });}
 function adminSchedule(){
  if(!adminReady()||adminNeedsLogin)return;
- if(vault.native())nativeCall('sync',{accountKey:adminAccount}).catch(()=>{});
+ if(vault.native()){
+  if(navigator.onLine)verifyAdminOfflineBackend(adminAuth).then(s=>{if(s&&adminReady())nativeCall('sync',{accountKey:adminAccount}).catch(()=>{});}).catch(()=>{});
+  else nativeCall('sync',{accountKey:adminAccount}).catch(()=>{});
+ }
  else if(navigator.onLine)setTimeout(()=>adminSync().catch(()=>{}),80);
 }
 async function adminRefresh(){
@@ -443,7 +499,8 @@ async function adminRefresh(){
  adminRefreshBusy=true;const token=adminAuth;
  try{
   const r=await network('/api/offline/admin/bootstrap'),data=await r.json();if(token!==adminAuth||!adminReady())return;
-  if([401,403].includes(r.status)){adminNeedsLogin=true;return;}if(!r.ok)throw Error(data.error);
+  if([401,403].includes(r.status)){adminNeedsLogin=true;return;}if(r.status===404){adminApiUnavailable=true;renderAvailability();return;}if(!r.ok)throw Error(data.error);
+  adminApiUnavailable=false;renderAvailability();
   await adminRun(async()=>{
    adminBase=data.state;adminProfile.state=adminBase;adminProfile.preparedAt=data.preparedAt;await adminHydrate();
    // Do not replace the state behind an open form. The next save diffs the form's
@@ -464,6 +521,7 @@ function adminSync(){
 }
 async function performAdminSync(){
  if(!adminReady()||adminBusy||!navigator.onLine||adminNeedsLogin)return;
+ if(adminApiUnavailable&&!await verifyAdminOfflineBackend(adminAuth))return;
  if(vault.native()){adminSchedule();return;}
  const work=async()=>{
   adminBusy=true;adminRender();const token=adminAuth;
@@ -474,6 +532,7 @@ async function performAdminSync(){
     const r=await network('/api/offline/admin/sync',{method:'POST',body:JSON.stringify(op),headers:{Authorization:'Bearer '+token}}),data=await r.json();
     if(adminAuth!==token||!adminReady())break;
     if([401,403].includes(r.status)&&!data.conflict){adminNeedsLogin=true;break;}
+    if(r.status===404&&!data.conflict){adminApiUnavailable=true;adminCapabilityToken=token;adminCapabilityAt=Date.now();adminCapabilityState=null;renderAvailability();break;}
     if(!r.ok){if(data.conflict||[400,404].includes(r.status))await vault.put('result:'+adminAccount+':'+op.id,{...data,conflict:true});break;}
     await vault.batch([{key:'result:'+adminAccount+':'+op.id,value:data},{key:'last-sync:'+adminAccount,value:{at:data.serverAt}}]);
     await adminRun(()=>adminHydrate());
@@ -541,7 +600,7 @@ window.apiCall=async function(path,method='GET',data=null){
 const adminLogout=window.logout;
 window.logout=function(){
  if(adminAuth){vault.remove('auth:'+adminAccount).catch(()=>{});if(vault.native())nativeCall('stopSync',{accountKey:adminAccount}).catch(()=>{});}
- adminAuth='';adminProfile=null;adminBase=null;adminView=null;adminOps=[];adminResults={};document.getElementById('adminOfflineToolbar')?.remove();adminLogout();
+ adminAuth='';adminProfile=null;adminBase=null;adminView=null;adminOps=[];adminResults={};adminApiUnavailable=false;adminCapabilityToken='';adminCapabilityAt=0;adminCapabilityState=null;preparationIssue=null;document.getElementById('offlineAvailability')?.remove();document.getElementById('adminOfflineToolbar')?.remove();adminLogout();
 };
 window.adminOffline={get ready(){return adminReady();},get pending(){return adminPending().length;},show:adminShow,sync:adminSync,capture:adminAccept,overlay(state){return state?.__offlineLocal?structuredClone(adminView):adminProject(state);}};
 window.addEventListener('online',()=>{if(adminReady()){adminNeedsLogin=false;prepareShell(adminAccount).catch(()=>{});adminSync().catch(()=>{});}adminRender();});
@@ -549,5 +608,16 @@ window.addEventListener('offline',adminRender);
 window.addEventListener('protec-native-lock',()=>{if(localStorage.getItem(roleKey)==='admin'){document.getElementById('dashboard')?.classList.add('hidden');showInitialLock();}});
 window.addEventListener('protec-native-unlock',()=>{if(adminProfile)adminShow();});
 setInterval(()=>{if(adminReady()&&!document.hidden){adminRun(()=>adminHydrate()).then(()=>{if(vault.native()&&!document.querySelector('.modal:not(.hidden),dialog[open]')){adminView=adminProject(adminBase);db=structuredClone(adminView);}}).catch(()=>{});}},3000);
-setInterval(()=>{if(adminReady()&&!document.hidden&&navigator.onLine){adminSync().catch(()=>{});if(!shellReady)prepareShell(adminAccount).catch(()=>{});}},30000);
-new MutationObserver(()=>{if(adminReady())adminRender();}).observe(document.getElementById('dashboard'),{attributes:true,attributeFilter:['class']});
+setInterval(()=>{
+ if(document.hidden||!navigator.onLine)return;
+ if(adminReady()){adminSync().catch(()=>{});if(!shellReady)prepareShell(adminAccount).catch(()=>{});}
+ else if(adminApiUnavailable&&!locked&&localStorage.getItem(roleKey)==='admin'&&localStorage.getItem(tokenKey)){
+  const token=localStorage.getItem(tokenKey);
+  verifyAdminOfflineBackend(token).then(async state=>{
+   if(!state||token!==localStorage.getItem(tokenKey)||localStorage.getItem(roleKey)!=='admin')return;
+   await adminAccept(state,state.settings?.username,token);
+   if(!document.querySelector('#editForm')&&document.querySelector('#dashboard:not(.hidden)')){db=structuredClone(adminView);window.saveLocal();window.renderPage?.();}adminRender();
+  }).catch(()=>{});
+ }
+},30000);
+new MutationObserver(()=>{renderAvailability();if(adminReady())adminRender();}).observe(document.getElementById('dashboard'),{attributes:true,attributeFilter:['class']});
