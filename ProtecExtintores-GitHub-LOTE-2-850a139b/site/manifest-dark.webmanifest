@@ -1,0 +1,36 @@
+{
+  "name": "ProtecExtintores",
+  "short_name": "ProtecExtintores",
+  "description": "Extintores: recarga, manutenção, instalação e acompanhamento do pedido.",
+  "lang": "pt-BR",
+  "id": "./",
+  "categories": [
+    "business",
+    "productivity"
+  ],
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1d1815",
+  "theme_color": "#1d1815",
+  "icons": [
+    {
+      "src": "icons/icon-192-dark.png?v=registration-recovery-26",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-dark.png?v=registration-recovery-26",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512-dark.png?v=registration-recovery-26",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
