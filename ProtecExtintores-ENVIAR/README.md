@@ -13,6 +13,20 @@ O Actions **Publicar ProtecExtintores no GitHub Pages** extrai o projeto, verifi
 
 Nenhum comando precisa ser executado para preparar os arquivos de upload. A pasta pequena permanece com os mesmos 5 arquivos ao executar os comandos abaixo: o projeto expandido e as dependências ficam em outra pasta.
 
+## Quando o navegador ignora a pasta .github
+
+Use o GitHub Desktop: clone `eusouods/ProtecExtintores`, abra Repository → Show in Explorer e copie o **conteúdo** da pasta mínima para a raiz clonada, mesclando `.github` e substituindo os arquivos correspondentes. Faça Commit to main e Push origin.
+
+No GitHub, os caminhos precisam ser `ProtecExtintores.mjs`, `.github/workflows/pages.yml` e `.github/workflows/android-apk.yml`. Arquivos YAML soltos na raiz ou dentro de `ProtecExtintores-ENVIAR` não substituem os workflows antigos. Um check verde no workflow antigo Publicar site pode estar publicando os fontes anteriores.
+
+Confira o envio no PowerShell da pasta mínima:
+
+```powershell
+node ProtecExtintores.mjs conferir-github
+```
+
+A checagem compara o arquivo empacotado e os dois workflows com a main pública, sem autenticação, gravações ou publicação. Só considera o envio correto quando os três arquivos têm os mesmos conteúdos nos caminhos exatos. A conferência offline `verificar` continua disponível.
+
 ## Publicar a API no Cloudflare
 
 O site publicado estava novo e a API antiga respondia 404 nas rotas offline. Publique a API atualizada para liberar todos os recursos. Abra o PowerShell na pasta pequena que contém `ProtecExtintores.mjs` e execute:
@@ -55,9 +69,11 @@ Para conferir a integridade sem criar pastas:
 node ProtecExtintores.mjs verificar
 ```
 
-## Novidades do cadastro — versão 27 / Android 1.4.0
+## Novidades do cadastro — versão 28 / Android 1.4.1
 
-Funcionário e vendedor agora selecionam serviço, extintor, capacidade, quantidade e peças previstas em listas. Mangueiras de hidrante são opcionais, com tipo, diâmetro, metros e quantidade selecionáveis. A sugestão de preço é exibida sem edição e aplicada se o valor combinado ficar vazio. Os preços vêm da tabela do admin; itens sem preço ficam a definir. A cotação offline é conferida no envio. O valor ao cliente permanece separado da cobrança interna.
+Funcionário e vendedor selecionam serviço, extintor, capacidade, quantidade e peças previstas em listas. Mangueiras de hidrante são opcionais, com tipo, diâmetro, metros e quantidade selecionáveis. A sugestão de preço é exibida sem edição e aplicada se o valor combinado ficar vazio. Os preços vêm da tabela do admin; itens sem preço ficam a definir. A cotação offline é conferida no envio. O valor ao cliente permanece separado da cobrança interna.
+
+O admin também seleciona peças previstas e as quantidades/comprimentos nos serviços adicionais, preservando seus fluxos de clientes, preços e impressão. A tela traz a identificação Cadastro por seleção · versão 28.
 
 Sem nome de cliente, a ordem fica identificada como serviço próprio de quem a registrou. O vendedor ganha busca, filtros, valores e margem bruta estimada quando existe cobrança; os dois perfis recebem atalhos para rascunho e última ordem.
 
