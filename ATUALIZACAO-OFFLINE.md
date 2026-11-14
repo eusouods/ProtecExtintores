@@ -1,10 +1,11 @@
-# Ordens offline, pausas e retomadas — versão 1.1
+# Offline automático — versão 25 / Android 1.3.0
 
-Esta atualização envolve o site, a API e o projeto Android. O ZIP é o código completo; gere um APK novo depois de publicar os arquivos.
+Esta entrega contém o site, a API e o projeto Android completos. O arquivo continua sendo `ProtecExtintores.zip`, com 99 arquivos. O ZIP contém código-fonte; o APK é gerado no GitHub Actions.
 
-## Como atualizar
+## Atualizar
 
-1. Extraia `ProtecExtintores.zip`. Na pasta extraída `ProtecExtintores/api-cloudflare`, abra o PowerShell e execute:
+1. Antes de atualizar, confirme o envio das pendências da versão anterior. Não desinstale o aplicativo nem apague dados locais com registros por enviar.
+2. Extraia o ZIP. Abra o PowerShell em **ProtecExtintores/api-cloudflare**:
 
    ```powershell
    npm.cmd install
@@ -12,67 +13,49 @@ Esta atualização envolve o site, a API e o projeto Android. O ZIP é o código
    npx.cmd wrangler deploy
    ```
 
-   A migração `0005_offline_receipts.sql` acrescenta a tabela de confirmações de sincronização. Não exclui os serviços existentes. As credenciais Cloudflare e a senha administrativa existentes continuam sendo usadas.
+   A tabela de comprovantes de sincronização, incluída na migração `0005_offline_receipts.sql`, é reutilizada. Não há migração destrutiva nesta versão. Preserve seu `database_id`, os bindings e os segredos Cloudflare já configurados.
 
-2. Atualize o conteúdo do repositório GitHub, preservando a estrutura da raiz: `site`, `api-cloudflare`, `android-app`, `scripts` e `.github`. A publicação do site continua pelo workflow de Pages.
-3. Em **Actions → Build Android APK → Run workflow**, escolha **main** e inicie uma execução nova. Baixe **ProtecExtintores-APK** em **Artifacts** e extraia `ProtecExtintores.apk`.
-4. Instale a nova versão e faça os testes no aparelho antes de usar com serviços reais.
+3. Atualize o conteúdo do GitHub preservando `site`, `api-cloudflare`, `android-app`, `scripts` e `.github`. Publique a API antes do site.
+4. Execute **Actions → Build Android APK → Run workflow → main**. Baixe o artefato **ProtecExtintores-APK** e extraia o APK. Reexecutar uma compilação de um commit antigo não usa o código novo.
+5. Instale a atualização preservando os dados e valide o fluxo em modo avião antes de usar com serviços reais. O workflow ainda gera um APK de teste; a assinatura pode mudar entre execuções. Se o Android exigir desinstalar, sincronize primeiro. Para distribuição definitiva, configure uma chave de assinatura permanente.
 
-Publique a API antes do site para que os novos painéis encontrem as rotas de sincronização.
+## Usar sem apertar botão de preparação
 
-## Preparar o aparelho
+Entre com internet uma vez. Os dados permitidos à sua conta são guardados automaticamente. As telas do navegador são baixadas em segundo plano; aguarde **Telas disponíveis offline**. O APK 1.3.0 já inclui as telas. O login continua online: sair da conta exige conexão para entrar de novo.
 
-- Entre como funcionário ou vendedor com internet. O primeiro acesso exige autenticação online.
-- No painel, pressione **Preparar offline** e aguarde a confirmação.
-- Serão baixados os registros da conta, as etapas e as referências necessárias ao cadastro. Não é baixado o banco administrativo inteiro.
-- O aplicativo guarda o rascunho enquanto você preenche. Reabra **Registrar serviço** para continuar um cadastro; rascunhos também aparecem em **Pendências**.
-- O prazo offline padrão é de 72 horas. O administrador pode escolher de 1 a 168 horas em **Configurações → Acesso offline da equipe**. O novo prazo chega ao aparelho na próxima conexão.
+O padrão passa a ser acesso local até sair da conta, sem expirar em 72 horas. Contas com política limitada explicitamente configurada na API continuam respeitando esse limite. Uma sessão do servidor vencida impede o envio, mas permite continuar registrando no aparelho já autorizado. O painel indicará quando é necessário entrar novamente para sincronizar. A senha nunca é guardada no banco offline.
 
-O APK 1.1 inclui uma cópia das telas para abertura sem rede e guarda os dados da equipe em SQLite privado, criptografado com uma chave do Android Keystore. Os vídeos pendentes ficam em arquivos privados criptografados. No navegador e em APKs anteriores, o armazenamento usa IndexedDB criptografado e a abertura offline depende do cache preparado.
+No APK, os registros e arquivos ficam criptografados em armazenamento privado com Android Keystore. No navegador, o cofre usa IndexedDB com AES-GCM. Os dados privados não vão para o cache público do service worker.
 
-## Registrar sem conexão
+## O que pode fazer offline
 
-- O funcionário pode cadastrar uma ordem, registrar notas, peças, pintura, etapa, pausa, retomada e conclusão local.
-- O vendedor pode cadastrar ordens e consultar os registros da própria conta que já foram baixados.
-- Cada peça trocada recebe seu vídeo, de até 60 segundos e 50 MB. O painel confirma quando o arquivo foi realmente guardado.
-- Escolha vídeos disponíveis no aparelho. Gravação direta pela câmera não foi acrescentada.
-- **Salvo neste aparelho** significa que ainda pode faltar enviar. **Recebido · aguardando revisão** significa que o servidor recebeu a execução e os anexos obrigatórios. O fechamento definitivo continua com o administrador.
-- Ordens novas são vinculadas à conta autenticada. Sair da conta preserva os rascunhos e envios pendentes separados por conta; para voltar a essa conta após sair, faça login online.
+- **Admin:** criar ordens, revisar o cadastro, finalizar localmente após a validação, gerenciar clientes, produtos e visibilidade no catálogo, estoque, custos, preços, etapas, contatos e configurações gerais. Configure também descontos e condições internas dos dois perfis. Os dados técnicos e valores de uma ordem já finalizada permanecem protegidos.
+- **Funcionário:** criar ordens, aceitar uma ordem disponível já baixada, registrar notas/peças/vídeos, quantidade de pinturas, etapa, pausa, retomada e conclusão local. Um único serviço pode ficar em execução por vez.
+- **Vendedor:** criar ordens e consultar o histórico da própria conta já baixado. O valor cobrado do cliente continua livre e separado da cobrança à empresa.
+- **Todos:** alternar o tema, consultar os dados baixados e fechar/reabrir o aplicativo mantendo os registros salvos. Rascunhos da equipe são guardados durante o preenchimento; para confirmar uma alteração administrativa, use o botão Salvar do próprio formulário.
 
-## Pausar para atender uma urgência
+Vídeos de peças novos podem ser guardados antes da conexão, até 60 segundos e 50 MB. Um vídeo de outro aparelho precisa ser aberto online uma vez para ser guardado para reprodução offline; não se baixam automaticamente todos os vídeos antigos. O app informa quando falta arquivo ou espaço. Use arquivos disponíveis no aparelho; gravação direta pela câmera não foi acrescentada.
 
-1. No serviço em execução, pressione **Pausar serviço**.
-2. Informe o motivo. A ordem permanece atribuída a você e vai para **Pausados**.
-3. Aceite outro serviço disponível com internet ou registre outro atendimento.
-4. Depois de concluir ou pausar o novo atendimento, abra **Pausados → Retomar serviço**.
+## Confirmação e sincronização
 
-A etapa anterior, peças e vídeos ficam preservados. O histórico registra quem pausou, o motivo, o horário recebido pelo sistema e a retomada. Somente um serviço pode ficar em execução por funcionário; serviços pausados não bloqueiam o atendimento urgente. O administrador pode acompanhar a pausa e consultar os vídeos recebidos em **Peças, vídeos e resultado**.
+**Salvo neste aparelho** significa que os outros usuários ainda não receberam a alteração. A finalização administrativa offline só libera cobrança no servidor depois que o fechamento e seus dados forem aceitos. Não representa confirmação de pagamento.
 
-Aceitar uma ordem ainda não atribuída exige internet, para impedir que dois funcionários assumam o mesmo atendimento offline.
+Ao reconectar, o envio começa automaticamente. No navegador, mantenha o painel aberto; o APK também agenda envios pelo WorkManager. O Android controla a execução em segundo plano conforme rede, bateria e restrições do aparelho. Não é garantia de envio instantâneo com o app fechado.
 
-## Envio, conflitos e acesso
+Cada operação tem identificador único. O comprovante e a alteração são gravados juntos no D1, permitindo repetir uma requisição perdida sem criar outra ordem ou movimentar estoque duas vezes. Alterações do admin são aplicadas por campo, preservando edições independentes de outros aparelhos. Preços, condições e a ordem usados no fechamento são conferidos novamente.
 
-- Use **Sincronizar agora** ou mantenha o painel aberto quando a rede voltar. O APK 1.1 também agenda o envio pelo WorkManager; o Android decide quando o trabalho em segundo plano pode executar, respeitando rede, bateria e restrições do aparelho.
-- Uma sessão vencida não apaga os registros. O painel pede novo login antes de enviar. A senha da conta não é guardada no banco offline.
-- Opcionalmente, ative **Bloqueio do aparelho** no APK. O Android confirma o PIN, padrão ou senha de tela ao retornar ao app após ficar em segundo plano. Use o mesmo botão para desativar, após confirmar o desbloqueio.
-- O servidor verifica novamente a conta, o responsável pela ordem e a versão do registro. Uma conta removida ou desativada não consegue enviar operações.
-- Se o admin alterou a ordem enquanto o aparelho estava offline, o envio é interrompido para essa ordem. Em **Pendências → Revisar ordem e reenvio**, confira a versão atual e confirme explicitamente a reaplicação. Os registros originais ficam preservados.
-- Cada envio tem uma identificação única e um comprovante persistente no D1, gravado na mesma transação do serviço. Uma conexão interrompida pode repetir o envio sem cadastrar outra ordem ou descontar peças duas vezes.
-- A fila local confirmada é compactada depois que os dados já aparecem em uma nova consulta ao servidor. Pendências e dependências de rascunhos são preservadas.
+Se houver disputa pelo mesmo dado, consulte **Pendências**. No admin, revise os campos locais e atuais: mantenha o servidor ou reaplique os campos da alteração administrativa. Comandos que precisam de nova validação, como fechamento ou alteração de preço, devem ser refeitos sobre a versão atual depois de manter o servidor. A versão anterior permanece no arquivo criptografado de revisão. Na equipe, use **Revisar ordem e reenvio** e confirme a reaplicação depois de conferir a ordem atual.
 
-Pagamentos, aprovações administrativas, fechamento financeiro e consultas de vídeos já enviados continuam dependendo da API online. O app não consegue descobrir novas atribuições ou bloqueios enquanto está sem conexão.
+Uma ordem disponível aceita por dois funcionários offline será atribuída ao primeiro envio válido. O outro envio fica preservado para revisão. O app não pode reservar uma ordem nos outros aparelhos enquanto está sem rede.
 
-## Cuidados ao atualizar o APK
+## O que continua online
 
-Até sincronizar, a única cópia dos novos registros está no aparelho. Não desinstale o app nem apague os dados do navegador com pendências.
+Login, criar/remover acessos ou alterar senhas/usuários, configurar/testar integrações bancárias, gerar um novo Pix, avisar que pagou e confirmar recebimento dependem do servidor. Ordens antigas vinculadas ao pagamento integrado de pedidos também exigem internet para finalizar. As telas indicam essa necessidade; essas operações não são apresentadas como concluídas offline.
 
-O workflow continua gerando um APK de teste, cuja assinatura pode mudar entre execuções do GitHub. Se o Android exigir desinstalar a versão anterior, primeiro confirme que todas as pendências foram recebidas. Antes de distribuir como aplicativo definitivo, configure uma chave de lançamento permanente e guarde-a com segurança.
+Consultas adicionais mostram a última cópia carregada quando disponível. Não é possível descobrir novas atribuições, alterações de outros aparelhos ou revogação de acesso sem conexão. O servidor revalida permissões, conta ativa e responsáveis ao receber a fila; uma conta desativada não consegue enviar. O acesso local até sair da conta é uma escolha para permitir trabalho continuado no aparelho já autorizado.
 
-## Verificações desta entrega
+## Verificações
 
-- Testes das regras e da API em D1/R2 locais: idempotência, gravação concorrente, permissões, pausas, retomadas, quantidade de pinturas, integridade de arquivos, vídeos obrigatórios, revisão e conta desativada.
-- Teste automatizado em navegador com tela móvel: preparo, rascunho, modo avião, reinício, atendimento urgente, vídeo WebM real, conclusão, sessão expirada, sincronização, revisão de conflito e separação entre funcionário e vendedor.
-- Verificação de compilação das classes Java com API 35 e dependências AndroidX reais, além da validação dos recursos XML e do build do Worker.
-- Sem teste em aparelho Android físico nesta sessão. O WorkManager, o desbloqueio do aparelho e o armazenamento Keystore ainda precisam da validação no seu aparelho. A compilação completa e o APK serão gerados pelo GitHub Actions.
+Testados em ambiente local: preparo automático após login, telas em modo avião, criação e revisão, configurações, fechamento local com financeiro, reinício e recuperação, envio automático, duplicidade, alteração concorrente em campos diferentes, conflito no mesmo campo, reautenticação sem perder pendências, pausa/urgência/retomada, vídeo WebM real, permissões e separação de contas. As cobranças e o QR Pix continuam verificados nos dois temas. Java compilado com API 35/AndroidX e XML validado.
 
-O conteúdo anterior dos documentos consolidados do projeto é histórico; para esta versão, siga estas instruções.
+Sem teste em Android físico nesta sessão. O APK completo deve ser compilado pelo GitHub Actions e validado no celular, incluindo Keystore, desbloqueio e WorkManager.

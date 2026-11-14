@@ -46,6 +46,11 @@ export function applyOperation(state, actor, op, at) {
     state.services.push(service); event('Ordem registrada','Registro recebido do aparelho.');
     return service;
   }
+  if(op.kind==='claim'){
+    if(!service||actor.role!=='employee'||service.employeeId||completed(service)||cancelled(service))fail('Esta ordem não está disponível para aceitar.',409);
+    if(activeWork(state,actor.id,service.id))fail('Pause ou conclua o outro serviço antes de aceitar este.',409);
+    service.employeeId=actor.id;service.employeeName=actor.name;service.status='Recebido';service.items.forEach(i=>i.status='Recebido');event('Serviço aceito');return service;
+  }
   if (!service || actor.role!=='employee' || service.employeeId!==actor.id) fail('Ordem não atribuída a este funcionário.',403);
   if (service.closed || cancelled(service)) fail('A ordem foi finalizada ou cancelada. Revise as alterações pendentes.',409);
   if (service.employeeCompletedAt) fail('A execução já foi concluída. O administrador deve revisar a ordem.',409);
@@ -98,7 +103,7 @@ export function applyOperation(state, actor, op, at) {
   return service;
 }
 export function replayLocal(profile, operations, results) {
-  const state={services:structuredClone(profile.services || []),types:profile.types || [],settings:profile.settings || {},costCatalog:profile.costCatalog || []};
+  const state={services:structuredClone([...(profile.services || []),...(profile.available||[]).filter(s=>!(profile.services||[]).some(o=>o.id===s.id))]),types:profile.types || [],settings:profile.settings || {},costCatalog:profile.costCatalog || []};
   for(const op of operations) {
     if(results[op.id]?.ok || results[op.id]?.discarded) continue;
     try {
@@ -110,4 +115,76 @@ export function replayLocal(profile, operations, results) {
     }catch{const service=state.services.find(s=>s.id===op.serviceId);if(service)service.localPending=true}
   }
   return state.services;
+}
+
+// Field-level changes preserve unrelated edits from another device. Arrays of
+// equipment are atomic: their positions are meaningful and cannot be merged safely.
+export const adminCollections=['employees','sellers','clients','extinguishers','services','products','orders','types','inventory','costCatalog'];
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o||{},k);
+const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+const plain=o=>o&&typeof o==='object'&&!Array.isArray(o);
+const unsafe=k=>['__proto__','prototype','constructor'].includes(k);
+export function adminChanges(before,after,canonical=false){
+ const changes=[];
+ function walk(a,b,path){
+   if(equal(a,b))return;
+   if(plain(a)&&plain(b)){
+     for(const k of new Set([...Object.keys(a),...Object.keys(b)])){
+       if(unsafe(k)||(!canonical&&(['localPending','localCompleted','__offlineLocal'].includes(k)||path[0]==='settings'&&['password','username'].includes(k)||path[0]==='services'&&k==='finance')))continue;
+       walk(a[k],b[k],[...path,k]);
+     }return;
+   }
+   if(!canonical&&path.at(-1)==='history'&&Array.isArray(a)&&Array.isArray(b)&&b.length>=a.length&&equal(a,b.slice(0,a.length))){changes.push({path,append:b.slice(a.length),before:a});return;}
+   changes.push({path,before:{exists:a!==undefined,...(a!==undefined?{value:a}:{})},after:{exists:b!==undefined,...(b!==undefined?{value:b}:{})}});
+ }
+ walk(before.settings||{},after.settings||{},['settings']);
+ for(const group of adminCollections){
+   const a=before[group]||[],b=after[group]||[];
+   for(const id of new Set([...a.map(x=>x.id),...b.map(x=>x.id)])){
+     if(typeof id!=='string'||!id||unsafe(id))fail('Cadastro sem identificador válido.');
+     const old=a.find(x=>x.id===id),next=b.find(x=>x.id===id);
+     if(!canonical&&!old&&next?.finance)fail('Não é possível cadastrar cobrança por edição direta.');
+     walk(old,next,[group,id]);
+   }
+ }
+ if(canonical)for(const key of ['__rev','__ts','teamBills'])walk(before[key],after[key],[key]);
+ return changes;
+}
+export function applyAdminChanges(state,changes,{force=false,canonical=false}={}){
+ if(!Array.isArray(changes)||changes.length>20000)fail('Conjunto de alterações inválido.');
+ const checkKeys=value=>{if(value&&typeof value==='object')for(const key of Object.keys(value)){if(unsafe(key))fail('Campo inválido.');checkKeys(value[key]);}};
+ checkKeys(changes);
+ for(const change of changes){
+   const path=change.path;
+   if(!Array.isArray(path)||!path.length||path.length>15||path.some(k=>typeof k!=='string'||!k||unsafe(k)))fail('Campo inválido.');
+   const [group,id]=path;
+   if(!canonical&&(group!=='settings'&&!adminCollections.includes(group)||group==='settings'&&(path.length<2||['password','username'].includes(id))||adminCollections.includes(group)&&path[2]==='id'||group==='services'&&path.includes('finance')))fail('Campo protegido.');
+   let parent=state,key=group;
+   if(adminCollections.includes(group)){
+     if(path.length<2)fail('Cadastro inválido.');
+     state[group]||=[];parent=state[group];key=parent.findIndex(x=>x.id===id);
+     if(path.length>2){if(key<0)fail('O cadastro foi removido em outro aparelho.',409);parent=parent[key];}
+   }else if(path.length>1){state[group]||={};parent=state[group];}
+   for(let i=adminCollections.includes(group)?2:1;i<path.length;i++){
+     key=path[i];if(i<path.length-1){if(!plain(parent[key])){if(!force)fail('Este campo foi alterado em outro aparelho.',409);parent[key]={};}parent=parent[key];}
+   }
+   const current=key===-1?undefined:parent[key];
+   if(change.append){
+     if(!Array.isArray(current)||!Array.isArray(change.before)||!equal(current.slice(0,change.before.length),change.before))fail('O histórico mudou. Revise esta alteração.',409);
+     parent[key]=current.concat(change.append.filter(event=>!current.some(old=>equal(old,event))));continue;
+   }
+   if(!change.before||!change.after)fail('Alteração inválida.');
+   const matches=change.before.exists?equal(current,change.before.value):current===undefined;
+   // A previously applied value is safe to acknowledge, including after a lost reply.
+   if(!force&&!matches&&!(change.after.exists?equal(current,change.after.value):current===undefined))throw Object.assign(Error('O mesmo campo mudou em outro aparelho. Revise antes de enviar.'),{status:409,conflict:true,field:path.join(' / ')});
+   if(!canonical&&group==='services'){
+     const service=state.services.find(s=>s.id===id);
+     if(path.length===2&&!change.after.exists)fail('Preserve o histórico: arquive a ordem em vez de excluir.');
+     if(path.length===2&&!service&&change.after.value?.finance)fail('Cobrança protegida.');
+     if(service?.closed&&['items','employeeId','sellerId','billingOwner','closed'].includes(path[2]))fail('Serviço finalizado: dados técnicos e responsáveis são imutáveis.');
+   }
+   if(Array.isArray(parent)&&path.length===2){if(change.after.exists){if(key<0)parent.push(structuredClone(change.after.value));else parent[key]=structuredClone(change.after.value)}else if(key>=0)parent.splice(key,1);}
+   else if(change.after.exists)parent[key]=structuredClone(change.after.value);else delete parent[key];
+ }
+ return state;
 }

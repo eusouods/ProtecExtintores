@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public final class OfflineSyncWorker extends Worker {
     public OfflineSyncWorker(@NonNull Context context,@NonNull WorkerParameters params){super(context,params);}
     public static void schedule(Context context,String account) throws Exception {
-        if(!account.matches("(employee|seller):[a-zA-Z0-9_-]{1,100}"))throw new IllegalArgumentException("Conta inválida.");
+        if(!account.matches("(employee|seller|admin):[a-zA-Z0-9_-]{1,100}"))throw new IllegalArgumentException("Conta inválida.");
         WorkManager manager=WorkManager.getInstance(context);String name="protec-sync:"+account;
         for(WorkInfo work:manager.getWorkInfosForUniqueWork(name).get())if(work.getState()==WorkInfo.State.ENQUEUED||work.getState()==WorkInfo.State.BLOCKED)return;
         OneTimeWorkRequest request=new OneTimeWorkRequest.Builder(OfflineSyncWorker.class)
@@ -57,7 +57,7 @@ public final class OfflineSyncWorker extends Worker {
     private Reply send(JSONObject op,String token,OfflineVault vault,String account) throws Exception {
         boolean media=op.getString("kind").equals("media");
         String base=getApplicationContext().getString(R.string.api_base_url);
-        URL url=new URL(base+(media?"/api/offline/media":"/api/offline/sync"));
+        URL url=new URL(base+(account.equals("admin:1")?"/api/offline/admin/sync":media?"/api/offline/media":"/api/offline/sync"));
         if(!url.getProtocol().equals("https"))throw new IOException("Conexão segura obrigatória.");
         HttpURLConnection connection=(HttpURLConnection)url.openConnection();
         connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(20000);connection.setReadTimeout(180000);connection.setRequestMethod("POST");connection.setDoOutput(true);connection.setRequestProperty("Authorization","Bearer "+token);connection.setChunkedStreamingMode(65536);
@@ -86,7 +86,7 @@ public final class OfflineSyncWorker extends Worker {
             }
             int code=connection.getResponseCode();InputStream input=code>=400?connection.getErrorStream():connection.getInputStream();
             if(input==null)throw new IOException("Sem resposta do servidor.");
-            ByteArrayOutputStream bytes=new ByteArrayOutputStream();try(InputStream stream=input){byte[] buffer=new byte[8192];int count;while((count=stream.read(buffer))!=-1){if(bytes.size()+count>2*1024*1024)throw new IOException("Resposta muito grande.");bytes.write(buffer,0,count);}}
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream();try(InputStream stream=input){byte[] buffer=new byte[8192];int count;while((count=stream.read(buffer))!=-1){if(bytes.size()+count>32*1024*1024)throw new IOException("Resposta muito grande.");bytes.write(buffer,0,count);}}
             return new Reply(code,new JSONObject(bytes.toString("UTF-8")));
         }finally{connection.disconnect();}
     }

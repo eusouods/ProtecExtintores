@@ -1,10 +1,23 @@
 import assert from 'node:assert/strict';
-import {applyOperation,replayLocal,isPaused,activeWork} from '../site/offline-rules.mjs';
+import {applyOperation,replayLocal,isPaused,activeWork,adminChanges,applyAdminChanges} from '../site/offline-rules.mjs';
 const actor={role:'employee',id:'employee-test',username:'tecnico',name:'Técnico'};
 const state=()=>({settings:{stages:['Recebido','Em manutenção','Pintando','Inspeção final']},types:[{name:'ABC',kg:'6',price:80}],services:[],inventory:[{name:'Válvula M30',qty:5}]});
 let n=0;const operation=(kind,serviceId,payload={})=>({id:'operation-'+(++n),deviceId:'device-test',serviceId,kind,payload,createdAt:'2026-11-12T12:00:00Z'});
 const create=id=>operation('create',id,{date:'2026-11-12',serviceType:'Recarga',clientName:'Empresa Teste',items:[{type:'ABC',kg:'6',qty:2}]});
 const at='2026-11-12T12:00:00Z';
+// Available orders are cached automatically and can be claimed without a request.
+const availableState=state(),available=applyOperation(availableState,{...actor,role:'seller'},create('service-available'),at);
+applyOperation(availableState,actor,operation('claim',available.id),at);
+assert.equal(available.employeeId,actor.id);assert.equal(available.status,'Recebido');
+assert.throws(()=>applyOperation(availableState,actor,operation('claim',available.id),at),/não está disponível/);
+const original={settings:{company:'Protec',whatsapp:'111'},products:[{id:'product-test',name:'Antes',active:true}],services:[{id:'service-test',history:[{action:'Criada'}]}]};
+const edited=structuredClone(original);edited.settings.company='Novo nome';edited.products[0].active=false;edited.services[0].history.push({action:'Nota local'});
+const patch=adminChanges(original,edited),remote=structuredClone(original);remote.settings.whatsapp='222';remote.services[0].history.push({action:'Nota remota'});
+applyAdminChanges(remote,patch);assert.equal(remote.settings.company,'Novo nome');assert.equal(remote.settings.whatsapp,'222');assert.equal(remote.products[0].active,false);assert.equal(remote.services[0].history.length,3);
+const conflict=structuredClone(original);conflict.settings.company='Nome remoto';assert.throws(()=>applyAdminChanges(conflict,patch),/mesmo campo mudou/);
+const removed=structuredClone(original);removed.products=[];const deletion=adminChanges(original,removed);applyAdminChanges(removed,deletion);assert.equal(removed.products.length,0);
+assert.throws(()=>applyAdminChanges(structuredClone(original),[{path:['settings','__proto__'],before:{exists:false},after:{exists:true,value:{hacked:true}}}]),/Campo inválido/);
+assert.equal({}.hacked,undefined);
 const db=state(),first=applyOperation(db,actor,create('service-first'),at);
 assert.equal(first.price,160);assert.equal(first.employeeId,actor.id);
 assert.throws(()=>applyOperation(db,actor,create('service-urgent'),at),/Pause ou conclua/);

@@ -1,8 +1,24 @@
 # Documentação da ProtecExtintores
 
+## Offline automático — versão 25 / Android 1.3.0
+
+**Instruções da versão atual.** Consulte também `ATUALIZACAO-OFFLINE.md`. Os blocos seguintes são históricos.
+
+- Entre com internet uma vez. A preparação das telas e dos dados acontece automaticamente; não existe mais a etapa de apertar **Preparar offline**. No navegador, aguarde a indicação de telas disponíveis antes de sair da rede. O APK novo já inclui as telas.
+- O acesso local permanece até sair da conta, inclusive quando a sessão do servidor expira. A senha não é armazenada. Entrar novamente requer internet; uma sessão vencida impede o envio até nova autenticação, sem apagar o trabalho local.
+- Administrador: ordens, revisão, finalização local, clientes, produtos, estoque, preços, custos, condições da equipe e configurações gerais podem ser registrados offline. A finalização só chega aos outros aparelhos e libera a cobrança depois de aceita no servidor.
+- Funcionário e vendedor: criação, consulta do histórico baixado e registros permitidos ao perfil. O funcionário pode aceitar uma ordem disponível que já esteja no aparelho, registrar peças/vídeos/pinturas, pausar, retomar e concluir a execução.
+- Os dados são guardados de forma criptografada no aparelho, com fila persistente e sincronização automática. No navegador, mantenha o site aberto ao reconectar; no APK atualizado, o WorkManager também agenda os envios conforme as restrições do Android.
+- Campos diferentes editados em aparelhos diferentes podem ser combinados. Alterações concorrentes no mesmo campo, atribuições disputadas ou preços usados no fechamento alterados no servidor ficam em **Pendências**, para revisão. Os registros não são substituídos silenciosamente.
+- Login, criação/alteração de credenciais, integração bancária, geração de um novo Pix, aviso de pagamento e confirmação de recebimento exigem internet. Vídeos enviados por outros aparelhos precisam ser carregados uma vez para assistir offline. Dados novos de outros aparelhos e bloqueios de conta só são conhecidos ao reconectar.
+
+Para publicar: atualize **API, site e APK**. Abra o PowerShell em `ProtecExtintores/api-cloudflare` e execute `npm.cmd install`, `npx.cmd wrangler d1 migrations apply protecextintores-db --remote` e `npx.cmd wrangler deploy`. Depois envie a estrutura completa ao GitHub e gere uma **nova execução** de **Build Android APK**. Não desinstale nem limpe o aplicativo com envios pendentes.
+
+Verificado em API D1/R2 local e navegador móvel automatizado, incluindo reinício offline, conflitos, autorização e pagamentos. Classes Java compiladas com API 35/AndroidX. O APK completo e o comportamento em aparelho físico ainda precisam ser validados pelo workflow e no celular.
+
 ## Cobrança interna com Pix — versão 24 / Android 1.2.0
 
-**Esta é a instrução da versão atual.** Os blocos seguintes registram o histórico de versões anteriores.
+**Histórico da versão 24.** Para preparar e usar o offline, siga a versão 25 acima.
 
 ### Como funciona
 

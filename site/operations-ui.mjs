@@ -108,7 +108,7 @@ function enhanceTeam(){
  summary.querySelector('[data-ops-current]')?.addEventListener('click',()=>window.offlineServices?.openDetails(current.id));
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=team-billing-24',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=automatic-offline-25',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{
@@ -166,6 +166,7 @@ async function openTeamPayments(owner=null){
  if(!admin)owner={role:role(),id:window.offlineServices?.actorId};
  if(!owner?.id)return window.toast('Conecte-se e confirme o acesso à sua conta.');
  const data=await billingRequest(walletPath(owner,admin));
+ if(data.offlineSnapshot)window.toast('Consulta salva em '+new Date(data.checkedAt).toLocaleString('pt-BR')+'. Conecte-se para atualizar o saldo ou pagar.');
  if(!admin){walletState=data;walletToken=localStorage.getItem('protecextintores_session');walletChecked=Date.now();}
  const pending=data.bills.filter(b=>b.status!=='paid'),paid=data.bills.filter(b=>b.status==='paid');
  const groupMarkup=data.groups.map((g,index)=>`<article class="ops-bill"><header><div><h3>${g.policy.mode==='weekly'?'Acerto semanal':'Ordem '+esc(g.orders[0]?.code)}</h3><p>Pagamento: ${day(g.dueDate)} · ${g.orders.length} ordem(ns)</p></div><b>${money(g.amountCents)}</b></header>${g.policy.mode==='weekly'?'<p class="ops-note">Ao abrir o Pix, este acerto será fechado. Novas ordens finalizadas depois entram no próximo período.</p>':''}<button type="button" class="btn btn-small" data-new-team-bill="${index}" ${g.eligible?'':'disabled'}>${g.eligible?'Pagar com Pix':'Pix disponível em '+day(g.dueDate)}</button><details><summary>Ordens incluídas</summary>${g.orders.map(s=>`<p>${esc(s.code)} · ${esc(s.clientName)} · ${money(s.amountCents)}</p>`).join('')}</details></article>`).join('');

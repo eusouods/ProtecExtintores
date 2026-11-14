@@ -120,3 +120,102 @@ export function sellerView(service){return teamView(service,'seller',service.sel
 export function missingVideos(service) {
   return (service.items || []).flatMap((item,index)=>(item.replacedParts || []).filter(part=>!item.replacementMedia?.[part]?.url).map(part=>`Extintor ${index+1}: ${part}`));
 }
+
+// Shared admin commands, including offline validation.
+const cleanText = (value,max=150) => String(value || '').trim().slice(0,max);
+const requirePolicy = policy => {
+  if (!policy || !['weekly','completion'].includes(policy.mode)) throw Error('Selecione a forma de pagamento.');
+  const weekday=Number(policy.weekday);
+  if (!Number.isInteger(weekday) || weekday<0 || weekday>6) throw Error('Selecione o dia da semana.');
+  return {mode:policy.mode,weekday};
+};
+
+export function applyAdminOperation(state,data,username,at){
+  if(data.action==='save-catalog'){
+    state.costCatalog ||= [];
+    const name=cleanText(data.name),category=cleanText(data.category,60),kg=cleanText(data.kg,12);
+    if(!name)throw Error('Informe o nome do item.');
+    cents(data.unitCost);cents(data.salePrice);
+    const duplicate=state.costCatalog.find(item=>item.id!==data.id&&item.active!==false&&item.name===name&&String(item.kg || '')===kg);
+    if(duplicate)throw Error('Já existe um item com esse nome e capacidade.');
+    let item=state.costCatalog.find(item=>item.id===data.id);
+    if(!item){item={id:data.id||crypto.randomUUID()};state.costCatalog.push(item)}
+    Object.assign(item,{name,category,kg,unitCost:Number(data.unitCost),salePrice:Number(data.salePrice),technicalPart:Boolean(data.technicalPart),active:true,updatedAt:at});
+  }else if(data.action==='remove-catalog'){
+    const item=(state.costCatalog || []).find(item=>item.id===data.id);
+    if(!item)throw Error('Item não encontrado.');
+    item.active=false;item.removedAt=at;
+  }else if(data.action==='policy'){
+    const policy=requirePolicy(data.policy);
+    const role=data.role||'seller',id=data.personId||data.sellerId;if(!['seller','employee'].includes(role))throw Error('Perfil inválido.');
+    if(id){const person=(state[role==='employee'?'employees':'sellers'] || []).find(item=>item.id===id);if(!person)throw Error('Pessoa não encontrada.');if(data.inherit)delete person.billingPolicy;else person.billingPolicy=policy}
+    else state.settings[role==='employee'?'employeeBillingPolicy':'sellerBillingPolicy']=policy;
+  }else if(data.action==='team-config'){
+    if(!['employee','seller'].includes(data.role))throw Error('Perfil inválido.');
+    const inherited=String(data.discountPercent??'').trim()==='',percent=Number(data.discountPercent);
+    if((inherited&&!data.personId)||!inherited&&(!Number.isFinite(percent)||percent<=0||percent>=100))throw Error('Defina um desconto maior que zero e menor que 100%.');
+    const policy=data.mode==='inherit'&&data.personId?null:requirePolicy({mode:data.mode,weekday:data.weekday});
+    if(data.personId){const person=(state[data.role==='employee'?'employees':'sellers']||[]).find(p=>p.id===data.personId);if(!person)throw Error('Pessoa não encontrada.');if(inherited)delete person.teamPricing;else person.teamPricing={discountPercent:percent};if(policy)person.billingPolicy=policy;else delete person.billingPolicy;}
+    else{state.settings.teamPricing ||= {};state.settings.teamPricing[data.role]={discountPercent:percent};state.settings[data.role==='employee'?'employeeBillingPolicy':'sellerBillingPolicy']=policy;}
+  }else if(data.action==='team-rate'){
+    if(!['employee','seller'].includes(data.role))throw Error('Perfil inválido.');
+    const percent=Number(data.discountPercent);if(!data.inherit&&(!Number.isFinite(percent)||percent<=0||percent>=100))throw Error('O desconto deve ser maior que zero e menor que 100%.');
+    if(data.personId){const person=(state[data.role==='employee'?'employees':'sellers']||[]).find(p=>p.id===data.personId);if(!person)throw Error('Pessoa não encontrada.');if(data.inherit)delete person.teamPricing;else person.teamPricing={discountPercent:percent}}
+    else{state.settings.teamPricing ||= {};state.settings.teamPricing[data.role]={discountPercent:percent};}
+  }else if(data.action==='team-quote'){
+    const service=state.services.find(s=>s.id===data.serviceId);if(!service||service.closed||cancelled(service)||service.billingVersion!==2)throw Error('Defina o valor interno antes de finalizar esta ordem.');
+    service.internalBaseCents=cents(data.amount);if(service.internalBaseCents<=0)throw Error('Informe um valor interno maior que zero.');
+    service.history ||= [];service.history.push({at,by:username,action:'Valor interno da manutenção definido',description:'Valor base definido pelo administrador, independente do preço cobrado ao cliente.'});
+  }else if(data.action==='service-items'){
+    const service=(state.services || []).find(item=>item.id===data.serviceId);
+    if(!service||service.closed||cancelled(service))throw Error('Ajuste os itens antes de finalizar o serviço.');
+    const lines=Array.isArray(data.items)?data.items:[];
+    if(lines.length>100)throw Error('Limite de 100 itens adicionais por ordem.');
+    for(const line of lines){if(!(state.costCatalog || []).some(item=>item.id===line.catalogId&&item.active!==false))throw Error('Selecione um item ativo.');if(!Number.isInteger(Number(line.quantity))||line.quantity<1||line.quantity>10000)throw Error('Quantidade inválida.')}
+    service.financialItems=lines.map(line=>({catalogId:line.catalogId,quantity:Number(line.quantity)}));
+    service.history ||= [];service.history.push({at,action:'Itens financeiros revisados',by:username});
+  }else if(data.action==='capture'){
+    const service=(state.services || []).find(item=>item.id===data.serviceId);
+    if(!service?.closed||service.finance||cancelled(service))throw Error('Somente ordens finalizadas sem lançamento podem ser importadas.');
+    service.finance=captureFinance(state,service,at);
+    service.history ||= [];service.history.push({at,action:'Ordem anterior importada para cobrança',by:username});
+  }else if(data.action==='mark-paid'){
+    const ids=[...new Set(Array.isArray(data.serviceIds)?data.serviceIds:[])];
+    if(!ids.length||ids.length>500)throw Error('Selecione as ordens a quitar.');
+    const reference=cleanText(data.reference,300);if(reference.length<3)throw Error('Informe comprovante, referência ou observação do recebimento.');
+    const selected=ids.map(id=>(state.services || []).find(item=>item.id===id));
+    if(selected.some(service=>!service?.finance||!service.closed||cancelled(service)||!['pending','not-applicable'].includes(service.finance.payment.status)))throw Error('Há uma ordem inválida ou já paga. Atualize a tela.');
+    if(selected.some(s=>s.finance.settlementId))throw Error('Registre o recebimento pelo acerto Pix completo.');
+    if(new Set(selected.map(service=>{const owner=service.finance.payer||billingOwner(service);return owner?owner.role+':'+owner.id:'direct'})).size!==1)throw Error('Confirme um responsável por pagamento por vez.');
+    const batchId=data.batchId||crypto.randomUUID();
+    for(const service of selected){service.finance.payment={status:'paid',paidAt:at,by:username,reference,batchId};service.history ||= [];service.history.push({at,action:'Recebimento confirmado pelo administrador',description:reference,by:username})}
+    return {settlement:true};
+  }else throw Error('Ação inválida.');
+  return {capture:data.action==='capture'};
+}
+
+export function finalizeAdminOrder(state,id,username,at){
+ const service=state.services.find(s=>s.id===id);
+ if(!service)throw Error('Serviço não encontrado.');
+ if(service.closed||cancelled(service))throw Error('A ordem já foi finalizada ou cancelada.');
+ if(service.pausedAt&&!service.employeeCompletedAt)throw Error('Retome o serviço antes de finalizar.');
+ const missing=missingVideos(service);if(missing.length)throw Error('Faltam vídeos de peças trocadas: '+missing.join('; '));
+ if(!service.items?.length||service.items.some(i=>!/^20\d{2}$/.test(String(i.maintenanceYear||''))||i.hydroYear&&!/^20\d{2}$/.test(String(i.hydroYear))))throw Error('Confira os anos de manutenção e teste hidrostático em todos os equipamentos.');
+ if((state.orders||[]).some(o=>o.code===service.code&&o.kind==='Manutenção'))throw Error('Esta ordem antiga possui pagamento integrado. Finalize com internet.');
+ service.closed=true;service.closedAt=at;service.closedBy=username;
+ if(!service.nextMaintenanceMonth&&/^\d{4}-\d{2}/.test(service.date||''))service.nextMaintenanceMonth=String(Number(service.date.slice(0,4))+1)+service.date.slice(4,7);
+ for(const item of service.items){item.status='Concluído';item.history||=[];item.history.push({status:'Concluído',at,by:username})}
+ service.history||=[];service.history.push({at,action:'Serviço finalizado pelo administrador',description:'Registrado no aparelho; confirmação de envio apresentada separadamente.',by:username});
+}
+export function updateAdminOrder(state,d,username,at){
+ const service=state.services.find(s=>s.id===d.serviceId);if(!service)throw Error('Serviço não encontrado.');
+ if(service.closed||cancelled(service))throw Error('Edite o cadastro antes de finalizar ou cancelar.');
+ const name=String(d.clientName||'').trim(),serviceType=String(d.serviceType||'').trim(),date=String(d.date||'').trim(),lines=d.items;
+ if(name&&name.length<2||name.length>100||!serviceType||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Array.isArray(lines)||!lines.length||lines.length>100)throw Error('Confira cliente, data, serviço e equipamentos.');
+ for(const [key,max] of [['clientPhone',30],['clientEmail',254],['parts',1000],['notes',3000],['sellerName',100],['employeeName',100]])service[key]=String(d[key]||'').trim().slice(0,max);
+ service.clientName=name;service.serviceType=serviceType.slice(0,100);service.date=date;
+ service.items=lines.map((line,i)=>{const type=String(line.type||'').trim().slice(0,100);if(!type)throw Error('Informe o tipo de cada equipamento.');return {...service.items[i],type,kg:String(line.kg||'').trim().slice(0,12),serial:String(line.serial||'').trim().slice(0,100)}});
+ service.type=[...new Set(service.items.map(i=>i.type))].join(', ');service.serial=service.items[0].serial;
+ service.history||=[];service.history.push({at,action:'Cadastro corrigido pelo administrador',by:username});
+ const order=(state.orders||[]).find(o=>o.code===service.code);if(order)Object.assign(order,{name,phone:service.clientPhone,email:service.clientEmail,details:service.notes});
+}

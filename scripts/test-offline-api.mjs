@@ -1,16 +1,30 @@
 import assert from 'node:assert/strict';
+import {adminChanges,applyAdminChanges} from '../site/offline-rules.mjs';
 const base=process.env.PROTEC_TEST_API || 'http://127.0.0.1:8789';
 if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw Error('Estes testes só podem usar uma API local de teste.');
 const suffix=crypto.randomUUID().slice(0,8),employeeId='emp-'+suffix,sellerId='seller-'+suffix,password='Offline-Test-Only-2026';
 async function call(path,method='GET',body,token){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();return {status:r.status,data}}
 async function ok(path,method,body,token){const r=await call(path,method,body,token);assert.ok(r.status>=200&&r.status<300,`${path}: ${r.status} ${JSON.stringify(r.data)}`);return r.data}
 const admin=await ok('/api/login','POST',{username:'admin',password:process.env.PROTEC_TEST_ADMIN_PASSWORD || password});
+await ok('/api/offline/policy','POST',{mode:'until-logout'},admin.token);
+const adminSnapshot=(await ok('/api/offline/admin/bootstrap','GET',null,admin.token)).state;
+const adminEdited=structuredClone(adminSnapshot);adminEdited.settings.company='Offline admin '+suffix;
+const adminOp={id:crypto.randomUUID(),deviceId:crypto.randomUUID(),accountKey:'admin:1',serviceId:'admin-state',kind:'admin-state',createdAt:new Date().toISOString(),payload:{},changes:adminChanges(adminSnapshot,adminEdited)};
+const committed=await ok('/api/offline/admin/sync','POST',adminOp,admin.token),duplicateAdmin=await ok('/api/offline/admin/sync','POST',adminOp,admin.token);
+assert.equal(duplicateAdmin.duplicate,true);assert.equal(duplicateAdmin.revision,committed.revision);
+applyAdminChanges(adminSnapshot,committed.delta,{canonical:true,force:true});assert.equal(adminSnapshot.settings.company,adminEdited.settings.company);
+assert.equal((await call('/api/offline/admin/sync','POST',{...adminOp,changes:[]},admin.token)).status,409);
+assert.equal((await call('/api/offline/admin/sync','POST',adminOp)).status,401);
+const staleAdmin=structuredClone(adminSnapshot),serverAdmin=await ok('/api/admin/state','GET',null,admin.token);serverAdmin.settings.company='Outro dispositivo '+suffix;await ok('/api/admin/state','PUT',serverAdmin,admin.token);
+staleAdmin.settings.company='Minha versão '+suffix;
+const conflictedAdmin=await call('/api/offline/admin/sync','POST',{...adminOp,id:crypto.randomUUID(),changes:adminChanges(adminSnapshot,staleAdmin)},admin.token);
+assert.equal(conflictedAdmin.status,409);assert.equal(conflictedAdmin.data.conflict,true);assert.match(conflictedAdmin.data.field,/company/);
 let state=await ok('/api/admin/state','GET',null,admin.token);state.employees.push({id:employeeId,name:'Técnico Offline QA'});state.sellers.push({id:sellerId,name:'Vendedor Offline QA'});
 await ok('/api/admin/state','PUT',state,admin.token);
 await ok('/api/admin/users','POST',{employeeId,username:'offline'+suffix,password},admin.token);
 await ok('/api/admin/sellers','POST',{sellerId,username:'seller'+suffix,password},admin.token);
 const employee=await ok('/api/login','POST',{username:'offline'+suffix,password}),seller=await ok('/api/login','POST',{username:'seller'+suffix,password});
-const profile=await ok('/api/offline/bootstrap','GET',null,employee.token);assert.equal(profile.accountKey,'employee:'+employeeId);assert.ok(Date.parse(profile.offlineUntil)>Date.now());
+const profile=await ok('/api/offline/bootstrap','GET',null,employee.token);assert.equal(profile.accountKey,'employee:'+employeeId);assert.equal(profile.offlineMode,'until-logout');assert.equal(profile.offlineUntil,null);
 const createId=crypto.randomUUID(),deviceId=crypto.randomUUID(),serviceId=crypto.randomUUID();
 const operation=(kind,payload={},extra={})=>({id:crypto.randomUUID(),accountKey:profile.accountKey,deviceId,serviceId,kind,payload,createdAt:new Date().toISOString(),...extra});
 const create=operation('create',{date:'2026-11-12',clientName:'Cliente Offline QA',serviceType:'Recarga',items:[{type:'ABC',kg:'6',qty:2}]},{id:createId});
@@ -42,5 +56,8 @@ const availableId=crypto.randomUUID(),availableOrder=operation('create',create.p
 await ok('/api/employee/claim','POST',{serviceId:availableId},employee.token);
 state=await ok('/api/admin/state','GET',null,admin.token);assert.equal(state.services.find(s=>s.id===availableId).employeeId,employeeId);assert.ok(state.services.find(s=>s.id===urgentId).pausedAt);
 const policy=await ok('/api/offline/policy','POST',{hours:48},admin.token);assert.equal(policy.hours,48);assert.equal((await call('/api/offline/policy','POST',{hours:200},admin.token)).status,400);
+assert.equal((await ok('/api/offline/bootstrap','GET',null,seller.token)).offlineMode,'limited');
+await ok('/api/offline/policy','POST',{mode:'until-logout'},admin.token);
+assert.equal((await ok('/api/offline/bootstrap','GET',null,seller.token)).offlineUntil,null);
 state=await ok('/api/admin/state','GET',null,admin.token);state.employees.find(e=>e.id===employeeId).active=false;await ok('/api/admin/state','PUT',state,admin.token);assert.equal((await call('/api/offline/bootstrap','GET',null,employee.token)).status,403);
 console.log('API local D1/R2: duplicação/reenvio, corrida de gravação, pausa/urgência/retomada, integridade de vídeo, conclusão/revisão, conflitos, contas separadas, prazo e conta bloqueada verificados.');
