@@ -55,4 +55,14 @@ Para conferir a integridade sem criar pastas:
 node ProtecExtintores.mjs verificar
 ```
 
-As funções de cadastro recuperado, offline automático, permissões, pausa, vídeos, preços internos, cobranças e temas permanecem as mesmas. Este formato muda a entrega e a preparação dos builds. Novos dados de outros aparelhos, login, credenciais e pagamentos continuam dependendo da conexão conforme o fluxo já documentado nos fontes expandidos.
+## Novidades do cadastro — versão 27 / Android 1.4.0
+
+Funcionário e vendedor agora selecionam serviço, extintor, capacidade, quantidade e peças previstas em listas. Mangueiras de hidrante são opcionais, com tipo, diâmetro, metros e quantidade selecionáveis. A sugestão de preço é exibida sem edição e aplicada se o valor combinado ficar vazio. Os preços vêm da tabela do admin; itens sem preço ficam a definir. A cotação offline é conferida no envio. O valor ao cliente permanece separado da cobrança interna.
+
+Sem nome de cliente, a ordem fica identificada como serviço próprio de quem a registrou. O vendedor ganha busca, filtros, valores e margem bruta estimada quando existe cobrança; os dois perfis recebem atalhos para rascunho e última ordem.
+
+Em Acessos da equipe, o admin redefine o acesso e visualiza a senha nova uma vez, com botão de olho e opção de copiar. As senhas antigas não são recuperáveis dos hashes. A redefinição exige internet e encerra as sessões do titular no servidor, preservando seus registros offline. Os campos de senha também têm o olho para conferir a digitação.
+
+Em Configurações → Preços sugeridos da equipe, o admin define preços de extintores e mangueiras. Peças previstas não representam consumo de estoque nem troca já realizada.
+
+As funções de offline automático, permissões, pausa, vídeos, preços internos, cobranças e temas são preservadas. Este formato muda a entrega e a preparação dos builds. Novos dados de outros aparelhos, login, credenciais e pagamentos continuam dependendo da conexão conforme o fluxo já documentado nos fontes expandidos.
