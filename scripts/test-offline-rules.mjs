@@ -51,6 +51,8 @@ applyOperation(db,actor,operation('technical',first.id,{itemIndex:0,parts:['Vál
 assert.equal(db.inventory[0].qty,4);
 applyOperation(db,actor,operation('technical',first.id,{itemIndex:0,parts:['Válvula M30'],notes:'Conferido'}),at);
 assert.equal(db.inventory[0].qty,4);
+assert.throws(()=>applyOperation(db,actor,operation('complete',first.id),at),/atualize a etapa até “Inspeção final”/);
+applyOperation(db,actor,operation('stage',first.id,{status:'Inspeção final'}),at);
 assert.throws(()=>applyOperation(db,actor,operation('complete',first.id),at),/quantidade de pinturas/);
 applyOperation(db,actor,operation('painting',first.id,{quantity:0}),at);
 assert.throws(()=>applyOperation(db,actor,operation('complete',first.id),at),/Vídeos pendentes/);

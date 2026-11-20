@@ -41,7 +41,8 @@ const urgentPause=operation('pause',{reason:'Retomar atendimento anterior'},{ser
 const resume=operation('resume',{}, {previousId:pause.id});const resumed=await ok('/api/offline/sync','POST',resume,employee.token);assert.equal(resumed.service.pauseIntervals.length,1);
 const paint=operation('painting',{quantity:0},{previousId:resume.id});await ok('/api/offline/sync','POST',paint,employee.token);
 const technical=operation('technical',{itemIndex:0,parts:['Válvula M30'],notes:'Registro offline'},{previousId:paint.id});const technicalReceived=await ok('/api/offline/sync','POST',technical,employee.token);
-const noVideo=await call('/api/offline/sync','POST',operation('complete',{}, {previousId:technical.id}),employee.token);assert.equal(noVideo.status,400);assert.match(noVideo.data.error,/Vídeos/);
+const toFinal=operation('stage',{status:'Inspeção final'},{previousId:technical.id});await ok('/api/offline/sync','POST',toFinal,employee.token);
+const noVideo=await call('/api/offline/sync','POST',operation('complete',{}, {previousId:toFinal.id}),employee.token);assert.equal(noVideo.status,400);assert.match(noVideo.data.error,/Vídeos/);
 const bytes=new TextEncoder().encode('offline-video-integrity-fixture'),sha256=Buffer.from(await crypto.subtle.digest('SHA-256',bytes)).toString('hex');
 const media=operation('media',{itemIndex:0,part:'Válvula M30',durationSeconds:2,mime:'video/mp4',sha256,blobKey:'test-local',name:'video.mp4'},{previousId:technical.id});
 const form=new FormData();form.append('operation',JSON.stringify(media));form.append('file',new Blob([bytes],{type:'video/mp4'}),'video.mp4');

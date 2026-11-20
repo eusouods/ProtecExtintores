@@ -1,9 +1,18 @@
-import {recordPowder,setPainting,requestOwnership,powderCapacity} from './workshop-rules.mjs?v=registration-flow-54';
+import {recordPowder,setPainting,requestOwnership,powderCapacity} from './workshop-rules.mjs?v=registration-flow-55';
 // Shared, deterministic rules. The server is authoritative for ownership and time.
-import {PART_NAMES, cancelled, completed, missingVideos,teamBase,normalizeRegistration,registrationQuote,estimateFinance,registrationContacts} from './service-rules.mjs?v=registration-flow-54';
+import {PART_NAMES, cancelled, completed, missingVideos,teamBase,normalizeRegistration,registrationQuote,estimateFinance,registrationContacts} from './service-rules.mjs?v=registration-flow-55';
 export const uuid = value => /^[a-zA-Z0-9_-]{8,80}$/.test(String(value || ''));
 export function fail(message, status = 400) { throw Object.assign(new Error(message), {status}); }
 const text = (value, max = 3000) => String(value ?? '').trim().slice(0, max);
+export const DEFAULT_STAGE_FLOW = {employeeStages:['Recebido','Em manutenção','Pintando','Inspeção final'],completeAt:'Inspeção final',requireCompleteStage:true,allowSkip:true};
+export function stageFlow(settings) {
+  const raw = settings?.stageFlow || {}, hidden = ['Concluído','Solicitado','Aguardando peça'];
+  const all = (settings?.stages || []).filter(stage => !hidden.includes(stage));
+  const chosen = (Array.isArray(raw.employeeStages) ? raw.employeeStages : DEFAULT_STAGE_FLOW.employeeStages).filter(stage => all.includes(stage));
+  const employeeStages = all.filter(stage => (chosen.length ? chosen : all).includes(stage));
+  const completeAt = employeeStages.includes(raw.completeAt) ? raw.completeAt : (employeeStages.includes(DEFAULT_STAGE_FLOW.completeAt) ? DEFAULT_STAGE_FLOW.completeAt : employeeStages[employeeStages.length - 1]);
+  return {employeeStages, completeAt, requireCompleteStage: raw.requireCompleteStage !== false, allowSkip: raw.allowSkip !== false};
+}
 export const isPaused = service => Boolean(service.pausedAt && !completed(service) && !cancelled(service));
 export function activeWork(state, employeeId, except) {
   return state.services.find(s => s.id !== except && s.employeeId === employeeId && !completed(s) && !cancelled(s) && !isPaused(s));
@@ -104,8 +113,9 @@ export function applyOperation(state, actor, op, at) {
     event('Pintura registrada',`${q} equipamento(s).`);
   } else if(op.kind==='powder'){recordPowder(service,data.usage,actor.username,at);
   } else if(op.kind==='stage') {
-    const status=text(data.status,80),stages=state.settings.stages || [];
-    if(!stages.includes(status)||['Concluído','Solicitado','Aguardando peça'].includes(status))fail('Etapa inválida.');
+    const status=text(data.status,80),stages=state.settings.stages || [],flow=stageFlow(state.settings);
+    if(!stages.includes(status)||['Concluído','Solicitado','Aguardando peça'].includes(status)||!flow.employeeStages.includes(status))fail('Etapa inválida.');
+    if(!flow.allowSkip&&flow.employeeStages.indexOf(status)>flow.employeeStages.indexOf(service.status)+1)fail('Avance uma etapa por vez.');
     service.status=status;service.items.forEach(item=>{item.status=status;item.history ||= [];item.history.push({status,at,by:actor.username})});
     event('Etapa atualizada',status);
   } else if(op.kind==='technical') {
@@ -125,6 +135,8 @@ export function applyOperation(state, actor, op, at) {
     if(!data.media?.url)fail('Vídeo não recebido.');
     item.replacementMedia ||= {};item.replacementMedia[part]=data.media;event('Vídeo recebido',`Equipamento ${index+1}: ${part}.`);
   } else if(op.kind==='complete') {
+    const flow=stageFlow(state.settings);
+    if(flow.requireCompleteStage&&flow.employeeStages.indexOf(service.status)<flow.employeeStages.indexOf(flow.completeAt))fail('Antes de concluir, atualize a etapa até “'+flow.completeAt+'”.');
     if(service.workshopVersion>=44&&Object.values(powderCapacity(service)).some(Boolean)&&!service.powderRecordedAt)fail('Registre o consumo de pó químico antes de concluir.');
     if(!service.paintingRecordedAt)fail('Informe a quantidade de pinturas, inclusive zero.');
     const missing=missingVideos(service);if(missing.length)fail('Vídeos pendentes: '+missing.join('; '));

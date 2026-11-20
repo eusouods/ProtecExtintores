@@ -354,7 +354,7 @@ public class MainActivity extends Activity {
     }
 
     private WebResourceResponse bundledPage(Uri uri) {
-        boolean bundledRelease = uri.isHierarchical() && "registration-flow-54".equals(uri.getQueryParameter("v"));
+        boolean bundledRelease = uri.isHierarchical() && "registration-flow-55".equals(uri.getQueryParameter("v"));
         if (!localStartup && !bundledRelease && !bundledFallback && connected()) return null;
         String sitePath=Uri.parse(startUrl).getPath(),requestPath=uri.getPath();
         if (!"https".equals(uri.getScheme()) || !websiteHost.equals(uri.getHost()) || uri.getPort()!=-1 || requestPath==null || !requestPath.startsWith(sitePath)) return null;

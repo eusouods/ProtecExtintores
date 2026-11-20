@@ -1,5 +1,5 @@
-import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=registration-flow-54';
-import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=registration-flow-54';
+import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=registration-flow-55';
+import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=registration-flow-55';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const when=v=>v?new Date(v).toLocaleString('pt-BR'):'—';

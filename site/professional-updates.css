@@ -345,10 +345,57 @@ html:root body #adminSearch .admin-search-field input{border:0!important;box-sha
  html:root body .admin-tab{font-size:11px!important;letter-spacing:-.01em!important}
 }
 
-html:root body .ops-detail-actions .btn:not(.btn-soft){flex:1 1 100%!important;width:100%!important;min-height:52px!important;order:9!important}
+html:root body .ops-detail-actions .btn:not(.btn-soft){flex:1 1 100%!important;width:100%!important;min-height:52px!important}
 
 html:root body .admin-nav-item{min-height:38px!important}
 html:root body .admin-nav-title{margin:11px 12px 3px!important}
+
+/* Manutenções do admin: linhas compactas */
+html:root body #servicesTable td{padding-top:12px!important;padding-bottom:12px!important;vertical-align:middle!important}
+html:root body #servicesTable .svc-hide{display:none!important}
+html:root body #servicesTable .svc-employee{display:block!important;margin-top:2px!important;color:var(--ui-muted)!important;font-size:12px!important;font-weight:500!important}
+html:root body #servicesTable .ops-cell-actions .panel-button-group{display:flex!important;flex-wrap:wrap!important;gap:6px!important;justify-content:flex-end!important}
+html:root body #servicesTable .ops-cell-actions :is(.icon-btn,.btn){min-height:34px!important;padding:0 11px!important;font-size:12px!important;white-space:nowrap!important}
+html:root body #servicesTable .lbl-short{display:none!important}
+@media(min-width:1100px){
+ html:root body #servicesTable .lbl-full{display:none!important}
+ html:root body #servicesTable .lbl-short{display:inline!important}
+}
+/* Configurações: etapas do funcionário */
+html:root body #stageFlowPanel{margin-top:20px!important}
+html:root body .stage-flow-body{display:grid!important;gap:18px!important;padding:8px 0 4px!important}
+html:root body .stage-flow-body fieldset{margin:0!important;padding:0!important;border:0!important}
+html:root body .stage-flow-body legend{margin:0 0 10px!important;padding:0!important;font-size:14px!important;font-weight:650!important}
+html:root body .stage-flow-checks{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+html:root body .stage-flow-checks label{display:inline-flex!important;align-items:center!important;gap:8px!important;min-height:40px!important;padding:0 14px!important;border:1px solid var(--ui-border)!important;border-radius:999px!important;background:var(--ui-panel)!important;font-size:14px!important;cursor:pointer!important}
+html:root body .stage-flow-checks label:has(input:checked){background:var(--ui-raised)!important;border-color:var(--ui-action)!important}
+html:root body .stage-flow-switch{display:flex!important;align-items:flex-start!important;gap:12px!important;padding:14px 16px!important;border:1px solid var(--ui-border)!important;border-radius:14px!important;background:var(--ui-panel)!important;cursor:pointer!important}
+html:root body .stage-flow-switch input{margin-top:3px!important}
+html:root body .stage-flow-switch span{display:grid!important;gap:2px!important}
+html:root body .stage-flow-switch small{color:var(--ui-muted)!important;font-size:13px!important;line-height:1.4!important}
+
+/* ===== Alinhamento geral do painel ===== */
+html:root body #dashboard .config-card form:has(>label){display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;gap:14px 16px!important;align-items:end!important;margin:12px 0 0!important}
+html:root body #dashboard .config-card form:has(>label)>label{display:grid!important;gap:6px!important;margin:0!important;font-size:13px!important;font-weight:600!important;color:var(--ui-text)!important}
+html:root body #dashboard .config-card form:has(>label) :is(input,select):not([type=checkbox]):not([type=radio]){width:100%!important;min-height:46px!important;box-sizing:border-box!important}
+html:root body #dashboard .config-card form:has(>label)>:is(button,.ops-detail-actions,hr,h3,p){grid-column:auto}
+html:root body #dashboard .config-card form:has(>label)>:is(hr,h3,p,.ops-detail-actions){grid-column:1/-1!important}
+html:root body #dashboard .config-card form:has(>label)>button{min-height:46px!important;align-self:end!important}
+html:root body #dashboard .config-card .ops-detail-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important;align-items:center!important}
+html:root body #dashboard .config-card .ops-detail-actions>*{width:auto!important;min-height:44px!important}
+html:root body #dashboard .config-card form:has(>img){display:grid!important;gap:14px!important;justify-items:start!important}
+html:root body #dashboard .config-card form:has(>img)>.form-field{justify-self:stretch!important;width:100%!important}
+html:root body #dashboard .config-card form:has(>img)>img{display:block!important;width:56px!important;height:56px!important;object-fit:cover!important;border-radius:12px!important;margin:0!important}
+html:root body #dashboard .config-card>:is(.btn,label.btn){display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:42px!important;margin:0 8px 10px 0!important;vertical-align:middle!important;box-sizing:border-box!important}
+html:root body #dashboard :is(input[type=checkbox],input[type=radio]){width:20px!important;height:20px!important;min-height:0!important;padding:0!important;flex:none!important;accent-color:var(--ui-action)!important}
+html:root body #dashboard :is(.form-field,label):has(>input[type=checkbox]){display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important}
+html:root body #dashboard .config-card textarea{min-height:150px!important;line-height:1.6!important}
+html:root body #dashboard .type-price-group>summary{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:12px 14px!important;background:transparent!important}
+html:root body #dashboard .type-price-group .list-line{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:10px 14px!important}
+html:root body #servicesTable thead th:last-child{text-align:right!important}
+
+html:root body .next-maintenance-card{grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) auto!important}
+@media(max-width:1000px){html:root body .next-maintenance-card{grid-template-columns:1fr!important}html:root body .next-maintenance-card .btn{width:100%!important}}
 }
 
 /* Páginas públicas (Produtos, Acompanhar): o cabeçalho é absoluto e cobria o início do conteúdo.

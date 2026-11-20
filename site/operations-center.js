@@ -270,6 +270,70 @@
     });
   }
 
+  /* Configurações: como o funcionário avança as etapas do serviço */
+  const HIDDEN_STAGES = ['Concluído', 'Solicitado', 'Aguardando peça'], DEFAULT_EMP = ['Recebido', 'Em manutenção', 'Pintando', 'Inspeção final'];
+  function currentFlow() {
+    const st = (typeof db !== 'undefined' && db.settings) || {}, raw = st.stageFlow || {};
+    const all = (st.stages || []).filter(x => !HIDDEN_STAGES.includes(x));
+    const chosen = (Array.isArray(raw.employeeStages) ? raw.employeeStages : DEFAULT_EMP).filter(x => all.includes(x));
+    const emp = all.filter(x => (chosen.length ? chosen : all).includes(x));
+    const completeAt = emp.includes(raw.completeAt) ? raw.completeAt : (emp.includes('Inspeção final') ? 'Inspeção final' : emp[emp.length - 1]);
+    return {all, emp, completeAt, requireCompleteStage: raw.requireCompleteStage !== false, allowSkip: raw.allowSkip !== false};
+  }
+  function stagePanel() {
+    const c = document.getElementById('content');
+    if (!c || document.getElementById('stageFlowPanel') || typeof db === 'undefined' || !db.settings) return;
+    const f = currentFlow();
+    const form = document.createElement('form');
+    form.id = 'stageFlowPanel'; form.className = 'panel config-card';
+    form.innerHTML = `<h3>Avanço das etapas pelo funcionário</h3><p>Defina como o funcionário avança o serviço e em que etapa ele pode concluir a execução.</p>
+<div class="stage-flow-body">
+<fieldset><legend>Etapas que o funcionário pode usar</legend><div class="stage-flow-checks">${f.all.map(x => `<label><input type="checkbox" name="stage" value="${esc(x)}" ${f.emp.includes(x) ? 'checked' : ''}><span>${esc(x)}</span></label>`).join('')}</div></fieldset>
+<label class="form-field">Pode concluir a execução a partir de<select name="completeAt"></select></label>
+<label class="stage-flow-switch"><input type="checkbox" name="requireCompleteStage" ${f.requireCompleteStage ? 'checked' : ''}><span><b>Exigir chegar nessa etapa antes de concluir</b><small>O botão “Concluir execução” só aparece depois que o serviço chegar nela.</small></span></label>
+<label class="stage-flow-switch"><input type="checkbox" name="allowSkip" ${f.allowSkip ? 'checked' : ''}><span><b>Permitir pular etapas</b><small>Desligado, o funcionário avança uma etapa de cada vez.</small></span></label>
+</div>
+<div class="panel-actions"><button class="btn" type="submit">Salvar etapas</button></div>`;
+    const select = form.elements.completeAt;
+    const fill = () => {
+      const on = [...form.querySelectorAll('input[name=stage]:checked')].map(i => i.value), keep = select.value || f.completeAt;
+      select.innerHTML = on.map(x => `<option ${x === keep || (!on.includes(keep) && x === on[on.length - 1]) ? 'selected' : ''}>${esc(x)}</option>`).join('');
+    };
+    fill();
+    form.addEventListener('change', e => { if (e.target.name === 'stage') fill(); });
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const on = [...form.querySelectorAll('input[name=stage]:checked')].map(i => i.value);
+      if (!on.length) { if (typeof toast === 'function') toast('Marque pelo menos uma etapa.'); return; }
+      const before = db.settings.stageFlow;
+      db.settings.stageFlow = {employeeStages: on, completeAt: select.value, requireCompleteStage: form.elements.requireCompleteStage.checked, allowSkip: form.elements.allowSkip.checked};
+      if (typeof save === 'function' && !(await save())) { db.settings.stageFlow = before; return; }
+      if (typeof toast === 'function') toast('Etapas do funcionário salvas');
+    });
+    const mine = [...c.querySelectorAll('.config-card')].find(x => x !== form && /^Etapas do serviço/.test((x.querySelector('h3')?.textContent || '').trim()));
+    if (mine) mine.insertAdjacentElement('afterend', form); else c.append(form);
+  }
+
+  /* Manutenções: linhas mais baixas, funcionário junto do cliente e ações em uma linha */
+  const SHORT = {'Atualizar status': 'Status', 'Revisar dados': 'Revisar', 'Finalizar serviço': 'Finalizar', 'Ordem de serviço': 'Ordem', 'Peças, vídeos e resultado': 'Peças e vídeos'};
+  function tidyServices() {
+    document.querySelectorAll('#servicesTable table:not([data-tidy])').forEach(table => {
+      const heads = [...table.querySelectorAll('thead th')], idx = heads.findIndex(h => /^Funcion/i.test(h.textContent.trim()));
+      table.dataset.tidy = '1';
+      table.querySelectorAll('tbody tr').forEach(row => {
+        const emp = row.querySelector('td[data-label="Funcionário"]'), client = row.querySelector('td[data-label="Cliente"]');
+        if (emp && client && !client.querySelector('.svc-employee')) { const t = document.createElement('small'); t.className = 'svc-employee'; t.textContent = emp.textContent.trim(); client.append(t); emp.classList.add('svc-hide'); }
+        const group = row.querySelector('.panel-button-group'), extra = row.querySelector('[data-service-details]');
+        if (group && extra && extra.parentElement !== group) group.append(extra);
+        row.querySelectorAll('.ops-cell-actions button').forEach(b => {
+          const full = b.textContent.trim(), short = SHORT[full];
+          if (short && !b.querySelector('.lbl-short')) { b.title = full; b.innerHTML = `<span class="lbl-full">${full}</span><span class="lbl-short">${short}</span>`; }
+        });
+      });
+      if (idx >= 0) heads[idx].classList.add('svc-hide');
+    });
+  }
+
   let last = null;
   function sync() {
     mount();
@@ -288,6 +352,8 @@
     }
     tabs(group, cur);
     if (cur === 'overview') search();
+    if (cur === 'settings') stagePanel();
+    if (cur === 'services') tidyServices();
   }
 
   document.addEventListener('click', event => {

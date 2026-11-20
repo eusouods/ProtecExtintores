@@ -1,12 +1,12 @@
-import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=registration-flow-54';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-54';
-import './service-management.mjs?v=registration-flow-54';
-import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=registration-flow-54';
-import {vault,nativeCall} from './offline-vault.mjs?v=registration-flow-54';
-import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges} from './offline-rules.mjs?v=registration-flow-54';
-import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=registration-flow-54';
+import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=registration-flow-55';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-55';
+import './service-management.mjs?v=registration-flow-55';
+import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=registration-flow-55';
+import {vault,nativeCall} from './offline-vault.mjs?v=registration-flow-55';
+import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=registration-flow-55';
+import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=registration-flow-55';
 
-const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=registration-flow-54',import.meta.url);document.head.append(css);
+const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=registration-flow-55',import.meta.url);document.head.append(css);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
@@ -201,8 +201,8 @@ async function staffAction(action,id){
   if(action==='resume'){await enqueue('resume',id,{});notify('Serviço retomado.');return}
   if(action==='painting')return serviceModal(id,'Pinturas da ordem',paintingField(s),async f=>{await enqueue('painting',id,{quantity:Number(f.get('quantity'))});return true},'Salvar quantidade');
   if(action==='powder')return serviceModal(id,'Consumo de pó químico',powderFields(s),async f=>{await enqueue('powder',id,{usage:powderPayload(f,s)});return true},'Salvar consumo');
-  if(action==='stage')return serviceModal(id,'Atualizar etapa',`<label class="form-field">Etapa<select name="status">${profile.settings.stages.filter(st=>!['Concluído','Solicitado','Aguardando peça'].includes(st)).map(st=>`<option ${st===s.status?'selected':''}>${esc(st)}</option>`).join('')}</select></label>`,async f=>{await enqueue('stage',id,{status:f.get('status')});return true});
-  if(action==='complete')return completionWizard(s);
+  if(action==='stage'){const flow=stageFlow(profile.settings),order=flow.employeeStages,cur=order.indexOf(s.status),next=Math.min(cur+1,order.length-1),opts=order.filter((st,n)=>flow.allowSkip||n<=cur+1);return serviceModal(id,'Atualizar etapa',`<p class="ops-note">Etapa atual: <b>${esc(s.status||'—')}</b></p><label class="form-field">Nova etapa<select name="status">${opts.map(st=>`<option ${order.indexOf(st)===next?'selected':''}>${esc(st)}</option>`).join('')}</select></label>`,async f=>{await enqueue('stage',id,{status:f.get('status')});return true},'Atualizar')}
+  if(action==='complete'){const flow=stageFlow(profile.settings),order=flow.employeeStages;if(flow.requireCompleteStage&&order.indexOf(s.status)<order.indexOf(flow.completeAt))throw Error(`Antes de concluir, atualize a etapa até “${flow.completeAt}”.`);return completionWizard(s)}
 }
 function details(s){
   return openOrderDetail(s,{onAction:(action,id)=>staffAction(action,id).catch(error=>notify(friendly(error))),readVideo:async url=>{
@@ -258,7 +258,7 @@ window.completeEmployeeService=id=>staffAction('complete',id);
 window.chooseEmployeeNextStep=id=>staffAction('painting',id);
 window.advanceEmployeeService=(id,status)=>enqueue('stage',id,{status});
 window.acceptEmployeeService=id=>staffAction('claim',id);
-window.offlineServices={prepare,sync,showSync:()=>openSyncDetails(false),sendToAdmin:id=>staffAction('ownership-request',id).catch(e=>notify(friendly(e))),pauseService:id=>staffAction('pause',id).catch(e=>notify(friendly(e))),statusFor:syncStatus,openDetails:id=>{const s=services.find(s=>s.id===id)||(profile?.available||[]).find(s=>s.id===id);if(s)details(s)},get powderStock(){return profile?.powderStock||null},get actorId(){return profile?.actor?.id},get services(){return services},get ready(){return Boolean(allowed())},get locked(){return locked},vault};
+window.offlineServices={prepare,sync,showSync:()=>openSyncDetails(false),sendToAdmin:id=>staffAction('ownership-request',id).catch(e=>notify(friendly(e))),pauseService:id=>staffAction('pause',id).catch(e=>notify(friendly(e))),statusFor:syncStatus,openDetails:id=>{const s=services.find(s=>s.id===id)||(profile?.available||[]).find(s=>s.id===id);if(s)details(s)},get powderStock(){return profile?.powderStock||null},flowFor:()=>stageFlow(profile?.settings||{}),get actorId(){return profile?.actor?.id},get services(){return services},get ready(){return Boolean(allowed())},get locked(){return locked},vault};
 window.offlineServices.hasRegistrationDraft=async()=>Boolean((active&&accountToken===localStorage.getItem(tokenKey)&&profile?.role===localStorage.getItem(roleKey)&&await vault.get('draft:'+active+':create'))||await vault.get('draft:online:'+localStorage.getItem(roleKey)+':'+localStorage.getItem('protecextintores_username')+':create'));
 window.addEventListener('protec-team-session-verified',()=>{
  const verified=window.protecVerifiedTeamSession;
@@ -588,7 +588,7 @@ async function serviceModal(serviceId,title,body,onSave,label='Salvar'){
 function duration(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file);let settled=false,seeking=false;const timer=setTimeout(()=>done(Error('Não foi possível conferir a duração do vídeo.')),15000);const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);video.onloadedmetadata=video.onseeked=video.ondurationchange=video.onerror=null;video.removeAttribute('src');video.load();URL.revokeObjectURL(url);error?reject(error):resolve(value)};const check=()=>{if(Number.isFinite(video.duration)&&video.duration>0){done(null,video.duration);return}if(!seeking){seeking=true;video.currentTime=1e100}};video.preload='metadata';video.onloadedmetadata=check;video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)done(null,video.duration)};video.onseeked=()=>{const seconds=Number.isFinite(video.duration)?video.duration:video.currentTime;done(!Number.isFinite(seconds)||seconds<=0?Error('Duração de vídeo inválida.'):null,seconds)};video.onerror=()=>done(Error('Este aparelho não conseguiu ler o vídeo.'));video.src=url})}
 
 let shellPreparing=null,shellReady=false,shellError='';
-const shellVersion='registration-flow-54';
+const shellVersion='registration-flow-55';
 async function prepareShell(account=''){
  if(shellPreparing)return shellPreparing;
  if(shellReady&&(await vault.get('shell:'+account))?.version===shellVersion)return;
