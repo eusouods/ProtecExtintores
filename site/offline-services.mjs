@@ -1,12 +1,12 @@
-import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=registration-flow-53';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-53';
-import './service-management.mjs?v=registration-flow-53';
-import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=registration-flow-53';
-import {vault,nativeCall} from './offline-vault.mjs?v=registration-flow-53';
-import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges} from './offline-rules.mjs?v=registration-flow-53';
-import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=registration-flow-53';
+import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=registration-flow-54';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-54';
+import './service-management.mjs?v=registration-flow-54';
+import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=registration-flow-54';
+import {vault,nativeCall} from './offline-vault.mjs?v=registration-flow-54';
+import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges} from './offline-rules.mjs?v=registration-flow-54';
+import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=registration-flow-54';
 
-const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=registration-flow-53',import.meta.url);document.head.append(css);
+const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=registration-flow-54',import.meta.url);document.head.append(css);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
@@ -588,7 +588,7 @@ async function serviceModal(serviceId,title,body,onSave,label='Salvar'){
 function duration(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file);let settled=false,seeking=false;const timer=setTimeout(()=>done(Error('Não foi possível conferir a duração do vídeo.')),15000);const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);video.onloadedmetadata=video.onseeked=video.ondurationchange=video.onerror=null;video.removeAttribute('src');video.load();URL.revokeObjectURL(url);error?reject(error):resolve(value)};const check=()=>{if(Number.isFinite(video.duration)&&video.duration>0){done(null,video.duration);return}if(!seeking){seeking=true;video.currentTime=1e100}};video.preload='metadata';video.onloadedmetadata=check;video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)done(null,video.duration)};video.onseeked=()=>{const seconds=Number.isFinite(video.duration)?video.duration:video.currentTime;done(!Number.isFinite(seconds)||seconds<=0?Error('Duração de vídeo inválida.'):null,seconds)};video.onerror=()=>done(Error('Este aparelho não conseguiu ler o vídeo.'));video.src=url})}
 
 let shellPreparing=null,shellReady=false,shellError='';
-const shellVersion='registration-flow-53';
+const shellVersion='registration-flow-54';
 async function prepareShell(account=''){
  if(shellPreparing)return shellPreparing;
  if(shellReady&&(await vault.get('shell:'+account))?.version===shellVersion)return;
