@@ -1,0 +1,11 @@
+<resources>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/protec_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">@color/protec_background</item>
+        <item name="android:statusBarColor">@color/protec_bar</item>
+        <item name="android:navigationBarColor">@color/protec_bar</item>
+    </style>
+</resources>

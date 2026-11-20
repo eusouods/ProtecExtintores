@@ -1,0 +1,241 @@
+.offline-toolbar,.offline-banner,.offline-queue-item,.offline-form-section{background:var(--ui-panel,#f9fcff);color:var(--ui-text,#20374a);border:1px solid var(--ui-border,#c5d8e6);border-radius:12px;padding:16px;margin:12px 0}
+#employeePortal.offline-enabled :is(.employee-service-search,.employee-search-empty,.team-operations-summary){display:none!important}
+#employeePortal:has([data-offline-workbench]) :is(.employee-service-search,.employee-search-empty,.team-operations-summary){display:none!important}
+.offline-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.offline-toolbar p{margin:3px 0;font-size:12px}.offline-actions{display:flex;gap:8px;flex-wrap:wrap}.offline-badge{display:inline-block;padding:4px 9px;border-radius:8px;background:var(--ui-selected,#dce9f3);color:var(--ui-text,#20374a);font-size:12px}.offline-badge.is-pending,.offline-banner.is-attention{background:var(--ui-warning-bg,#dce9f3);color:var(--ui-warning,#20374a)}
+.offline-card-meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.offline-state{font-weight:600}.offline-save-state{font-size:12px;min-height:1.5em}.offline-queue-item p{overflow-wrap:anywhere}.offline-queue-item pre{white-space:pre-wrap;word-break:break-word;font-size:12px;max-height:240px;overflow:auto}.offline-form-section label{display:block;margin:10px 0}.offline-parts{display:flex;gap:12px;flex-wrap:wrap}.offline-parts label{display:flex;align-items:center;gap:5px}.offline-parts input{width:auto}.offline-item{padding:12px 0;border-top:1px solid var(--ui-border,#c5d8e6)}.offline-video-preview{max-width:100%;max-height:260px;border-radius:8px}.offline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.offline-grid label{min-width:0}.offline-grid input,.offline-grid textarea,.offline-grid select{width:100%}.offline-equipment-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin:8px 0}.offline-search{width:100%;margin:10px 0}.offline-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.offline-tabs [aria-pressed=true]{outline:2px solid var(--ui-action,#226b99);outline-offset:2px}.offline-details{margin-top:10px}.offline-details summary{cursor:pointer;font-weight:600}.offline-details li{margin:8px 0}.offline-footer-note{font-size:12px}.offline-locked{padding:32px;max-width:560px;margin:32px auto;background:var(--ui-panel,#f9fcff);border:1px solid var(--ui-border,#c5d8e6);border-radius:12px}
+@media(max-width:600px){.offline-grid{grid-template-columns:1fr}.offline-equipment-row{grid-template-columns:1fr 1fr}.offline-toolbar,.offline-queue-item{padding:12px}.offline-actions{width:100%}.offline-actions .btn{flex:1}.offline-service-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.offline-service-actions .btn{white-space:normal;min-height:44px}}
+.registration-line{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end;padding:14px 0;border-bottom:1px solid var(--ui-border)}
+.team-maintenance-form{width:min(900px,calc(100vw - 32px));max-width:900px}
+.team-maintenance-form .modal-body{padding:24px}.team-maintenance-form [hidden]{display:none!important}
+.maintenance-registration-form .registration-admin-equipment{display:block!important;padding:0!important;border:0!important;margin:24px 0!important;background:transparent!important}
+.maintenance-registration-form .registration-admin-maintenance{display:block!important;margin:12px 0!important;padding:16px!important}
+.maintenance-registration-form .service-ext-row.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin:0;padding:16px 0;align-items:end}
+.maintenance-registration-form .service-ext-row .form-field{margin:0}.maintenance-registration-form .service-ext-row .form-field label{font-size:12px;font-weight:700}
+.maintenance-registration-form .service-ext-row .form-field>label{display:block!important}
+.maintenance-registration-form .required-mark{display:inline!important;margin:0 0 0 3px!important;padding:0!important;background:transparent!important;border:0!important;color:var(--ui-muted)!important}
+.maintenance-registration-form .service-extra-remove{font-size:12px;line-height:1.4;min-height:44px}
+.maintenance-registration-form .registration-admin-additional{padding:16px;border:1px solid var(--ui-border);border-radius:14px}
+.maintenance-registration-form .registration-admin-additional>summary{font-weight:700}.maintenance-registration-form .registration-admin-additional .service-extra-grid{margin-top:12px}
+.maintenance-registration-form [data-admin-part-picker]{display:block!important;grid-column:auto}
+.maintenance-registration-form .registration-price #serviceTotal{display:block;font-size:26px;font-weight:800;margin:12px 0;overflow-wrap:anywhere}
+.maintenance-registration-form [data-extra-card="hydrant-hose-test"] .service-extra-line{grid-template-columns:1.4fr 1fr 1fr 1fr auto}
+.maintenance-registration-form [data-extra-card="hydrant-hose-test"] .service-extra-add{width:100%;min-height:44px}
+.maintenance-registration-form .registration-hidden-fields{display:none!important}
+@media(max-width:620px){.maintenance-registration-form .service-ext-row.form-grid{grid-template-columns:1fr 1fr}.maintenance-registration-form .service-ext-row .form-field:first-child{grid-column:1/-1}.maintenance-registration-form .service-ext-row .icon-btn{justify-self:start;min-height:44px}.maintenance-registration-form [data-extra-card="hydrant-hose-test"] .service-extra-line{grid-template-columns:1fr 1fr}.maintenance-registration-form [data-extra-card="hydrant-hose-test"] .service-extra-line .form-field:first-child{grid-column:1/-1}.maintenance-registration-form [data-extra-card="hydrant-hose-test"] .service-extra-remove{width:auto;grid-column:auto;min-height:44px}.maintenance-registration-form .registration-admin-maintenance{padding:14px!important}}
+.team-maintenance-form .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.team-maintenance-form .form-field{display:grid;gap:8px;min-width:0}.team-maintenance-form :is(input,select,textarea){width:100%;box-sizing:border-box;color:var(--ui-text);background:var(--ui-panel);border-color:var(--ui-border)}
+.team-maintenance-form select{appearance:auto!important;min-height:48px!important;font-size:16px!important;padding:10px 12px!important}
+.team-maintenance-form .helper{font-size:12px;line-height:1.65;color:var(--ui-muted);margin:8px 0 12px}.team-registration-intro{margin-bottom:20px}.team-registration-intro .offline-save-state{margin:0;color:var(--ui-muted)}
+.registration-contact-details{margin:14px 0}.registration-contact-details summary{cursor:pointer;font-size:13px;color:var(--ui-muted);padding:8px 0}.registration-contact-details .form-grid{margin-top:10px}
+.team-equipment-section{margin-top:24px}.team-equipment-section>h3,.registration-complementary h3{font-size:15px;margin:0 0 8px}
+.registration-choice-card{border:1px solid var(--ui-border);border-radius:14px;padding:16px;margin:12px 0;background:var(--ui-panel)}
+.registration-choice{display:flex!important;align-items:flex-start;gap:12px!important;cursor:pointer;margin:0!important}.registration-choice input[type=checkbox]{width:20px!important;min-height:20px!important;height:20px;margin:2px 0 0;flex:0 0 20px;accent-color:var(--ui-action)}
+.registration-choice span{display:grid;gap:5px;min-width:0}.registration-choice b{font-size:14px}.registration-choice small{font-size:12px;line-height:1.6;color:var(--ui-muted)}
+.team-maintenance-form .registration-line{border-bottom:0;padding:16px 0;gap:10px}.team-maintenance-form .registration-line label,.registration-sale-line label{font-size:12px;color:var(--ui-muted);font-weight:700}
+.registration-add-wide{width:100%;min-height:44px;margin-top:6px!important}.registration-complementary{margin:22px 0;padding:18px;border:1px solid var(--ui-border);border-radius:14px}
+.registration-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.registration-section-head h3{margin:0}
+.registration-sale-line{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin-top:16px}.registration-sale-line label{display:grid;gap:7px;min-width:0}.registration-sale-line label:first-child{grid-column:1/-1}
+.registration-price-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.team-maintenance-form .registration-price{margin:22px 0}.team-maintenance-form .registration-price output{font-size:26px;overflow-wrap:anywhere}.team-maintenance-form .registration-price input{font-size:16px}
+@media(max-width:620px){.team-maintenance-form{width:calc(100vw - 16px)}.team-maintenance-form .modal-body{padding:18px}.team-maintenance-form .form-grid{grid-template-columns:1fr}.registration-choice-card{padding:14px}.registration-sale-line{grid-template-columns:1fr 1fr}.registration-sale-line label:nth-child(2){grid-column:1/-1}.team-maintenance-form .registration-line .icon-btn,.registration-sale-line .icon-btn{min-height:44px}.registration-complementary{padding:14px}.registration-section-head .btn{width:100%}.team-maintenance-form .registration-price{padding:14px}.registration-price-heading{align-items:flex-start}.registration-price-heading .offline-badge{white-space:nowrap}}
+.registration-line label{display:grid;gap:6px;min-width:0}.registration-line select{width:100%;min-height:44px}.registration-line .icon-btn{min-height:44px}.registration-hose{grid-template-columns:1.4fr 1fr 1fr 1fr auto}
+.registration-optional,.registration-price{margin:20px 0;padding:18px;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-panel);color:var(--ui-text)}
+.registration-check{display:flex;align-items:center;gap:10px;font-weight:700}.registration-check input{width:20px;height:20px}.registration-price output{display:block;font-size:1.7rem;font-weight:800;margin:8px 0}.registration-price label{display:grid;gap:7px}.registration-price input{width:100%}
+.password-visibility{position:relative}.password-visibility input[data-password-eye]{padding-right:52px!important;box-sizing:border-box}.password-eye{position:absolute;display:grid;place-items:center;width:44px;min-height:44px;margin:0!important;padding:0!important}.password-eye svg{display:block}.seller-filter-bar{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin:14px 0}.seller-filter-bar label{display:grid;gap:6px;min-width:0}.seller-filter-bar p{grid-column:1/-1;margin:0}.seller-filter-bar input,.seller-filter-bar select{width:100%}
+.registration-line select,.offline-grid select,.seller-filter-bar select,[data-registration-pricing] select{appearance:auto!important;min-height:44px!important;padding:10px 12px!important;box-sizing:border-box}
+@media(max-width:620px){.registration-line,.registration-hose{grid-template-columns:1fr 1fr}.registration-line label:first-child{grid-column:1/-1}.registration-line .icon-btn{justify-self:start}.registration-price,.registration-optional{padding:14px}.seller-filter-bar{grid-template-columns:1fr}.ops-team-register [data-team-fast-actions]{display:flex;flex-wrap:wrap;gap:8px}}
+
+/* Shared registration composition: identical technical controls in every role. */
+.maintenance-registration-form .registration-additional-services{padding:20px;border:1px solid var(--ui-border);border-radius:20px;background:var(--ui-panel);margin:18px 0}
+.maintenance-registration-form .registration-section-head{align-items:center;gap:16px}
+.maintenance-registration-form .registration-section-head h3{margin:0 0 6px}
+.maintenance-registration-form .registration-section-head .helper{margin:0}
+.maintenance-registration-form .registration-section-head>button{flex:none}
+.maintenance-registration-form .registration-complement-line{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) minmax(80px,.5fr) auto;align-items:end;gap:12px;padding:16px 0;border-top:1px solid var(--ui-border);margin-top:16px}
+.maintenance-registration-form .registration-complement-line label,.maintenance-registration-form .registration-complement-parameters label{display:grid;gap:8px;min-width:0;font-size:12px;font-weight:600;color:var(--ui-text)}
+.maintenance-registration-form .registration-complement-parameters{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.maintenance-registration-form .registration-complement-parameters:empty{display:none}
+.maintenance-registration-form .btn,.maintenance-registration-form .icon-btn{min-height:44px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.25;white-space:normal;text-align:center}
+.maintenance-registration-form .icon-btn{min-width:88px;box-shadow:none}
+.maintenance-registration-form .modal-foot{gap:12px}
+.maintenance-registration-form .modal-foot .btn{min-width:140px;min-height:48px}
+.maintenance-registration-form .btn-soft,.maintenance-registration-form .icon-btn{background:var(--ui-panel);color:var(--ui-text);border:1px solid var(--ui-border)}
+.maintenance-registration-form button:focus-visible,.maintenance-registration-form select:focus-visible{outline:3px solid var(--ui-accent);outline-offset:3px}
+[data-complement-settings] form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+[data-complement-settings] form>label{display:grid;gap:8px;min-width:0}
+[data-complement-settings] form>.helper,[data-complement-settings] form>.ops-detail-actions,[data-complement-settings] form>h3{grid-column:1/-1}
+[data-complement-settings] .ops-detail-actions{display:flex;flex-wrap:wrap;gap:10px}
+[data-complement-settings] form[hidden]{display:none}
+@media(max-width:680px){
+ .maintenance-registration-form .registration-additional-services{padding:16px;border-radius:16px}
+ .maintenance-registration-form .registration-section-head{align-items:stretch;flex-direction:column}
+ .maintenance-registration-form .registration-section-head>button{width:100%}
+ .maintenance-registration-form .registration-complement-line{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .maintenance-registration-form .registration-complement-line>label:first-child{grid-column:1/-1}
+ .maintenance-registration-form .registration-complement-line>.icon-btn{grid-column:1/-1;width:100%}
+ .maintenance-registration-form .registration-complement-parameters{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .maintenance-registration-form .modal-foot .btn{flex:1;min-width:0}
+ [data-complement-settings] form{grid-template-columns:1fr}
+ [data-complement-settings] .ops-detail-actions>*{width:100%;min-height:44px}
+}
+
+html:root body .maintenance-registration-form .modal-head .icon-btn{width:44px;min-width:44px;height:44px;padding:0;flex:none;border-radius:12px}
+html:root body .maintenance-registration-form .modal-foot .btn{min-width:140px;min-height:48px;border-radius:14px}
+@media(max-width:680px){html:root body .maintenance-registration-form .modal-foot .btn{min-width:0;flex:1}}
+
+/* Reference: employee registration, shared unchanged by all three panels. */
+.maintenance-registration-form .team-contact-grid{margin-top:18px}
+.maintenance-registration-form .team-equipment-section{margin-top:28px}
+.maintenance-registration-form .team-equipment-section>h3{margin-bottom:16px}
+.maintenance-registration-form .registration-complementary{padding:0;border:0;border-radius:0;margin:28px 0;background:transparent}
+.maintenance-registration-form .registration-complementary .registration-section-head{flex-direction:column;align-items:flex-start;gap:14px}
+.maintenance-registration-form .registration-complementary .registration-section-head>button{width:auto}
+.maintenance-registration-form .registration-optional{margin:20px 0;padding:20px}
+.maintenance-registration-form .registration-optional>label{margin:0}
+.maintenance-registration-form .registration-schedule .form-field{max-width:340px;margin-top:12px}
+.maintenance-registration-form .registration-line{border-bottom:1px solid var(--ui-border);margin-bottom:12px}
+.maintenance-registration-form .team-registration-intro .helper{margin-top:0}
+@media(max-width:620px){.maintenance-registration-form .registration-optional{padding:16px}.maintenance-registration-form .registration-complementary .registration-section-head>button{min-width:140px}.maintenance-registration-form .registration-schedule .form-field{max-width:none}}
+
+/* The employee reference is the single composition for all registration roles. */
+.maintenance-registration-form .registration-required-note{font-size:10px;margin:4px 0 24px}
+.maintenance-registration-form .team-contact-grid{margin-top:0;gap:18px 14px}
+.maintenance-registration-form .team-contact-grid>label{font-size:12px;font-weight:700;color:var(--ui-muted)}
+.maintenance-registration-form .team-equipment-section{margin-top:32px}
+.maintenance-registration-form .team-equipment-section>h3{font-size:13px;margin:0 0 20px}
+.maintenance-registration-form .registration-line{grid-template-columns:1.5fr 1.5fr .65fr auto;gap:10px;padding:14px 0;border-bottom:0;margin-bottom:10px}
+.maintenance-registration-form .registration-part{grid-template-columns:2fr 1fr auto}
+.maintenance-registration-form .registration-hose{grid-template-columns:1.3fr 1fr 1fr .8fr auto}
+.maintenance-registration-form .registration-add-wide{border-radius:28px;min-height:44px}
+.maintenance-registration-form .registration-capacity-note{font-size:10px;margin-top:18px}
+.maintenance-registration-form .registration-additional-services{padding:20px;border-radius:14px;margin:30px 0 22px}
+.maintenance-registration-form .registration-additional-services>h3{font-size:14px;margin:0 0 10px}
+.maintenance-registration-form .registration-additional-services>.helper{font-size:10px;margin:0 0 16px}
+.maintenance-registration-form .registration-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.maintenance-registration-form .registration-service-card{padding:14px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-panel);min-width:0;min-height:74px;box-sizing:border-box}
+.maintenance-registration-form .registration-service-card .registration-choice{height:100%;align-items:center;gap:10px!important}
+.maintenance-registration-form .registration-service-card .registration-choice input[type=checkbox]{width:17px!important;min-height:17px!important;height:17px;flex-basis:17px;margin:0}
+.maintenance-registration-form .registration-service-card .registration-choice b{font-size:12px;line-height:1.4}
+.maintenance-registration-form .registration-service-card .registration-choice small{font-size:10px;line-height:1.5}
+.maintenance-registration-form .registration-service-card.is-open{grid-column:1/-1}
+.maintenance-registration-form .registration-service-card.is-open>.registration-choice{height:auto}
+.maintenance-registration-form .registration-service-card [data-hose-section],.maintenance-registration-form [data-complement-details]{padding-top:8px}
+.maintenance-registration-form .registration-complement-line{grid-template-columns:2fr 1fr auto;margin-top:8px;padding:12px 0}
+.maintenance-registration-form .registration-complement-parameters{grid-template-columns:repeat(2,minmax(0,1fr))}
+.maintenance-registration-form .registration-purchase-card{padding:18px;margin:22px 0}
+.maintenance-registration-form .registration-contact-editor{border-top:1px solid var(--ui-border);padding-top:12px;margin-top:24px}
+/* Include the modal root so the shared theme's input reset cannot hide selection. */
+html:root body #modalRoot .maintenance-registration-form .registration-choice{min-height:44px}
+html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]{appearance:none!important;-webkit-appearance:none!important;display:inline-grid;place-content:center;box-sizing:border-box;width:20px!important;min-width:20px!important;height:20px!important;min-height:20px!important;flex:0 0 20px;padding:0!important;background:var(--ui-raised)!important;border:1px solid var(--ui-control)!important;border-radius:4px!important;cursor:pointer}
+html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]::after{content:"";width:8px;height:5px;border-left:2px solid var(--ui-action-text);border-bottom:2px solid var(--ui-action-text);transform:translateY(-1px) rotate(-45deg);opacity:0}
+html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]:checked{background:var(--ui-action)!important;border-color:var(--ui-action)!important}
+html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]:checked::after{opacity:1}
+html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]:focus-visible{outline:3px solid var(--ui-focus);outline-offset:3px}
+html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]:disabled{opacity:.55;cursor:default}
+html:root body #modalRoot .maintenance-registration-form :is(.registration-service-card,.registration-purchase-card).is-open{border-color:var(--ui-action)!important}
+@media(forced-colors:active){html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]{appearance:auto!important;-webkit-appearance:auto!important}html:root body #modalRoot .maintenance-registration-form .registration-choice input[type=checkbox]::after{content:none}}
+html:root body .maintenance-registration-form .modal-foot .btn{min-width:88px;min-height:44px;border-radius:24px}
+@media(max-width:680px){
+ .maintenance-registration-form .registration-card-grid{grid-template-columns:1fr}
+ .maintenance-registration-form .registration-service-card.is-open{grid-column:auto}
+ .maintenance-registration-form .registration-additional-services{padding:16px}
+ .maintenance-registration-form .registration-line{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .maintenance-registration-form .registration-line>label:first-child{grid-column:1/-1}
+ .maintenance-registration-form .registration-complement-line{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .maintenance-registration-form .registration-complement-line>.icon-btn{grid-column:1/-1;width:100%}
+}
+
+/* Shared control geometry throughout admin, employee and seller panels. */
+html:root body :is(#dashboard,#employeePortal,#modalRoot) button{box-sizing:border-box;min-height:44px!important;vertical-align:middle;line-height:1.25}
+html:root body :is(#dashboard,#employeePortal,#modalRoot) :is(button.btn,button.icon-btn){display:inline-flex!important;align-items:center;justify-content:center;gap:8px;margin-top:0;line-height:1.25;text-align:center;white-space:normal}
+html:root body :is(#dashboard,#employeePortal) .page-title{align-items:center;gap:16px;flex-wrap:wrap}
+html:root body :is(#dashboard,#employeePortal) :is(.page-title,.panel-head)>.btn{flex-shrink:0;align-self:center}
+html:root body :is(#dashboard,#employeePortal,#modalRoot) :is(.ops-detail-actions,.panel-actions,.offline-actions,.offline-service-actions,.employee-header-actions,.seller-header-actions,.ops-utility-links){align-items:stretch;gap:10px;flex-wrap:wrap}
+html:root body :is(#dashboard,#employeePortal,#modalRoot) :is(.ops-detail-actions,.panel-actions,.offline-actions)>:is(.btn,.icon-btn){align-self:stretch}
+html:root body #modalRoot :is(.modal-actions,.modal-foot){display:flex;align-items:stretch;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+html:root body #modalRoot :is(.modal-actions,.modal-foot)>.btn{margin:0;min-height:44px;min-width:88px}
+html:root body #modalRoot .modal-head>.icon-btn{display:inline-flex!important;align-items:center;justify-content:center;flex:0 0 44px;min-width:44px;width:44px;height:44px;min-height:44px;margin:0;padding:0}
+html:root body :is(#dashboard,#employeePortal) :is(.ops-team-menu,.sidebar) .btn{justify-content:flex-start;text-align:left}
+html:root body :is(#dashboard,#employeePortal,#modalRoot) .panel-button-group{display:flex;align-items:stretch;flex-wrap:wrap;gap:8px}
+html:root body :is(#dashboard,#employeePortal,#modalRoot) .panel-button-group>:is(.btn,.icon-btn){margin:0;min-height:44px}
+html:root body :is([data-registration-pricing],[data-supply-pricing],[data-complement-settings]) button{align-self:end;min-height:44px}
+html:root body :is([data-registration-pricing],[data-supply-pricing]) label[hidden]{display:none!important}
+.maintenance-registration-form .registration-water-line{grid-template-columns:2fr 1fr auto}
+.maintenance-registration-form .registration-water-line [data-fixed-capacity]{font-size:12px;line-height:1.4;font-weight:500;color:var(--ui-muted)}
+.maintenance-registration-form .registration-sale-line.registration-water-line>label:first-child{grid-column:1/-1}
+.maintenance-registration-form .registration-compatibility-note{padding:10px 12px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-raised);color:var(--ui-text)}
+@media(max-width:680px){
+ html:root body :is(#dashboard,#employeePortal) .page-title>.btn{min-height:44px}
+ html:root body #modalRoot :is(.modal-actions,.modal-foot)>.btn{flex:1 1 120px;min-width:0}
+ html:root body :is(#dashboard,#employeePortal,#modalRoot) .panel-button-group{gap:8px}
+ .maintenance-registration-form .registration-water-line{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .maintenance-registration-form .registration-water-line>label:first-child,.maintenance-registration-form .registration-sale-line.registration-water-line>label:nth-child(2){grid-column:1/-1}
+}
+
+@layer protecNeutral {
+html:root body .workshop-equipment-summary{display:grid;gap:8px;margin:18px 0}
+html:root body .workshop-equipment-summary>div{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 16px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-raised)}
+html:root body .workshop-equipment-summary b{white-space:nowrap}
+html:root body .workshop-equipment-group{margin:14px 0;border:1px solid var(--ui-border);border-radius:14px;padding:14px;background:var(--ui-panel)}
+html:root body .workshop-equipment-group>summary{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:44px;cursor:pointer}
+html:root body .workshop-equipment-group>summary span{white-space:nowrap;color:var(--ui-muted)}
+html:root body .workshop-equipment-group .offline-form-section{margin-top:14px}
+html:root body .workshop-parts-evidence>summary{min-height:44px;padding:12px 0;cursor:pointer;font-weight:600}
+html:root body .workshop-rates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+html:root body .workshop-config-modal .workshop-rates{display:block!important}
+html:root body .workshop-config-modal{max-height:calc(100dvh - 32px)!important;overflow:hidden!important}
+html:root body .workshop-config-modal #editForm{display:flex!important;flex-direction:column;max-height:calc(100dvh - 32px)!important;min-height:0}
+html:root body .workshop-config-modal .modal-body{overflow:auto!important;min-height:0!important;max-height:calc(100dvh - 205px)!important}
+html:root body .workshop-rate-section,html:root body .workshop-rate-group{border:1px solid var(--ui-border);border-radius:12px;padding:12px;margin:12px 0}
+html:root body .workshop-rate-section>summary,html:root body .workshop-rate-group>summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:600}
+html:root body .workshop-rate-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-top:16px}
+html:root body .workshop-stock-value{font-size:26px;font-weight:700;line-height:1.4}
+html:root body .workshop-powder-field{margin:20px 0;padding:18px;border:1px solid var(--ui-border);border-radius:14px}
+html:root body .workshop-history-filters{display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin:16px 0}
+html:root body .workshop-history-filters>label{flex:1;min-width:180px}
+html:root body .workshop-quote-lines{list-style:none;padding:0;margin:16px 0}
+html:root body .workshop-quote-lines li{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid var(--ui-border)}
+html:root body .workshop-quote-lines b{white-space:nowrap}
+html:root body [data-workshop-content]{margin-top:24px;min-width:0}
+html:root body [data-workshop-content] .ops-panel{min-width:0}
+html:root body [data-workshop-content] td small{display:block;color:var(--ui-muted);margin-top:4px}
+@media(max-width:650px){html:root body .workshop-rates{grid-template-columns:1fr}html:root body .workshop-equipment-summary>div{align-items:flex-start}html:root body .workshop-equipment-group>summary{align-items:flex-start}html:root body .workshop-history-filters{display:grid;grid-template-columns:1fr}html:root body [data-workshop-content] .ops-metrics{grid-template-columns:1fr}}
+@media(max-width:650px){html:root body #dashboard #content [data-workshop-content]>.ops-metrics{grid-template-columns:1fr!important}html:root body .workshop-rate-inputs{grid-template-columns:1fr}}
+}
+
+@layer protecNeutral {
+html:root body .data-tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:24px}
+html:root body .data-tools-grid>.ops-panel{display:flex;flex-direction:column;min-width:0;margin:0}
+html:root body .data-tools-grid>.ops-panel>.btn{margin-top:auto;align-self:flex-start;min-height:46px!important}
+html:root body .data-tools-grid>.ops-panel>.btn{max-width:100%;white-space:normal!important;text-align:center}
+html:root body .workspace-powder-stock{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:16px 0!important;padding:18px 22px!important}
+html:root body .workspace-powder-stock h2{font-size:16px!important;margin:0 0 8px!important}
+html:root body .workspace-powder-stock p{margin:0 0 6px!important}
+html:root body .workspace-powder-stock small{color:var(--ui-muted)}
+html:root body [data-data-progress]{min-height:24px;color:var(--ui-text);font-weight:600}
+@media(max-width:650px){html:root body .data-tools-grid{grid-template-columns:1fr}html:root body #employeePortal #offlineToolbar>.offline-actions>[data-offline-action=sync]{display:inline-flex!important}html:root body #employeePortal #offlineToolbar>.offline-actions{display:flex!important;flex-wrap:wrap}}
+}
+
+/* Conclusão da execução em passos */
+.wiz-modal .modal-body{min-height:300px}
+.wiz-steps{display:flex;gap:6px;list-style:none;margin:0 0 22px;padding:0;overflow-x:auto}
+.wiz-steps li{flex:1;min-width:64px;display:grid;justify-items:center;gap:6px;font-size:12px;color:var(--ui-muted);text-align:center}
+.wiz-steps li span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--ui-raised);border:1px solid var(--ui-border);color:var(--ui-text);font-size:13px;font-weight:700}
+.wiz-steps li.cur{color:var(--ui-text);font-weight:700}
+.wiz-steps li.cur span,.wiz-steps li.done span{background:var(--ui-action);border-color:var(--ui-action);color:var(--ui-action-text)}
+.wiz-step h3{margin:0 0 6px;font-size:21px;letter-spacing:-.02em}
+.wiz-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.wiz-opt{min-height:58px;border:1.5px solid var(--ui-border);border-radius:14px;background:var(--ui-panel);color:var(--ui-text);font-size:16px;font-weight:700;cursor:pointer;transition:background-color .15s,border-color .15s}
+.wiz-opt:hover{border-color:var(--ui-control)}
+.wiz-opt.on{background:var(--ui-action);border-color:var(--ui-action);color:var(--ui-action-text)}
+.wiz-step .form-field select{width:100%;min-height:48px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-panel);color:var(--ui-text);padding:0 12px}
+.wiz-row{display:grid;grid-template-columns:minmax(0,1fr) 92px 46px;gap:8px;margin:8px 0}
+.wiz-row select,.wiz-row button{min-height:48px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-panel);color:var(--ui-text);padding:0 10px;font:inherit}
+.wiz-row button{cursor:pointer;padding:0}
+.wiz-video{display:grid;gap:6px;padding:14px;margin:10px 0;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-panel)}
+.wiz-error{margin:16px 0 0;padding:11px 13px;border:1px solid var(--ui-border);border-left:3px solid var(--ui-action);border-radius:10px;background:var(--ui-raised);color:var(--ui-text);font-size:14px;line-height:1.5}
+.wiz-summary{display:grid;gap:0;margin:14px 0}
+.wiz-summary>div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;padding:13px 0;border-top:1px solid var(--ui-border)}
+.wiz-summary dt{color:var(--ui-muted);font-size:14px}
+.wiz-summary dd{margin:0;font-weight:650}
+@media(prefers-reduced-motion:reduce){.wiz-opt{transition:none}}
+.wiz-video input[type=file]{width:100%;max-width:100%;min-width:0;box-sizing:border-box;padding:10px;font-size:14px}

@@ -1,0 +1,44 @@
+name: Publicar ProtecExtintores no GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+jobs:
+  publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar arquivos do repositório
+        uses: actions/checkout@v4
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe dos scripts
+        run: |
+          set -euo pipefail
+          for f in site/*.js site/*.mjs api-cloudflare/src/*.js api-cloudflare/src/*.mjs; do node --check "$f"; done
+          node -e "JSON.parse(require('fs').readFileSync('site/manifest.webmanifest','utf8'))"
+          node scripts/release-offline.mjs
+          node scripts/test-service-rules.mjs
+          node scripts/test-offline-rules.mjs
+          node scripts/verify-theme.mjs
+          node scripts/verify-site.mjs
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Preparar arquivos do site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+      - name: Publicar site
+        id: deployment
+        uses: actions/deploy-pages@v4

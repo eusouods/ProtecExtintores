@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "protecextintores-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-02",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "protecextintores-db",
+      "database_id": "2f6f1588-e474-4251-899a-da2ffba6b585",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "protecextintores-media"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 6 * * 1"]
+  },
+  "vars": {
+    "ADMIN_USER": "admin",
+    "ALLOWED_ORIGIN": "https://eusouods.github.io,https://protecextintoresbeta.pages.dev,https://protecextintores.eusouods.workers.dev",
+    "PUBLIC_API_URL": "https://protecextintores-api.eusouods.workers.dev",
+    "GOOGLE_CLIENT_ID": ""
+  }
+}
