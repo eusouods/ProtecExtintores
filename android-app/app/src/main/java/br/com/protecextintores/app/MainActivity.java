@@ -328,12 +328,12 @@ public class MainActivity extends Activity {
     public void applyAppearance(String mode) {
         if (!"light".equals(mode) && !"dark".equals(mode)) return;
         boolean dark="dark".equals(mode);
-        int background=android.graphics.Color.parseColor(dark?"#1D1815":"#EDF4FA");
-        int panel=android.graphics.Color.parseColor(dark?"#29211C":"#F9FCFF");
-        int text=android.graphics.Color.parseColor(dark?"#F5E9DC":"#20374A");
-        int muted=android.graphics.Color.parseColor(dark?"#C7B09B":"#526B80");
-        int action=android.graphics.Color.parseColor(dark?"#E7AA74":"#226B99");
-        int onAction=android.graphics.Color.parseColor(dark?"#2C1D12":"#FFFFFF");
+        int background=android.graphics.Color.parseColor(dark?"#0E1420":"#F3F6FF");
+        int panel=android.graphics.Color.parseColor(dark?"#161F30":"#FFFFFF");
+        int text=android.graphics.Color.parseColor(dark?"#FFFFFF":"#0A1233");
+        int muted=android.graphics.Color.parseColor(dark?"#9BA7BF":"#4D5A80");
+        int action=android.graphics.Color.parseColor(dark?"#B9FC01":"#003CFF");
+        int onAction=android.graphics.Color.parseColor(dark?"#0F131F":"#FFFFFF");
         getSharedPreferences("protec-appearance",MODE_PRIVATE).edit().putString("mode",mode).apply();
         getWindow().setStatusBarColor(background);
         getWindow().setNavigationBarColor(!dark && Build.VERSION.SDK_INT<26?android.graphics.Color.parseColor("#20374A"):background);
@@ -354,7 +354,7 @@ public class MainActivity extends Activity {
     }
 
     private WebResourceResponse bundledPage(Uri uri) {
-        boolean bundledRelease = uri.isHierarchical() && "registration-flow-55".equals(uri.getQueryParameter("v"));
+        boolean bundledRelease = uri.isHierarchical() && "registration-flow-56".equals(uri.getQueryParameter("v"));
         if (!localStartup && !bundledRelease && !bundledFallback && connected()) return null;
         String sitePath=Uri.parse(startUrl).getPath(),requestPath=uri.getPath();
         if (!"https".equals(uri.getScheme()) || !websiteHost.equals(uri.getHost()) || uri.getPort()!=-1 || requestPath==null || !requestPath.startsWith(sitePath)) return null;

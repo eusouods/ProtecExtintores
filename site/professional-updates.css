@@ -396,6 +396,10 @@ html:root body #servicesTable thead th:last-child{text-align:right!important}
 
 html:root body .next-maintenance-card{grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr) auto!important}
 @media(max-width:1000px){html:root body .next-maintenance-card{grid-template-columns:1fr!important}html:root body .next-maintenance-card .btn{width:100%!important}}
+
+html:root body .admin-search-field{position:relative!important;border:0!important;background:transparent!important;padding:0!important;min-height:0!important;display:block!important}
+html:root body .admin-search-field svg{position:absolute!important;left:15px!important;top:50%!important;transform:translateY(-50%)!important;pointer-events:none!important;z-index:1!important}
+html:root body #adminSearch .admin-search-field input{display:block!important;width:100%!important;min-height:50px!important;padding:0 14px 0 46px!important;border-radius:14px!important;box-sizing:border-box!important}
 }
 
 /* Páginas públicas (Produtos, Acompanhar): o cabeçalho é absoluto e cobria o início do conteúdo.

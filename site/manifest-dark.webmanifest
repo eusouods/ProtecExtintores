@@ -11,23 +11,23 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1d1815",
-  "theme_color": "#1d1815",
+  "background_color": "#0e1420",
+  "theme_color": "#0e1420",
   "icons": [
     {
-      "src": "icons/icon-192-dark.png?v=registration-flow-55",
+      "src": "icons/icon-192-dark.png?v=registration-flow-56",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512-dark.png?v=registration-flow-55",
+      "src": "icons/icon-512-dark.png?v=registration-flow-56",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-512-dark.png?v=registration-flow-55",
+      "src": "icons/icon-maskable-512-dark.png?v=registration-flow-56",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
