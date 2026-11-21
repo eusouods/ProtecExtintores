@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private LinearLayout loadErrorView;
     private OfflineBridge offlineBridge;
     private boolean bundledFallback;
+    private boolean firstPaintDone;
     private volatile boolean localStartup = true;
     private FrameLayout appRoot;
 
@@ -69,6 +70,11 @@ public class MainActivity extends Activity {
             return insets;
         });
         webView = new WebView(this);
+        // O site entra com um fade suave em vez de piscar na tela.
+        webView.setAlpha(0f);
+        webView.postDelayed(() -> {
+            if (webView.getAlpha() < 1f) webView.animate().alpha(1f).setDuration(250L).start();
+        }, 4000L);
         progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progressBar.setMax(100);
         progressBar.setIndeterminate(false);
@@ -161,6 +167,10 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
+                if (!firstPaintDone) {
+                    firstPaintDone = true;
+                    webView.animate().alpha(1f).setDuration(320L).start();
+                }
                 localStartup = false;
                 view.evaluateJavascript("if(navigator.serviceWorker){navigator.serviceWorker.getRegistration().then(function(r){if(r&&r.active)r.update();}).catch(function(){});}", null);
             }
@@ -274,7 +284,10 @@ public class MainActivity extends Activity {
         if (loadErrorView == null) return;
         TextView details = loadErrorView.findViewWithTag("load-error-details");
         if (details != null) details.setText(message + "\n\nEndereço: " + startUrl);
+        webView.setAlpha(1f);
+        loadErrorView.setAlpha(0f);
         loadErrorView.setVisibility(View.VISIBLE);
+        loadErrorView.animate().alpha(1f).setDuration(260L).start();
         progressBar.setVisibility(View.GONE);
     }
 
@@ -354,7 +367,7 @@ public class MainActivity extends Activity {
     }
 
     private WebResourceResponse bundledPage(Uri uri) {
-        boolean bundledRelease = uri.isHierarchical() && "registration-flow-56".equals(uri.getQueryParameter("v"));
+        boolean bundledRelease = uri.isHierarchical() && "registration-flow-57".equals(uri.getQueryParameter("v"));
         if (!localStartup && !bundledRelease && !bundledFallback && connected()) return null;
         String sitePath=Uri.parse(startUrl).getPath(),requestPath=uri.getPath();
         if (!"https".equals(uri.getScheme()) || !websiteHost.equals(uri.getHost()) || uri.getPort()!=-1 || requestPath==null || !requestPath.startsWith(sitePath)) return null;

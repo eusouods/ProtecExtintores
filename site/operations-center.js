@@ -225,7 +225,7 @@
     if (!document.getElementById('adminTabbar')) {
       const bar = document.createElement('nav');
       bar.id = 'adminTabbar'; bar.setAttribute('aria-label', 'Navegação principal');
-      bar.innerHTML = TABS.map(id => entry(id, 'admin-tab')).join('') + `<button type="button" class="admin-tab" data-nav-more aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
+      bar.innerHTML = '<span class="admin-tab-pill" aria-hidden="true"></span>' + TABS.map(id => entry(id, 'admin-tab')).join('') + `<button type="button" class="admin-tab" data-nav-more aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
       document.body.appendChild(bar);
       const sheet = document.createElement('section');
       sheet.id = 'adminMore'; sheet.hidden = true; sheet.setAttribute('aria-label', 'Mais opções');
@@ -314,27 +314,58 @@
     if (mine) mine.insertAdjacentElement('afterend', form); else c.append(form);
   }
 
-  /* Manutenções: linhas mais baixas, funcionário junto do cliente e ações em uma linha */
-  const SHORT = {'Atualizar status': 'Status', 'Revisar dados': 'Revisar', 'Finalizar serviço': 'Finalizar', 'Ordem de serviço': 'Ordem', 'Peças, vídeos e resultado': 'Peças e vídeos'};
+  /* Manutenções: ações em ícones; só mostra o que tem utilidade naquele serviço */
+  Object.assign(I, {
+    flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    review:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m9 12 2 2 4-4"/>',
+    done:'<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.5 2.5L16 9.5"/>',
+    doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+    edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>'
+  });
+  const ICON_ACTIONS = {
+    'Atualizar status': {icon: 'flag', short: 'Status'}, 'Revisar dados': {icon: 'review', short: 'Revisar'},
+    'Finalizar serviço': {icon: 'done', short: 'Finalizar'}, 'Histórico': {icon: 'clock', short: 'Histórico'},
+    'Ordem de serviço': {icon: 'doc', short: 'Ordem'}, 'Editar cadastro': {icon: 'edit', short: 'Editar'},
+    'Peças, vídeos e resultado': {icon: 'video', short: 'Peças e vídeos', onlyWithParts: true},
+    'Aguardando funcionário': {hide: true}, 'Serviço concluído': {hide: true}
+  };
+  function serviceOfRow(row) {
+    const d = row.querySelector('[data-service-details]');
+    let id = d && d.dataset.serviceDetails;
+    if (!id) { const m = [...row.querySelectorAll('[onclick]')].map(b => b.getAttribute('onclick')).join(' ').match(/\(\s*['"]([^'"]+)['"]/); id = m && m[1]; }
+    return (typeof db !== 'undefined' && db.services || []).find(x => x.id === id);
+  }
   function tidyServices() {
-    document.querySelectorAll('#servicesTable table:not([data-tidy])').forEach(table => {
-      const heads = [...table.querySelectorAll('thead th')], idx = heads.findIndex(h => /^Funcion/i.test(h.textContent.trim()));
-      table.dataset.tidy = '1';
+    document.querySelectorAll('#servicesTable table').forEach(table => {
+      if (!table.dataset.tidy) {
+        const heads = [...table.querySelectorAll('thead th')], idx = heads.findIndex(h => /^Funcion/i.test(h.textContent.trim()));
+        table.dataset.tidy = '1';
+        if (idx >= 0) heads[idx].classList.add('svc-hide');
+      }
       table.querySelectorAll('tbody tr').forEach(row => {
         const emp = row.querySelector('td[data-label="Funcionário"]'), client = row.querySelector('td[data-label="Cliente"]');
         if (emp && client && !client.querySelector('.svc-employee')) { const t = document.createElement('small'); t.className = 'svc-employee'; t.textContent = emp.textContent.trim(); client.append(t); emp.classList.add('svc-hide'); }
         const group = row.querySelector('.panel-button-group'), extra = row.querySelector('[data-service-details]');
         if (group && extra && extra.parentElement !== group) group.append(extra);
+        const svc = serviceOfRow(row), hasParts = !svc || (svc.items || []).some(i => (i.replacedParts || []).length > 0);
         row.querySelectorAll('.ops-cell-actions button').forEach(b => {
-          const full = b.textContent.trim(), short = SHORT[full];
-          if (short && !b.querySelector('.lbl-short')) { b.title = full; b.innerHTML = `<span class="lbl-full">${full}</span><span class="lbl-short">${short}</span>`; }
+          if (b.dataset.ib) { if (b.dataset.ib === 'parts') b.hidden = !hasParts; return; }
+          const full = b.textContent.replace(/\s+/g, ' ').trim(), meta = ICON_ACTIONS[full];
+          if (!meta) return;
+          if (meta.hide) { b.dataset.ib = 'x'; b.hidden = true; b.style.display = 'none'; return; }
+          b.dataset.ib = meta.onlyWithParts ? 'parts' : '1';
+          b.classList.add('ibtn'); b.dataset.tip = full; b.setAttribute('aria-label', full); b.removeAttribute('title');
+          b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${I[meta.icon]}</svg><span class="ibtn-label">${meta.short}</span>`;
+          if (meta.onlyWithParts) b.hidden = !hasParts;
         });
+        const btns = [...row.querySelectorAll('.ibtn')], hasFinal = btns.some(x => x.dataset.tip === 'Finalizar serviço');
+        btns.forEach(x => x.classList.toggle('is-primary', x.dataset.tip === (hasFinal ? 'Finalizar serviço' : 'Ordem de serviço')));
       });
-      if (idx >= 0) heads[idx].classList.add('svc-hide');
     });
   }
 
-  let last = null;
+  let last = null, pendingCount = true;
   function sync() {
     mount();
     const dash = document.getElementById('dashboard'), open = Boolean(dash && !dash.classList.contains('hidden'));
@@ -342,7 +373,7 @@
     if (!open) { closeMore(); return; }
     const cur = window.page || 'overview', group = byPage[cur];
     if (cur !== last) {
-      last = cur;
+      last = cur; pendingCount = cur === 'overview';
       document.querySelectorAll('[data-nav-group]').forEach(b => {
         const on = b.dataset.navGroup === group?.id;
         b.classList.toggle('active', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current');
@@ -352,6 +383,8 @@
     }
     tabs(group, cur);
     if (cur === 'overview') search();
+    if (cur === 'overview' && pendingCount && window.__protecCountUp && window.__protecCountUp()) pendingCount = false;
+    if (window.__protecPill) window.__protecPill();
     if (cur === 'settings') stagePanel();
     if (cur === 'services') tidyServices();
   }
@@ -365,4 +398,83 @@
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMore(); });
   setInterval(sync, 300); sync();
+})();
+
+/* Movimento: troca de tela, revelar ao rolar, contadores, pílula da barra inferior e toque nos botões. */
+(() => {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.__protecMotion = {reduce};
+  /* 1) painel: animar a troca de tela */
+  const wrapGo = () => {
+    if (typeof window.go !== 'function' || window.go.__mv) return;
+    const base = window.go;
+    const fn = function () {
+      const c = document.getElementById('content');
+      if (c && !reduce) { c.dataset.enter = '1'; clearTimeout(fn.__t); fn.__t = setTimeout(() => { delete c.dataset.enter; }, 900); }
+      return base.apply(this, arguments);
+    };
+    fn.__mv = true; window.go = fn;
+  };
+  wrapGo(); setTimeout(wrapGo, 1200);
+  /* 2) site: revelar blocos ao rolar */
+  const REVEAL = '#store .home-equipment .section-head,#store .home-family,#store #servicos .section-head,#store #servicos .feature,#store #como-funciona .section-head,#store #como-funciona .how-steps li,#store #perguntas .section-head,#store #perguntas .faq-list details,#store #perguntas .faq-foot,#store .catalog-card,#store .customer-services-heading,#store .customer-service-card';
+  if (!reduce && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target; io.unobserve(el); el.classList.add('in');
+      setTimeout(() => { el.classList.remove('reveal', 'in'); el.style.removeProperty('--rv-d'); }, 1200);
+    }), {threshold: .1, rootMargin: '0px 0px -5% 0px'});
+    let n = 0, timer = null;
+    const scan = () => {
+      timer = null;
+      document.querySelectorAll(REVEAL).forEach(el => {
+        if (el.dataset.rv) return;
+        el.dataset.rv = '1'; el.classList.add('reveal'); el.style.setProperty('--rv-d', (n++ % 4) * 70 + 'ms'); io.observe(el);
+      });
+    };
+    scan();
+    new MutationObserver(() => { if (!timer) timer = setTimeout(scan, 120); }).observe(document.body, {childList: true, subtree: true});
+  }
+  /* 3) cabeçalho com sombra ao rolar */
+  window.addEventListener('scroll', () => document.body.classList.toggle('is-scrolled', window.scrollY > 6), {passive: true});
+  /* 4) efeito de toque nos botões */
+  document.addEventListener('pointerdown', e => {
+    if (reduce) return;
+    const b = e.target.closest && e.target.closest('.btn:not(.ibtn)');
+    if (!b || b.disabled) return;
+    const r = b.getBoundingClientRect(), s = Math.max(r.width, r.height), sp = document.createElement('span');
+    sp.className = 'rip'; sp.style.cssText = `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px`;
+    if (getComputedStyle(b).position === 'static') b.style.position = 'relative';
+    b.style.overflow = 'hidden'; b.append(sp); setTimeout(() => sp.remove(), 650);
+  }, {passive: true});
+  /* 5) números do painel contando até o valor */
+  const brl = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'});
+  window.__protecCountUp = function () {
+    if (reduce) return true;
+    const els = [...document.querySelectorAll('#content .ops-metric strong')].filter(el => !el.dataset.cu);
+    if (!els.length) return false;
+    els.forEach(el => {
+      el.dataset.cu = '1';
+      const txt = el.textContent.trim(); let target, fmt;
+      if (/^\d+$/.test(txt)) { target = +txt; fmt = v => String(Math.round(v)); }
+      else if (/^R\$\s?[\d.]+,\d{2}$/.test(txt)) { target = parseFloat(txt.replace(/[^\d,]/g, '').replace(',', '.')); fmt = v => brl.format(v).replace(/\u00a0/g, ' '); }
+      else return;
+      if (!target) return;
+      const t0 = performance.now(), d = 800; el.textContent = fmt(0);
+      const step = t => { const p = Math.min(1, (t - t0) / d), k = 1 - Math.pow(1 - p, 3); el.textContent = p < 1 ? fmt(target * k) : txt; if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    });
+    return true;
+  };
+  /* 6) pílula que desliza na barra inferior */
+  window.__protecPill = function () {
+    const bar = document.getElementById('adminTabbar'), pill = bar && bar.querySelector('.admin-tab-pill');
+    if (!bar || !pill || getComputedStyle(bar).display === 'none') return;
+    const svg = bar.querySelector('.admin-tab.active svg');
+    if (!svg) { pill.style.opacity = '0'; return; }
+    const b = bar.getBoundingClientRect(), r = svg.getBoundingClientRect();
+    pill.style.opacity = '1'; pill.style.width = r.width + 'px'; pill.style.height = r.height + 'px';
+    pill.style.transform = `translate(${r.left - b.left}px,${r.top - b.top}px)`;
+  };
+  window.addEventListener('resize', () => window.__protecPill && window.__protecPill());
 })();

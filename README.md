@@ -1,4 +1,4 @@
-# ProtecExtintores — versão 56 / Android 1.8.6
+# ProtecExtintores — versão 57 / Android 1.8.7
 
 ## Agenda removida — versão 53
 

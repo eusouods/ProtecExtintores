@@ -1,12 +1,12 @@
-import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=registration-flow-56';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-56';
-import './service-management.mjs?v=registration-flow-56';
-import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=registration-flow-56';
-import {vault,nativeCall} from './offline-vault.mjs?v=registration-flow-56';
-import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=registration-flow-56';
-import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=registration-flow-56';
+import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=registration-flow-57';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-57';
+import './service-management.mjs?v=registration-flow-57';
+import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=registration-flow-57';
+import {vault,nativeCall} from './offline-vault.mjs?v=registration-flow-57';
+import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=registration-flow-57';
+import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=registration-flow-57';
 
-const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=registration-flow-56',import.meta.url);document.head.append(css);
+const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=registration-flow-57',import.meta.url);document.head.append(css);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
@@ -526,10 +526,11 @@ async function completionWizard(service){
   if(step==='videos'){const miss=needVideos().filter(v=>!v.done);if(miss.length)return 'Falta o vídeo de: '+miss.map(v=>`${v.part} (equipamento ${v.i+1})`).join(', ')+'.'}
   return '';
  };
- let form,pending=0,error='';
+ let form,pending=0,error='',dir='fwd',shown=-1;
  const draw=()=>{
   const list=steps(),cur=Math.min(st.step,list.length-1);st.step=cur;const step=list[cur],last=step==='review';
-  form.querySelector('[data-wiz]').innerHTML=`<ol class="wiz-steps" aria-label="Etapas">${list.map((k,i)=>`<li class="${i<cur?'done':i===cur?'cur':''}" ${i===cur?'aria-current="step"':''}><span>${i<cur?'✓':i+1}</span>${names[k]}</li>`).join('')}</ol><div class="wiz-step">${html[step]()}</div>${error?`<p class="wiz-error" role="alert">${esc(error)}</p>`:''}`;
+  const anim=cur!==shown;shown=cur;
+ form.querySelector('[data-wiz]').innerHTML=`<ol class="wiz-steps" aria-label="Etapas">${list.map((k,i)=>`<li class="${i<cur?'done':i===cur?'cur':''}" ${i===cur?'aria-current="step"':''}><span>${i<cur?'✓':i+1}</span>${names[k]}</li>`).join('')}</ol><div class="wiz-step${anim?' wiz-anim':''}${anim&&dir==='back'?' is-back':''}">${html[step]()}</div>${error?`<p class="wiz-error" role="alert">${esc(error)}</p>`:''}`;
   const actions=form.querySelector('.modal-actions');let back=actions.querySelector('[data-wiz-back]');
   if(!back){back=document.createElement('button');back.type='button';back.className='btn btn-soft btn-small';back.dataset.wizBack='1';back.textContent='Voltar';actions.insertBefore(back,actions.lastElementChild)}
   back.hidden=cur===0;const primary=actions.lastElementChild;primary.textContent=last?'Concluir execução':'Avançar';primary.disabled=pending>0;
@@ -538,7 +539,7 @@ async function completionWizard(service){
  await serviceModal(service.id,'Concluir execução · '+(service.code||'ordem'),'<div data-wiz></div>',async()=>{
   const list=steps(),step=list[st.step];error=validate(step);
   if(error){setTimeout(draw,0);return false}
-  if(step!=='review'){st.step++;persist();setTimeout(draw,0);return false}
+  if(step!=='review'){dir='fwd';st.step++;persist();setTimeout(draw,0);return false}
   const per=assign(),usePaint=Boolean(st.paint.use);
   await enqueue('painting',service.id,{quantity:usePaint?Number(st.paint.qty):0});
   for(let i=0;i<total;i++){const item=service.items[i],before=[...(item.replacedParts||[])].sort().join('|'),after=[...(st.parts.use?per[i]:[])].sort().join('|');if(before!==after)await enqueue('technical',service.id,{itemIndex:i,notes:item.notes||'',parts:st.parts.use?per[i]:[]})}
@@ -553,7 +554,7 @@ async function completionWizard(service){
  draw();
  form.addEventListener('click',event=>{
   const t=event.target.closest('button');if(!t||!form.contains(t))return;
-  if(t.dataset.wizBack){st.step=Math.max(0,st.step-1);redraw();return}
+  if(t.dataset.wizBack){dir='back';st.step=Math.max(0,st.step-1);redraw();return}
   if(t.dataset.wizChoice){const use=t.dataset.v==='true',k=t.dataset.wizChoice;
    if(k==='paint')st.paint.use=use;
    if(k==='parts'){st.parts.use=use;if(use&&!st.parts.rows.length){const first=catalog.find(p=>{const s=stockOf(p);return s==null||s>=1});if(first)st.parts.rows.push({part:first,qty:1})}}
@@ -588,7 +589,7 @@ async function serviceModal(serviceId,title,body,onSave,label='Salvar'){
 function duration(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file);let settled=false,seeking=false;const timer=setTimeout(()=>done(Error('Não foi possível conferir a duração do vídeo.')),15000);const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);video.onloadedmetadata=video.onseeked=video.ondurationchange=video.onerror=null;video.removeAttribute('src');video.load();URL.revokeObjectURL(url);error?reject(error):resolve(value)};const check=()=>{if(Number.isFinite(video.duration)&&video.duration>0){done(null,video.duration);return}if(!seeking){seeking=true;video.currentTime=1e100}};video.preload='metadata';video.onloadedmetadata=check;video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)done(null,video.duration)};video.onseeked=()=>{const seconds=Number.isFinite(video.duration)?video.duration:video.currentTime;done(!Number.isFinite(seconds)||seconds<=0?Error('Duração de vídeo inválida.'):null,seconds)};video.onerror=()=>done(Error('Este aparelho não conseguiu ler o vídeo.'));video.src=url})}
 
 let shellPreparing=null,shellReady=false,shellError='';
-const shellVersion='registration-flow-56';
+const shellVersion='registration-flow-57';
 async function prepareShell(account=''){
  if(shellPreparing)return shellPreparing;
  if(shellReady&&(await vault.get('shell:'+account))?.version===shellVersion)return;

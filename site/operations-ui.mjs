@@ -1,10 +1,10 @@
-import {mountDataTools} from './data-tools.mjs?v=registration-flow-56';
-import {mountWorkshop,bindWorkshopOrder,groupedEquipmentMarkup} from './workshop-ui.mjs?v=registration-flow-56';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-56';
+import {mountDataTools} from './data-tools.mjs?v=registration-flow-57';
+import {mountWorkshop,bindWorkshopOrder,groupedEquipmentMarkup} from './workshop-ui.mjs?v=registration-flow-57';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-57';
 function complementaryWork(service){return service.complementaryServices?.length?'<h3>Serviços complementares</h3><ul>'+service.complementaryServices.map(row=>'<li><b>'+esc(row.name)+'</b> · '+esc(row.variant)+' · '+Number(row.quantity)+' unidade(s)'+Object.entries(row.parameters||{}).map(([key,value])=>' · '+esc(({lengthMeters:'Comprimento',widthCm:'Largura',diameterMm:'Diâmetro'})[key]||key)+': '+esc(value)+(key==='lengthMeters'?' m':key==='widthCm'?' cm':key==='diameterMm'?' mm':'')).join('')+'</li>').join('')+'</ul>':'';}
 function suppliedEquipment(service){return service.soldExtinguishers?.length?'<h3>Extintores para fornecimento</h3><ul>'+service.soldExtinguishers.map(i=>'<li>'+esc(i.condition==='new'?'Novo lacrado · sem argola':'Seminovo revisado · com argola')+' · '+esc(i.type)+' '+esc(i.kg||'10 L')+' · '+i.quantity+' unidade(s)</li>').join('')+'</ul>':'';}
-import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=registration-flow-56';
-import {isPaused} from './offline-rules.mjs?v=registration-flow-56';
+import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=registration-flow-57';
+import {isPaused} from './offline-rules.mjs?v=registration-flow-57';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=value=>(Number(value||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -157,7 +157,7 @@ function enhanceTeam(){
   summary.querySelector('[data-ops-assigned]')?.addEventListener('click',()=>host.querySelector('[data-employee-scope="assigned"]')?.click());
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=registration-flow-56',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=registration-flow-57',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{

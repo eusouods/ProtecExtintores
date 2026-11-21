@@ -400,6 +400,91 @@ html:root body .next-maintenance-card{grid-template-columns:minmax(0,.8fr) minma
 html:root body .admin-search-field{position:relative!important;border:0!important;background:transparent!important;padding:0!important;min-height:0!important;display:block!important}
 html:root body .admin-search-field svg{position:absolute!important;left:15px!important;top:50%!important;transform:translateY(-50%)!important;pointer-events:none!important;z-index:1!important}
 html:root body #adminSearch .admin-search-field input{display:block!important;width:100%!important;min-height:50px!important;padding:0 14px 0 46px!important;border-radius:14px!important;box-sizing:border-box!important}
+
+/* ===== Movimento e animações ===== */
+html:root{--ease-out:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.3,1.35,.5,1)}
+@keyframes mvRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes mvFade{from{opacity:0}to{opacity:1}}
+@keyframes mvFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes mvMenu{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes mvSheet{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}}
+@keyframes mvModal{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes mvToast{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes mvRipple{to{transform:scale(3.4);opacity:0}}
+@keyframes wizIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes wizInBack{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+/* troca de tela do site e do painel */
+html:root body #store .public-view.active:not(.hero){animation:mvFade .4s ease both}
+html:root body #content[data-enter]>*{animation:mvRise .5s var(--ease-out) both}
+html:root body #content[data-enter]>:nth-child(2){animation-delay:.05s}
+html:root body #content[data-enter]>:nth-child(3){animation-delay:.1s}
+html:root body #content[data-enter]>:nth-child(4){animation-delay:.15s}
+html:root body #content[data-enter]>:nth-child(5){animation-delay:.2s}
+html:root body #content[data-enter]>:nth-child(n+6){animation-delay:.25s}
+html:root body #content[data-enter] tbody tr{animation:mvRise .45s var(--ease-out) both}
+html:root body #content[data-enter] tbody tr:nth-child(2){animation-delay:.04s}
+html:root body #content[data-enter] tbody tr:nth-child(3){animation-delay:.08s}
+html:root body #content[data-enter] tbody tr:nth-child(4){animation-delay:.12s}
+html:root body #content[data-enter] tbody tr:nth-child(5){animation-delay:.16s}
+html:root body #content[data-enter] tbody tr:nth-child(n+6){animation-delay:.2s}
+html:root body #content[data-enter] .ops-metric{animation:mvRise .55s var(--ease-out) both}
+html:root body #content[data-enter] .ops-metric:nth-child(2){animation-delay:.07s}
+html:root body #content[data-enter] .ops-metric:nth-child(3){animation-delay:.14s}
+html:root body #content[data-enter] .ops-metric:nth-child(4){animation-delay:.21s}
+/* revelar ao rolar */
+html:root body .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s var(--ease-out) var(--rv-d,0ms),transform .65s var(--ease-out) var(--rv-d,0ms)}
+html:root body .reveal.in{opacity:1;transform:none}
+/* início: cartão em destaque flutuando de leve */
+@media(prefers-reduced-motion:no-preference){
+ html:root body #store .hero.active .hero-card{animation:protecRise .8s .2s var(--ease-out) both,mvFloat 7s 1.2s ease-in-out infinite;will-change:transform}
+}
+/* menu do celular e cabeçalho */
+html:root body .topbar .navlinks.is-open{animation:mvMenu .28s var(--ease-out) both}
+html:root body .menu-toggle span{transition:transform .3s var(--ease-out),opacity .2s ease;transform-origin:center}
+html:root body.is-scrolled #store .topbar{box-shadow:0 10px 28px -18px rgb(var(--ui-scrim-rgb) / .55)}
+/* janelas e avisos */
+html:root body .modal-back{animation:mvFade .2s ease both}
+html:root body .modal-back>.modal{animation:mvModal .34s var(--ease-out) both}
+html:root body #toast:not(.hidden){animation:mvToast .3s var(--ease-out) both}
+@media(max-width:760px){html:root body .modal-back>.modal{animation-name:mvSheet}}
+/* toques e passagem do mouse */
+html:root body :is(.btn,.icon-btn,.ibtn,.wiz-opt,#pageTabs button,.admin-tab,.admin-nav-item,.admin-more-row):active{transform:scale(.96)!important;transition-duration:.08s!important}
+html:root body .btn .rip{position:absolute;border-radius:50%;background:currentColor;opacity:.22;pointer-events:none;transform:scale(0);animation:mvRipple .6s ease-out forwards}
+html:root body .admin-nav-item svg{transition:transform .25s var(--ease-spring)}
+html:root body .admin-nav-item:hover svg{transform:translateX(3px) scale(1.08)}
+/* barra inferior com pílula deslizante */
+html:root body .admin-tab{position:relative;z-index:1}
+html:root body .admin-tab-pill{position:absolute;left:0;top:0;border-radius:999px;background:var(--ui-action);pointer-events:none;opacity:0;z-index:0;transition:transform .42s var(--ease-spring),width .3s ease,height .3s ease,opacity .2s ease}
+html:root body .admin-tab.active svg{background:transparent!important;color:var(--ui-action-text)!important}
+html:root body .admin-tab svg{transition:color .25s ease}
+/* conclusão em passos */
+html:root body .wiz-step.wiz-anim{animation:wizIn .3s var(--ease-out) both}
+html:root body .wiz-step.wiz-anim.is-back{animation-name:wizInBack}
+html:root body .wiz-steps li span{transition:background-color .3s ease,border-color .3s ease,color .3s ease}
+/* ações da tabela de Manutenções em ícones */
+html:root body #servicesTable .ops-cell-actions .ibtn{overflow:visible!important;position:relative!important;display:inline-grid!important;place-items:center!important;width:38px!important;height:38px!important;min-height:0!important;padding:0!important;gap:0!important;border-radius:12px!important;transition:transform .2s var(--ease-spring),background-color .15s ease,border-color .15s ease!important}
+html:root body #servicesTable .ops-cell-actions .ibtn[hidden]{display:none!important}
+html:root body #servicesTable .ibtn svg{width:19px!important;height:19px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.9!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+html:root body #servicesTable .ibtn .ibtn-label{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+html:root body #servicesTable .ops-cell-actions .ibtn:hover{transform:translateY(-2px)!important;border-color:var(--ui-control)!important}
+html:root body #servicesTable .ops-cell-actions .ibtn.is-primary{background:var(--ui-action)!important;border-color:var(--ui-action)!important;color:var(--ui-action-text)!important}
+html:root body #servicesTable .ibtn[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);right:-4px;white-space:nowrap;padding:6px 10px;border-radius:8px;background:var(--ui-text);color:var(--ui-bg);font-size:12px;font-weight:600;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:30}
+html:root body #servicesTable .ibtn:is(:hover,:focus-visible)::after{opacity:1;transform:none}
+@media(max-width:760px){
+ html:root body #servicesTable .ops-cell-actions .ibtn{display:inline-flex!important;width:auto!important;padding:0 14px 0 12px!important;gap:8px!important;min-height:40px!important}
+ html:root body #servicesTable .ibtn .ibtn-label{position:static!important;width:auto!important;height:auto!important;clip:auto!important;font-size:13px!important}
+ html:root body #servicesTable .ibtn[data-tip]::after{display:none!important}
+}
+/* quem prefere menos movimento */
+@media(prefers-reduced-motion:reduce){
+ html:root body *,html:root body *::before,html:root body *::after{animation-duration:.01ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+ html:root body .reveal{opacity:1!important;transform:none!important}
+}
+
+
+html:root body .menu-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg)!important}
+html:root body .menu-toggle[aria-expanded="true"] span:nth-child(2){opacity:0!important;transform:scaleX(.2)!important}
+html:root body .menu-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg)!important}
 }
 
 /* Páginas públicas (Produtos, Acompanhar): o cabeçalho é absoluto e cobria o início do conteúdo.
