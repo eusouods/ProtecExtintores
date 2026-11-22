@@ -160,7 +160,9 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     }
 
     fun logout(note: String? = null) {
+        val oldToken = Store.token
         Store.clearSession()
+        if (oldToken.isNotBlank()) viewModelScope.launch { Api.logout(oldToken) }
         profile = null
         portalRole = ""
         portalState = null
@@ -354,6 +356,36 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     }.getOrDefault(false)
 
     internal fun saveAdminReview(service: JSONObject, updates: JSONObject, done: () -> Unit) {
+        val fields = listOf("clientName", "clientPhone", "clientEmail", "date", "nextMaintenanceMonth", "notes", "items",
+            "maintenanceValid", "hydroValid")
+        saveAdminServiceFields(service, updates, fields, "Dados e validades revisados pelo administrador",
+            updates.str("reviewNotes"), mirrorOrder = true, done = done)
+    }
+
+    internal fun linkAdminContacts(service: JSONObject, clientId: String, sellerId: String, done: () -> Unit) {
+        val state = portalState?.optJSONObject("state") ?: return
+        val client = state.optJSONArray("clients").objects().firstOrNull { it.str("id") == clientId && clientId.isNotBlank() }
+        val seller = state.optJSONArray("sellers").objects().firstOrNull {
+            it.str("id") == sellerId && sellerId.isNotBlank() && it.optBoolean("active", true)
+        }
+        if (clientId.isNotBlank() && client == null || sellerId.isNotBlank() && seller == null) {
+            message = "Selecione contatos ativos do cadastro."
+            return
+        }
+        val updates = JSONObject().put("clientId", clientId).put("sellerId", sellerId).put("sellerName", seller?.str("name").orEmpty())
+        if (client != null) {
+            updates.put("clientName", client.str("name")).put("clientPhone", client.str("phone"))
+                .put("clientEmail", client.str("email")).put("clientSource", "customer")
+        }
+        val fields = listOf("clientId", "sellerId", "sellerName", "clientName", "clientPhone", "clientEmail", "clientSource")
+        val description = "Cliente: ${client?.str("name") ?: "Contato informado"}. Vendedor: ${seller?.str("name") ?: "Sem atribuição"}."
+        saveAdminServiceFields(service, updates, fields, "Vínculos administrativos atualizados", description, done = done)
+    }
+
+    private fun saveAdminServiceFields(
+        service: JSONObject, updates: JSONObject, fields: List<String>, action: String,
+        description: String, mirrorOrder: Boolean = false, done: () -> Unit
+    ) {
         val state = portalState?.optJSONObject("state") ?: return
         val id = service.str("id")
         val changes = JSONArray()
@@ -366,23 +398,24 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 .put("before", previous)
                 .put("after", JSONObject().put("exists", true).put("value", after)))
         }
-        for (field in listOf("clientName", "clientPhone", "clientEmail", "date", "nextMaintenanceMonth", "notes", "items")) {
+        for (field in fields) {
             updates.opt(field)?.let { addChange("services", service, field, it) }
         }
         val order = state.optJSONArray("orders").objects().firstOrNull { it.str("code") == service.str("code") }
-        if (order != null) {
+        if (mirrorOrder && order != null) {
             for ((from, to) in listOf("clientName" to "name", "clientPhone" to "phone", "clientEmail" to "email", "notes" to "details")) {
                 if (updates.has(from)) addChange("orders", order, to, updates.str(from))
             }
         }
-        if (changes.length() == 0) {
+        if (changes.length() == 0 && description.isBlank()) {
             done()
             return
         }
         val now = Instant.now().toString()
         val originalHistory = service.optJSONArray("history") ?: JSONArray()
         val event = JSONObject().put("at", now).put("by", portalState?.str("username").orEmpty())
-            .put("action", "Dados e validades revisados pelo administrador")
+            .put("action", action)
+        if (description.isNotBlank()) event.put("description", description)
         if (service.has("history")) {
             changes.put(JSONObject().put("path", JSONArray(listOf("services", id, "history")))
                 .put("before", originalHistory).put("append", JSONArray(listOf(event))))
@@ -417,8 +450,14 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         .put("kind", kind)
 
     internal fun saveContact(group: String, original: JSONObject?, fields: JSONObject, done: () -> Unit) {
-        val state = portalState?.optJSONObject("state") ?: return
         if (group !in listOf("clients", "sellers", "employees")) return
+        saveAdminRecord(group, original, fields, done)
+    }
+
+    internal fun saveAdminRecord(group: String, original: JSONObject?, fields: JSONObject, done: () -> Unit) {
+        val state = portalState?.optJSONObject("state") ?: return
+        if (group !in listOf("clients", "sellers", "employees", "inventory", "types", "products")) return
+        if (group == "inventory" && (!original?.str("powderAgent").isNullOrEmpty() || fields.has("powderAgent"))) return
         val id = original?.str("id") ?: UUID.randomUUID().toString()
         val next = JSONObject(original?.toString() ?: "{}").put("id", id)
         fields.keys().forEach { next.put(it, fields.opt(it)) }
@@ -428,6 +467,17 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             .put("before", before).put("after", JSONObject().put("exists", true).put("value", next))))
         adminAction("/api/offline/admin/sync", adminEnvelope(state, "admin-state").put("changes", changes),
             if (original == null) "Cadastro criado." else "Cadastro atualizado.", done)
+    }
+
+    internal fun removeAdminRecord(group: String, original: JSONObject, done: () -> Unit) {
+        val state = portalState?.optJSONObject("state") ?: return
+        if (group !in listOf("clients", "sellers", "types", "products")) return
+        val changes = JSONArray(listOf(JSONObject()
+            .put("path", JSONArray(listOf(group, original.str("id"))))
+            .put("before", JSONObject().put("exists", true).put("value", original))
+            .put("after", JSONObject().put("exists", false))))
+        adminAction("/api/offline/admin/sync", adminEnvelope(state, "admin-state").put("changes", changes),
+            "Registro removido.", done)
     }
 
     internal fun adminAction(path: String, payload: JSONObject, success: String, done: () -> Unit) {

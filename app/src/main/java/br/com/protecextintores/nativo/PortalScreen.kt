@@ -1,6 +1,7 @@
 package br.com.protecextintores.nativo
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,10 +46,24 @@ private val adminTabs = listOf(
     PanelTab("Pedidos", PanelIcon.List),
     PanelTab("Produtos", PanelIcon.Flame),
     PanelTab("Equipe", PanelIcon.People),
-    PanelTab("Recebimentos", PanelIcon.Chart, "Custos e recebimentos")
+    PanelTab("Recebimentos", PanelIcon.Chart, "Custos e recebimentos"),
+    PanelTab("Estoque", PanelIcon.List),
+    PanelTab("Agenda", PanelIcon.Clock),
+    PanelTab("Alertas", PanelIcon.List),
+    PanelTab("Relatórios", PanelIcon.Chart),
+    PanelTab("Histórico da equipe", PanelIcon.Clock),
+    PanelTab("Acessos da equipe", PanelIcon.People),
+    PanelTab("Pó e movimentações", PanelIcon.List),
+    PanelTab("Garantias e avaliações", PanelIcon.List),
+    PanelTab("Preços sugeridos", PanelIcon.Chart),
+    PanelTab("Envios da equipe", PanelIcon.List)
 )
 private val adminKeys = mapOf(1 to "services", 2 to "types", 3 to "clients", 4 to "orders", 5 to "products", 6 to "employees")
-private val sellerMore = listOf(PanelTab("Catálogo", PanelIcon.Flame), PanelTab("Pedidos", PanelIcon.List))
+private val sellerMore = listOf(
+    PanelTab("Catálogo", PanelIcon.Flame),
+    PanelTab("Pedidos", PanelIcon.List),
+    PanelTab("Meu perfil", PanelIcon.People)
+)
 
 @Composable
 fun PortalScreen(vm: AppVm) {
@@ -63,7 +79,15 @@ fun PortalScreen(vm: AppVm) {
     var sellerOrder by remember { mutableStateOf<JSONObject?>(null) }
     val openSellerOrder = sellerOrder
     if (!admin && openSellerOrder != null) {
-        AdminServiceScreen(vm, openSellerOrder, readOnly = true) { sellerOrder = null }
+        val token = Store.token
+        var profile by remember(openSellerOrder.str("id"), token) { mutableStateOf<Profile?>(null) }
+        LaunchedEffect(openSellerOrder.str("id"), token) {
+            val result = Api.bootstrap(token)
+            if (result.ok && Store.token == token && result.json.str("role") == "seller") profile = Profile(result.json)
+        }
+        AdminServiceScreen(vm, openSellerOrder, readOnly = true, staffProfile = profile) {
+            sellerOrder = null
+        }
         return
     }
     val currentOrder = root.optJSONObject("state")?.optJSONArray("services").objects()
@@ -101,10 +125,22 @@ fun PortalScreen(vm: AppVm) {
                 0 -> AdminOverview(state, vm::startRegistration, { serviceId = it.str("id") }) { page = it }
                 1 -> RecordsPage(adminTabs[active].title, state.optJSONArray("services").objects(),
                     filterStatus = true, register = vm::startRegistration, openRecord = { serviceId = it.str("id") })
+                2 -> AdminCatalog(vm, state, CatalogArea.Types)
                 3 -> AdminDirectory(vm, state, employees = false)
+                4 -> RecordsPage(adminTabs[active].title, state.optJSONArray("orders").objects())
+                5 -> AdminCatalog(vm, state, CatalogArea.Products)
                 6 -> AdminDirectory(vm, state, employees = true)
                 7 -> AdminReceipts(state) { owner = it }
-                else -> RecordsPage(adminTabs[active].title, state.optJSONArray(adminKeys.getValue(active)).objects())
+                8 -> AdminCatalog(vm, state, CatalogArea.Stock)
+                9 -> AdminAgenda(state) { serviceId = it }
+                10 -> AdminAlerts(state, { serviceId = it }) { page = 8 }
+                11 -> AdminReports(vm, state)
+                12 -> AdminTeamHistory(state) { serviceId = it }
+                13 -> AdminAccess(state)
+                14 -> AdminPowder(vm, state)
+                15 -> AdminCare(vm)
+                16 -> AdminPrices(vm, state)
+                17 -> AdminTransfers(vm, state) { serviceId = it }
             }
         } else {
             when (active) {
@@ -115,6 +151,7 @@ fun PortalScreen(vm: AppVm) {
                 3 -> TeamWallet(refreshKey)
                 4 -> RecordsPage("Catálogo", root.optJSONArray("products").objects())
                 5 -> RecordsPage("Meus pedidos", root.optJSONArray("orders").objects())
+                6 -> AccountProfile(vm)
             }
         }
     }
@@ -160,6 +197,9 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
             item { PanelShortcut("Ordens de serviço", "Consultar andamento e serviços em revisão", PanelIcon.List) { select(1) } }
             item { PanelShortcut("Extintores", "Tipos, capacidades e preços", PanelIcon.Flame) { select(2) } }
             item { PanelShortcut("Custos e recebimentos", "Conferir resultados", PanelIcon.Chart) { select(7) } }
+            item { PanelShortcut("Pó e movimentações", "Acompanhar estoque e entradas", PanelIcon.List) { select(14) } }
+            item { PanelShortcut("Agenda", "Manutenções e próximos prazos", PanelIcon.Clock) { select(9) } }
+            item { PanelShortcut("Alertas", "Validades, revisões e estoque baixo", PanelIcon.List) { select(10) } }
         }
     }
 }
@@ -247,21 +287,26 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
                         register: (() -> Unit)? = null, openRecord: ((JSONObject) -> Unit)? = null) {
     var query by rememberSaveable(title) { mutableStateOf("") }
     var filter by rememberSaveable(title) { mutableIntStateOf(0) }
-    val shown = records.filter { record ->
-        matches(record, query) && when (filter) {
-            1 -> !Svc(record).finished
-            2 -> record.optBoolean("closed")
-            else -> true
-        }
-    }
+    val matching = records.filter { matches(it, query) }
+    val categories = if (filterStatus) {
+        val services = matching.map(::Svc)
+        listOf(
+            "Todas" to services,
+            "Em andamento" to services.filter { !it.finished },
+            "Em revisão" to services.filter { it.employeeCompleted && !it.closed && !it.cancelled },
+            "Finalizadas" to services.filter { it.closed && !it.cancelled },
+            "Canceladas" to services.filter { it.cancelled }
+        )
+    } else emptyList()
+    val shown = categories.getOrNull(filter)?.second?.map(Svc::j) ?: matching
     PanelList {
         item { PanelIntro("", title) }
         if (register != null) item { PrimaryButton("＋ Registrar serviço", onClick = register) }
         item { PanelSearch(query, { query = it }, "Buscar nesta seção") }
         if (filterStatus) item {
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                listOf("Todas", "Em andamento", "Finalizadas").forEachIndexed { index, text ->
-                    FilterChip(filter == index, { filter = index }, label = { Text(text) })
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                categories.forEachIndexed { index, (label, services) ->
+                    FilterChip(filter == index, { filter = index }, label = { Text("$label (${services.size})") })
                 }
             }
         }

@@ -12,6 +12,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -41,7 +42,7 @@ object Api {
                 val json = try {
                     JSONObject(text)
                 } catch (e: Exception) {
-                    JSONObject()
+                    runCatching { JSONObject().put("items", JSONArray(text)) }.getOrDefault(JSONObject())
                 }
                 ApiResult(response.code, json)
             }
@@ -66,6 +67,17 @@ object Api {
 
     suspend fun postSection(token: String, path: String, payload: JSONObject): ApiResult =
         postJson(token, path, payload.toString())
+
+    suspend fun putSection(token: String, path: String, payload: JSONObject): ApiResult =
+        exec(Request.Builder().url("$BASE$path").header("Authorization", "Bearer $token")
+            .put(payload.toString().toRequestBody(jsonType)).build())
+
+    suspend fun revokeTeamAccess(token: String, path: String, accountId: String): ApiResult {
+        val url = ("$BASE$path").toHttpUrl().newBuilder().addQueryParameter("id", accountId).build()
+        return exec(Request.Builder().url(url).header("Authorization", "Bearer $token").delete().build())
+    }
+
+    suspend fun logout(token: String): ApiResult = postSection(token, "/api/logout", JSONObject())
 
     private suspend fun postJson(token: String, path: String, json: String): ApiResult =
         exec(Request.Builder().url("$BASE$path").header("Authorization", "Bearer $token")

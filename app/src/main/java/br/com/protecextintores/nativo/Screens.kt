@@ -199,14 +199,18 @@ fun HomeScreen(vm: AppVm) {
     var refreshKey by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     PanelChrome(
         teamTabs, vm.employeePage, { vm.employeePage = it }, "FN",
-        listOf(PanelAction("Registrar serviço", PanelIcon.Plus, vm::startRegistration)) +
-            panelActions(vm) { vm.refresh(); refreshKey++ }
+        listOf(
+            PanelAction("Registrar serviço", PanelIcon.Plus, vm::startRegistration),
+            PanelAction("Meu perfil", PanelIcon.People) { vm.employeePage = 4 }
+        ) + panelActions(vm) { vm.refresh(); refreshKey++ },
+        title = if (vm.employeePage == 4) "Meu perfil" else null
     ) { page ->
         when (page) {
             0 -> EmployeeOverview(vm, p)
             1 -> EmployeeOrders(vm, p)
             2 -> TeamDataPage("/api/employee/next-maintenance", "Próximas manutenções", "services", refreshKey)
             3 -> TeamWallet(refreshKey)
+            4 -> AccountProfile(vm)
         }
     }
 }

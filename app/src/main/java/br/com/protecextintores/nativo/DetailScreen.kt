@@ -105,6 +105,7 @@ fun DetailScreen(vm: AppVm, id: String) {
                 }
             }
             ServiceSelections(svc.j)
+            StaffTransfer(vm, p, svc) { vm.refresh(silent = true) }
             CardBox {
                 Text("Resumo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))

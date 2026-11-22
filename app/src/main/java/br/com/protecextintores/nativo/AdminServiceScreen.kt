@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -26,13 +28,31 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.YearMonth
 
+private val reviewYearFormat = Regex("""20\d{2}""")
+
+private fun needsValidity(items: List<JSONObject>) = items.any { item ->
+    !item.str("maintenanceYear").matches(reviewYearFormat) ||
+        item.str("hydroYear").let { it.isNotBlank() && !it.matches(reviewYearFormat) }
+}
+
+private fun reviewDraft(order: JSONObject): JSONObject {
+    val fallback = order.str("date").take(4).takeIf { it.matches(reviewYearFormat) } ?: LocalDate.now().year.toString()
+    val items = order.optJSONArray("items").objects().map { item ->
+        JSONObject(item.toString())
+            .put("maintenanceYear", item.str("maintenanceYear").ifBlank { order.str("maintenanceValid").ifBlank { fallback } })
+            .put("hydroYear", item.str("hydroYear").ifBlank { order.str("hydroValid") })
+    }
+    return JSONObject(order.toString()).put("items", JSONArray(items)).put("reviewNotes", "")
+}
+
 @Composable
-internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean = false, close: () -> Unit) {
+internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean = false, staffProfile: Profile? = null, close: () -> Unit) {
     val svc = Svc(order)
     var tab by remember { mutableIntStateOf(0) }
     var edit by remember { mutableStateOf<JSONObject?>(null) }
     var confirm by remember { mutableStateOf(false) }
     var receipt by remember { mutableStateOf(false) }
+    var linkContacts by remember { mutableStateOf(false) }
     var reference by remember { mutableStateOf("") }
     androidx.activity.compose.BackHandler {
         if (!vm.busy) {
@@ -69,11 +89,18 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                             Text("Vendedor · ${order.str("sellerName").ifBlank { "Administração" }}")
                             Text("Equipamentos · ${svc.items.size}")
                             Text("Pintura · ${order.optInt("paintingQuantity")} unidade(s)")
+                            order.optDouble("retailAmount").takeIf { it.isFinite() }?.let {
+                                Text("Preço informado ao cliente · ${formatRegistrationMoney(Math.round(it * 100))}")
+                            }
                             if (svc.paused) Text("Motivo da pausa · ${svc.pauseReason}")
                             if (order.str("notes").isNotBlank()) Text(order.str("notes"))
                         }
                     }
                     item { ServiceSelections(order) }
+                    if (readOnly) {
+                        val authoritative = staffProfile?.find(svc.id)
+                        item { StaffTransfer(vm, staffProfile, authoritative ?: svc, close) }
+                    }
                     items(svc.items) { item ->
                         CardBox {
                             Text(item.str("type"), fontWeight = FontWeight.Bold)
@@ -81,6 +108,7 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                                 .filterNotNull().filter(String::isNotBlank).joinToString(" · "))
                             Text("Manutenção · ${item.str("maintenanceYear").ifBlank { "Pendente" }}")
                             Text("Hidrostático · ${item.str("hydroYear").ifBlank { "Não informado" }}")
+                            if (item.str("seal").isNotBlank()) Text("Selo / lacre · ${item.str("seal")}")
                             if (item.str("notes").isNotBlank()) Text(item.str("notes"))
                             val parts = item.optJSONArray("replacedParts").stringList()
                             if (parts.isNotEmpty()) Text("Peças substituídas · ${parts.joinToString()}")
@@ -88,8 +116,16 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                         }
                     }
                     if (!readOnly && !svc.closed && !svc.cancelled) {
-                        item { SoftButton("Revisar dados e validades", enabled = !vm.busy) { edit = JSONObject(order.toString()) } }
-                        item { PrimaryButton("Finalizar serviço", enabled = !vm.busy) { confirm = true } }
+                        item { SoftButton("Revisar dados e validades", enabled = !vm.busy) { edit = reviewDraft(order) } }
+                        item { SoftButton("Vincular cliente / vendedor", enabled = !vm.busy) { linkContacts = true } }
+                        item {
+                            PrimaryButton("Finalizar serviço", enabled = !vm.busy) {
+                                if (needsValidity(svc.items)) {
+                                    vm.message = "Revise as validades antes de finalizar o serviço."
+                                    edit = reviewDraft(order)
+                                } else confirm = true
+                            }
+                        }
                     }
                 }
                 1 -> {
@@ -121,7 +157,14 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                     }
                 }
                 else -> {
-                    val history = order.optJSONArray("history").objects().sortedByDescending { it.str("at") }
+                    val equipmentHistory = svc.items.flatMapIndexed { index, item ->
+                        item.optJSONArray("history").objects().map { event ->
+                            JSONObject(event.toString()).put("description",
+                                "Equipamento ${index + 1}: ${event.str("description").ifBlank { event.str("status") }}")
+                        }
+                    }
+                    val history = (order.optJSONArray("history").objects() + equipmentHistory)
+                        .sortedByDescending { it.str("at") }.distinctBy { it.toString() }
                     if (history.isEmpty()) item { EmptyRecord("Nenhum registro no histórico.") }
                     items(history) { event ->
                         CardBox {
@@ -133,6 +176,9 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                 }
             }
         }
+    }
+    if (linkContacts) vm.portalState?.optJSONObject("state")?.let { state ->
+        LinkContactsDialog(vm, state, order) { linkContacts = false }
     }
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false }, title = { Text("Finalizar ${svc.code}?") },
@@ -157,6 +203,59 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
             }) { Text("Confirmar recebimento") }
         },
         dismissButton = { TextButton(onClick = { receipt = false }) { Text("Cancelar") } }
+    )
+}
+
+@Composable
+private fun LinkContactsDialog(vm: AppVm, state: JSONObject, order: JSONObject, close: () -> Unit) {
+    val clients = state.optJSONArray("clients").objects()
+    val sellers = state.optJSONArray("sellers").objects().filter { it.optBoolean("active", true) }
+    var clientId by remember { mutableStateOf(order.str("clientId").takeIf { id -> clients.any { it.str("id") == id } }.orEmpty()) }
+    var sellerId by remember { mutableStateOf(order.str("sellerId").takeIf { id -> sellers.any { it.str("id") == id } }.orEmpty()) }
+    AlertDialog(
+        onDismissRequest = { if (!vm.busy) close() },
+        title = { Text("Vincular cliente / vendedor") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Text("O criador da ordem permanece no histórico. A cobrança já atribuída ao criador é preservada.")
+                ContactPicker("Cliente", "Manter o contato informado", clientId, clients, !vm.busy) { clientId = it }
+                ContactPicker("Vendedor", "Sem vendedor atribuído", sellerId, sellers, !vm.busy) { sellerId = it }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = !vm.busy, onClick = { vm.linkAdminContacts(order, clientId, sellerId, close) }) { Text("Salvar vínculos") }
+        },
+        dismissButton = { TextButton(enabled = !vm.busy, onClick = close) { Text("Cancelar") } }
+    )
+}
+
+@Composable
+private fun ContactPicker(
+    label: String, blankLabel: String, id: String, options: List<JSONObject>, enabled: Boolean, choose: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    val name = options.firstOrNull { it.str("id") == id }?.str("name") ?: blankLabel
+    SoftButton("$label · $name", enabled = enabled) {
+        query = ""
+        expanded = true
+    }
+    if (expanded) AlertDialog(
+        onDismissRequest = { expanded = false }, title = { Text(label) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                PanelSearch(query, { query = it }, "Buscar pelo nome")
+                LazyColumn(Modifier.heightIn(max = 255.dp)) {
+                    item {
+                        TextButton(onClick = { choose(""); expanded = false }) { Text(blankLabel) }
+                    }
+                    items(options.filter { matches(it, query) }) { contact ->
+                        TextButton(onClick = { choose(contact.str("id")); expanded = false }) { Text(contact.str("name")) }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { expanded = false }) { Text("Voltar") } }
     )
 }
 
@@ -189,7 +288,8 @@ private fun AdminReviewForm(vm: AppVm, service: Svc, draft: JSONObject, change: 
     val fields = listOf(
         Triple("clientName", "Cliente", 100), Triple("clientPhone", "Telefone", 30), Triple("clientEmail", "E-mail", 254),
         Triple("date", "Data do serviço (AAAA-MM-DD)", 10), Triple("nextMaintenanceMonth", "Próxima manutenção (AAAA-MM)", 7),
-        Triple("notes", "Observações", 3000)
+        Triple("notes", "Observações da ordem", 3000),
+        Triple("reviewNotes", "Observação da revisão", 1500)
     )
     val equipment = draft.optJSONArray("items").objects()
     fun updateItem(index: Int, field: String, value: String) {
@@ -201,14 +301,14 @@ private fun AdminReviewForm(vm: AppVm, service: Svc, draft: JSONObject, change: 
         fields.forEach { (key, label, length) ->
             item {
                 OutlinedTextField(draft.str(key), { if (it.length <= length) change(JSONObject(draft.toString()).put(key, it)) },
-                    modifier = Modifier.fillMaxWidth(), label = { Text(label) }, singleLine = key != "notes")
+                    modifier = Modifier.fillMaxWidth(), label = { Text(label) }, singleLine = key !in setOf("notes", "reviewNotes"))
             }
         }
         equipment.forEachIndexed { index, item ->
             item {
                 CardBox {
                     Text("Unidade ${index + 1} · ${item.str("type")}", fontWeight = FontWeight.Bold)
-                    for ((key, label, max) in listOf(Triple("serial", "Número de série", 100),
+                    for ((key, label, max) in listOf(Triple("serial", "Número de série", 100), Triple("seal", "Selo / lacre", 100),
                         Triple("maintenanceYear", "Ano da manutenção", 4), Triple("hydroYear", "Ano hidrostático", 4))) {
                         OutlinedTextField(item.str(key), { if (it.length <= max) updateItem(index, key, it) },
                             modifier = Modifier.fillMaxWidth(), label = { Text(label) }, singleLine = true)
@@ -220,7 +320,6 @@ private fun AdminReviewForm(vm: AppVm, service: Svc, draft: JSONObject, change: 
         item {
             PrimaryButton("Salvar revisão", enabled = !vm.busy) {
                 val next = draft.str("nextMaintenanceMonth")
-                val year = Regex("""20\d{2}""")
                 val name = draft.str("clientName").trim()
                 val date = draft.str("date")
                 val phone = draft.str("clientPhone").trim()
@@ -231,13 +330,16 @@ private fun AdminReviewForm(vm: AppVm, service: Svc, draft: JSONObject, change: 
                     next.isNotEmpty() && (!next.matches(Regex("""20\d{2}-\d{2}""")) || runCatching { YearMonth.parse(next) }.isFailure) -> "Confira a próxima manutenção."
                     phone.isNotEmpty() && !phone.matches(Regex("""\+?[\d\s().-]{8,30}""")) -> "Confira o telefone."
                     email.isNotEmpty() && !email.matches(Regex("""[^\s@]+@[^\s@]+\.[^\s@]+""")) -> "Confira o e-mail."
-                    equipment.any { item -> listOf("maintenanceYear", "hydroYear").any { item.str(it).isNotBlank() && !item.str(it).matches(year) } } -> "Confira os anos informados."
+                    needsValidity(equipment) -> "Informe o ano da manutenção de cada extintor e confira os anos hidrostáticos."
                     else -> ""
                 }
                 if (error.isBlank()) {
                     val updates = JSONObject()
                     for ((key) in fields) updates.put(key, draft.str(key).trim())
                     updates.put("items", JSONArray(equipment))
+                    equipment.firstOrNull()?.let { first ->
+                        updates.put("maintenanceValid", first.str("maintenanceYear")).put("hydroValid", first.str("hydroYear"))
+                    }
                     vm.saveAdminReview(original, updates, done)
                 }
             }

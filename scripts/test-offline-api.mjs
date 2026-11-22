@@ -20,6 +20,9 @@ staleAdmin.settings.company='Minha versão '+suffix;
 const conflictedAdmin=await call('/api/offline/admin/sync','POST',{...adminOp,id:crypto.randomUUID(),changes:adminChanges(adminSnapshot,staleAdmin)},admin.token);
 assert.equal(conflictedAdmin.status,409);assert.equal(conflictedAdmin.data.conflict,true);assert.match(conflictedAdmin.data.field,/company/);
 let state=await ok('/api/admin/state','GET',null,admin.token);state.employees.push({id:employeeId,name:'Técnico Offline QA'});state.sellers.push({id:sellerId,name:'Vendedor Offline QA'});
+const valveStock=state.inventory.find(item=>item.name==='Válvula M30');
+if(valveStock)valveStock.qty=Math.max(Number(valveStock.qty)||0,10);
+else state.inventory.push({id:crypto.randomUUID(),name:'Válvula M30',category:'Peças',unit:'un',qty:10,unitCost:10});
 await ok('/api/admin/state','PUT',state,admin.token);
 await ok('/api/admin/users','POST',{employeeId,username:'offline'+suffix,password},admin.token);
 await ok('/api/admin/sellers','POST',{sellerId,username:'seller'+suffix,password},admin.token);
@@ -44,7 +47,7 @@ const technical=operation('technical',{itemIndex:0,parts:['Válvula M30'],notes:
 const toFinal=operation('stage',{status:'Inspeção final'},{previousId:technical.id});await ok('/api/offline/sync','POST',toFinal,employee.token);
 const noVideo=await call('/api/offline/sync','POST',operation('complete',{}, {previousId:toFinal.id}),employee.token);assert.equal(noVideo.status,400);assert.match(noVideo.data.error,/Vídeos/);
 const bytes=new TextEncoder().encode('offline-video-integrity-fixture'),sha256=Buffer.from(await crypto.subtle.digest('SHA-256',bytes)).toString('hex');
-const media=operation('media',{itemIndex:0,part:'Válvula M30',durationSeconds:2,mime:'video/mp4',sha256,blobKey:'test-local',name:'video.mp4'},{previousId:technical.id});
+const media=operation('media',{itemIndex:0,part:'Válvula M30',durationSeconds:2,mime:'video/mp4',sha256,blobKey:'test-local',name:'video.mp4'},{previousId:toFinal.id});
 const form=new FormData();form.append('operation',JSON.stringify(media));form.append('file',new Blob([bytes],{type:'video/mp4'}),'video.mp4');
 const upload=await fetch(base+'/api/offline/media',{method:'POST',headers:{Authorization:'Bearer '+employee.token},body:form});const uploaded=await upload.json();assert.equal(upload.status,200,JSON.stringify(uploaded));assert.ok(uploaded.service.items[0].replacementMedia['Válvula M30'].url);
 const finished=await ok('/api/offline/sync','POST',operation('complete',{}, {previousId:media.id}),employee.token);assert.ok(finished.service.employeeCompletedAt);assert.equal(finished.service.closed,false);

@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +82,12 @@ internal fun RegistrationScreen(vm: AppVm) {
             verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text("Etapa ${step + 1} de ${steps.size} · ${steps[step]}", style = MaterialTheme.typography.labelLarge)
             LinearProgressIndicator(progress = { (step + 1) / steps.size.toFloat() }, modifier = Modifier.fillMaxWidth())
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                steps.forEachIndexed { index, name ->
+                    FilterChip(step == index, { vm.registrationStep(index) }, label = { Text(name) },
+                        enabled = !vm.busy)
+                }
+            }
         }
         AnimatedContent(
             targetState = step,
@@ -208,6 +216,10 @@ private fun RegistrationRows(group: String, rows: List<JSONObject>, catalog: Reg
                              open: (Int, JSONObject) -> Unit, remove: (Int) -> Unit) {
     CardBox {
         Text(registrationLabel(group), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
+        if (rows.isNotEmpty()) {
+            val quantity = rows.sumOf { it.optInt("quantity", it.optInt("qty", 1)) }
+            Text(if (quantity == 1) "1 unidade" else "$quantity unidades", style = MaterialTheme.typography.bodySmall)
+        }
         rows.forEachIndexed { index, row ->
             val single = JSONObject().put(group, JSONArray(listOf(row)))
             val line = catalog.quote(single).firstOrNull()
