@@ -59,7 +59,6 @@ import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -159,8 +158,8 @@ internal fun PanelChrome(
 
 @Composable
 private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> Unit, alerts: (() -> Unit)?) {
-    val brand = if (MaterialTheme.colorScheme.background.luminance() > .5f) Color(0xFF123052) else Color(0xFF1C3456)
-    val ink = Color(0xFFF4F8FF)
+    val brand = MaterialTheme.colorScheme.protecBrand
+    val ink = ProtecOnBrand
     Surface(color = brand, contentColor = ink) {
       Column(Modifier.fillMaxWidth().padding(start = 17.dp, end = 17.dp, top = 10.dp, bottom = 16.dp)) {
         Row(

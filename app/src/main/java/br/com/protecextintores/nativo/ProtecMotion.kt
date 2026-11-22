@@ -149,7 +149,7 @@ internal fun ProtecSheet(
         Box(Modifier.fillMaxSize()) {
             Box(Modifier.fillMaxSize()
                 .graphicsLayer { alpha = scrim.value }
-                .background(colors.scrim.copy(alpha = .35f))
+                .background(colors.scrim.copy(alpha = .4f))
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest)
                 .clearAndSetSemantics {})
             BoxWithConstraints(

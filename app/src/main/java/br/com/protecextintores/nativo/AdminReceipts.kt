@@ -1,6 +1,7 @@
 package br.com.protecextintores.nativo
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -113,7 +112,6 @@ private fun ReceiptLine(receipt: ReceiptOrder, today: LocalDate, firstDue: Boole
     val chargeOwner = receipt.finance.optJSONObject("payer")?.str("name").orEmpty()
         .ifBlank { receipt.service.j.optJSONObject("billingOwner")?.str("name").orEmpty() }
     val name = chargeOwner.ifBlank { receipt.service.client }.ifBlank { receipt.service.code }
-    val statusInk = if (colors.background.luminance() > .5f) Color(0xFF76510C) else Color(0xFFFFDC91)
     val top = if (first) 14.dp else 0.dp
     val bottom = if (last) 14.dp else 0.dp
     Surface(onClick = open, color = colors.surface, shape = RoundedCornerShape(top, top, bottom, bottom),
@@ -127,7 +125,10 @@ private fun ReceiptLine(receipt: ReceiptOrder, today: LocalDate, firstDue: Boole
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(formatRegistrationMoney(receipt.cents), fontWeight = FontWeight.SemiBold)
-                if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall, color = statusInk)
+                if (status.isNotBlank()) Text(status,
+                    modifier = Modifier.background(colors.tertiaryContainer, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.bodySmall, color = colors.onTertiaryContainer)
             }
         }
     }

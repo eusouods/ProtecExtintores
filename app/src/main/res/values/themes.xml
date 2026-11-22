@@ -3,5 +3,6 @@
     <style name="Theme.Protec" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/protec_bg</item>
         <item name="android:colorBackground">@color/protec_bg</item>
+        <item name="android:colorAccent">@color/protec_accent</item>
     </style>
 </resources>

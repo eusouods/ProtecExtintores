@@ -9,8 +9,22 @@ css=css.replace(/@media print\{[^\n]+\}/,`@media print{:root,:root[data-theme="d
 fs.writeFileSync(stylesheet,css);
 for(const name of fs.readdirSync(site)){
  if(!/\.(?:html|js|mjs)$/.test(name))continue;
- const file=path.join(site,name);let text=fs.readFileSync(file,'utf8');text=text.replace(/(\.(?:css|js|mjs|png|svg|webmanifest)\?v=)[a-zA-Z0-9._-]+/g,'$1'+version);fs.writeFileSync(file,text);
+ const file=path.join(site,name),original=fs.readFileSync(file,'utf8');
+ let text=original.replace(/(\.(?:css|js|mjs|png|svg|webmanifest)\?v=)[a-zA-Z0-9._-]+/g,'$1'+version);
+ if(name==='index.html'){
+  text=text.replace(/(<meta name="theme-color" content=")#[a-f0-9]{6}/i,(_,prefix)=>prefix+light.brand)
+   .replace(/(document\.querySelector\("meta\[name=theme-color\]"\)\.content=document\.documentElement\.dataset\.theme==="dark"\?")#[a-f0-9]{6}":"#[a-f0-9]{6}/i,(_,prefix)=>prefix+dark.brand+'":"'+light.brand)
+   .replace(/(\.\/mobile-panels\.css)(?=")/g,'$1?v='+version);
+ }
+ if(name==='theme-mode.js')text=text.replace(/(meta\.content = mode === 'dark' \? ')#[a-f0-9]{6}' : '#[a-f0-9]{6}/i,(_,prefix)=>prefix+dark.brand+"' : '"+light.brand);
+ if(name==='offline-services.mjs')text=text.replace(/(const shellVersion=')[^']+/,(_,prefix)=>prefix+version);
+ if(text!==original)fs.writeFileSync(file,text);
 }
-const manifestFile=path.join(site,'manifest.webmanifest'),manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));manifest.theme_color=light.bg;manifest.background_color=light.bg;manifest.icons.forEach(icon=>icon.src=icon.src.split('?')[0]+'?v='+version);fs.writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
-const darkManifest={...manifest,theme_color:dark.bg,background_color:dark.bg,icons:manifest.icons.map(icon=>({...icon,src:icon.src.replace(/(icon-(?:maskable-)?(?:192|512))\.png/,'$1-dark.png')}))};fs.writeFileSync(path.join(site,'manifest-dark.webmanifest'),JSON.stringify(darkManifest,null,2)+'\n');
+const manifestFile=path.join(site,'manifest.webmanifest'),manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));manifest.theme_color=light.brand;manifest.background_color=light.bg;manifest.icons.forEach(icon=>icon.src=icon.src.split('?')[0]+'?v='+version);fs.writeFileSync(manifestFile,JSON.stringify(manifest,null,2)+'\n');
+const darkManifest={...manifest,theme_color:dark.brand,background_color:dark.bg,icons:manifest.icons.map(icon=>({...icon,src:icon.src.replace(/(icon-(?:maskable-)?(?:192|512))\.png/,'$1-dark.png')}))};fs.writeFileSync(path.join(site,'manifest-dark.webmanifest'),JSON.stringify(darkManifest,null,2)+'\n');
+const artFile=path.join(site,'extintor-original.svg');
+const artTokens=theme=>`--surface:${theme.raised};--disc:${theme.art};--ink:${theme['art-ink']};--panel:${theme.panel};--text:${theme.text}`;
+const art=fs.readFileSync(artFile,'utf8').replace(/<style>:root\{[^}]+\}@media\(prefers-color-scheme:dark\)\{:root\{[^}]+\}\}/,
+ `<style>:root{${artTokens(light)}}@media(prefers-color-scheme:dark){:root{${artTokens(dark)}}}`);
+fs.writeFileSync(artFile,art);
 console.log('Identidade '+version+' e referências de cache atualizadas.');

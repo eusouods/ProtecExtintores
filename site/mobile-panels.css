@@ -3,56 +3,23 @@
 
 @media (max-width: 650px) {
   :root {
-    --mobile-page: #eef2f7;
-    --mobile-paper: #fff;
-    --mobile-ink: #152640;
-    --mobile-muted: #526277;
-    --mobile-line: #dee6f0;
-    --mobile-brand: #123052;
-    --mobile-brand-rgb: 18 48 82;
-    --mobile-brand-ink: #f4f8ff;
-    --mobile-action: #1956c1;
-    --mobile-on-action: #fff;
-    --mobile-active: #eaf1ff;
-    --mobile-due: #76510c;
-    --mobile-due-bg: #fff4d9;
-    --mobile-shadow: #233f6823;
-    --mobile-scrim: #101e3e65;
-  }
-
-  :root[data-theme="dark"] {
-    --mobile-page: #0d1523;
-    --mobile-paper: #172335;
-    --mobile-ink: #edf3ff;
-    --mobile-muted: #a7b7cc;
-    --mobile-line: #2c3c55;
-    --mobile-brand: #1c3456;
-    --mobile-brand-rgb: 28 52 86;
-    --mobile-action: #a0c2ff;
-    --mobile-on-action: #10254c;
-    --mobile-active: #243b67;
-    --mobile-due: #ffdc91;
-    --mobile-due-bg: #44351a;
-    --mobile-shadow: #02070f80;
-  }
-
-  html:root body :is(#dashboard, #employeePortal[data-team-mobile-role]) {
-    --ui-bg: var(--mobile-page);
-    --ui-panel: var(--mobile-paper);
-    --ui-text: var(--mobile-ink);
-    --ui-muted: var(--mobile-muted);
-    --ui-border: var(--mobile-line);
-    --ui-raised: var(--mobile-active);
-    --ui-action: var(--mobile-action);
-    --ui-action-text: var(--mobile-on-action);
-    background: var(--mobile-page) !important;
+    --mobile-paper: var(--ui-panel);
+    --mobile-ink: var(--ui-text);
+    --mobile-muted: var(--ui-muted);
+    --mobile-line: var(--ui-border);
+    --mobile-brand: var(--ui-brand);
+    --mobile-brand-ink: var(--ui-on-brand);
+    --mobile-action: var(--ui-action);
+    --mobile-on-action: var(--ui-action-text);
+    --mobile-active: var(--ui-selected);
+    --mobile-due: var(--ui-warning);
+    --mobile-due-bg: var(--ui-warning-bg);
+    --mobile-shadow: var(--ui-elevation);
+    --mobile-scrim: rgb(var(--ui-scrim-rgb) / .4);
   }
 
   html:root body.admin-open #dashboard .admin-top,
   html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top {
-    --ui-panel: var(--mobile-brand);
-    --ui-panel-rgb: var(--mobile-brand-rgb);
-    --ui-text: var(--mobile-brand-ink);
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;

@@ -4,6 +4,7 @@ import vm from 'node:vm';
 const site=path.resolve(import.meta.dirname,'../site'),css=fs.readFileSync(path.join(site,'theme-system.css'),'utf8');
 function luminance(hex){hex=hex.slice(1);if(hex.length===3)hex=[...hex].map(c=>c+c).join('');const channels=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return channels.reduce((sum,value,i)=>sum+value*[.2126,.7152,.0722][i],0)}
 const pairs=[['text','bg'],['text','panel'],['text','raised'],['muted','bg'],['muted','panel'],['muted','raised'],['action-text','action'],['action-text','action-hover'],['accent','selected'],['accent','panel'],['success','success-bg'],['warning','warning-bg'],['on-hero','hero'],['on-hero','hero-end'],['hero-muted','hero'],['hero-muted','hero-end']];
+pairs.push(['on-brand','brand'],['brand-muted','brand'],['on-brand-action','brand-action']);
 for(const theme of ['light','dark']){
  const pattern=theme==='light'?/:root\{color-scheme:light;([^}]+)\}/:/:root\[data-theme="dark"\]\{color-scheme:dark;([^}]+)\}/;
  const match=css.match(pattern);if(!match)throw Error('Tema ausente: '+theme);
