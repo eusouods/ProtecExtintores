@@ -1,3 +1,0 @@
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-    android:src="@drawable/company_logo" android:gravity="fill"
-    android:filter="true" android:antialias="true" />
