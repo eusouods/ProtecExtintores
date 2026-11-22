@@ -17,10 +17,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -33,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,20 +52,25 @@ fun PortalScreen(vm: AppVm) {
         PortalTab("Resumo", "⌂"), PortalTab("Serviços", "⚒"), PortalTab("Pedidos", "▣"), PortalTab("Produtos", "◇")
     ) else listOf(PortalTab("Resumo", "⌂"), PortalTab("Catálogo", "◇"), PortalTab("Pedidos", "▣"))
     var selected by remember(role) { mutableIntStateOf(0) }
+    var optionsOpen by remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(if (role == "admin") "Painel administrativo" else "Painel do vendedor", fontWeight = FontWeight.Bold)
+                Text(if (role == "admin") "Painel administrativo" else "Painel do vendedor", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(vm.portalState?.str("username").ifNullOrBlank("ProtecExtintores"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            TextButton(onClick = { vm.refreshPortal() }) { Text("Atualizar") }
-            TextButton(onClick = { vm.logout() }) { Text("Sair") }
+            TextButton(onClick = { optionsOpen = true }) { Text("•••") }
+            DropdownMenu(expanded = optionsOpen, onDismissRequest = { optionsOpen = false }, shape = RoundedCornerShape(18.dp), containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .96f)) {
+                DropdownMenuItem(text = { Text("Atualizar painel") }, onClick = { optionsOpen = false; vm.refreshPortal() })
+                DropdownMenuItem(text = { Text("Alternar tema") }, onClick = { optionsOpen = false; vm.cycleTheme() })
+                DropdownMenuItem(text = { Text("Sair da conta") }, onClick = { optionsOpen = false; vm.logout() })
+            }
         }
         AnimatedContent(targetState = selected, modifier = Modifier.weight(1f), transitionSpec = {
             (slideInHorizontally(tween(260)) { if (targetState > initialState) it / 6 else -it / 6 } + fadeIn(tween(220))) togetherWith
                 (slideOutHorizontally(tween(180)) { if (targetState > initialState) -it / 8 else it / 8 } + fadeOut(tween(160)))
         }, label = "portal") { page -> PortalPage(role, page, vm.portalState) }
-        NavigationBar {
+        NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .94f), tonalElevation = 0.dp) {
             tabs.forEachIndexed { index, tab ->
                 NavigationBarItem(selected = selected == index, onClick = { selected = index }, icon = { Text(tab.mark) }, label = { AnimatedVisibility(selected == index) { Text(tab.label) } })
             }
@@ -81,8 +90,8 @@ private fun PortalPage(role: String, page: Int, root: JSONObject?) {
         role == "seller" && page == 2 -> state.array("orders")
         else -> emptyList()
     }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { Spacer(Modifier.height(4.dp)); Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text(if (role == "admin") "Acompanhamento da operação." else "Sua carteira de vendas.", color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.height(4.dp)) }
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { Spacer(Modifier.height(6.dp)); Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text(if (role == "admin") "Acompanhamento da operação em tempo real." else "Vendas, catálogo e pedidos da sua carteira.", color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.height(6.dp)) }
         if (page == 0) item { Overview(role, state) }
         if (page != 0 && entries.isEmpty()) item { Text("Nenhum registro disponível.", modifier = Modifier.padding(vertical = 32.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         items(entries, key = { it.str("id").ifEmpty { it.str("code") }.ifEmpty { it.toString().hashCode().toString() } }) { PortalItem(it) }
@@ -93,13 +102,17 @@ private fun PortalPage(role: String, page: Int, root: JSONObject?) {
 @Composable
 private fun Overview(role: String, root: JSONObject) {
     val state = if (role == "admin") root.obj("state") else root
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Row(Modifier.fillMaxWidth().padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+    Card(shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .82f))) {
+        Column(Modifier.fillMaxWidth().padding(20.dp)) {
+            Text(if (role == "admin") "A operação hoje" else "Seu desempenho", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(14.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Metric("Serviços", state.array("services").size)
             Metric("Pedidos", state.array("orders").size)
             Metric("Produtos", state.array("products").size)
         }
     }
+}
 }
 
 @Composable private fun Metric(label: String, value: Int) { Column { Text(value.toString(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold); Text(label, style = MaterialTheme.typography.labelSmall) } }
@@ -108,8 +121,8 @@ private fun Overview(role: String, root: JSONObject) {
 private fun PortalItem(item: JSONObject) {
     val name = item.str("clientName").ifEmpty { item.str("name") }.ifEmpty { item.str("code") }.ifEmpty { "Registro" }
     val secondary = item.str("code").ifEmpty { item.str("type") }.ifEmpty { item.str("serviceType") }
-    Card {
-        Column(Modifier.fillMaxWidth().padding(15.dp)) {
+    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = .92f))) {
+        Column(Modifier.fillMaxWidth().padding(18.dp)) {
             Text(name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (secondary.isNotEmpty()) Text(secondary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             item.str("status").takeIf { it.isNotEmpty() }?.let { Text(it, modifier = Modifier.padding(top = 6.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) }
