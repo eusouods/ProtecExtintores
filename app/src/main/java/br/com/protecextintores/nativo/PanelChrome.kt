@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.PathParser
 
 internal enum class PanelIcon(val data: String) {
+    Plus("M12 5v14M5 12h14"),
     Grid("M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"),
     Wrench("M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z"),
     Flame("M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"),

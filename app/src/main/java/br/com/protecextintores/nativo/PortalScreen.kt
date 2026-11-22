@@ -58,7 +58,31 @@ fun PortalScreen(vm: AppVm) {
     val tabs = if (admin) adminTabs.take(4) else sellerTabs
     var page by rememberSaveable(role) { mutableIntStateOf(0) }
     var refreshKey by remember { mutableIntStateOf(0) }
+    var owner by remember { mutableStateOf<WalletOwner?>(null) }
+    var serviceId by rememberSaveable { mutableStateOf<String?>(null) }
+    var sellerOrder by remember { mutableStateOf<JSONObject?>(null) }
+    val openSellerOrder = sellerOrder
+    if (!admin && openSellerOrder != null) {
+        AdminServiceScreen(vm, openSellerOrder, readOnly = true) { sellerOrder = null }
+        return
+    }
+    val currentOrder = root.optJSONObject("state")?.optJSONArray("services").objects()
+        .firstOrNull { serviceId != null && it.str("id") == serviceId }
+    if (admin && currentOrder != null) {
+        AdminServiceScreen(vm, currentOrder) { serviceId = null }
+        return
+    }
+    val selectedOwner = owner
+    if (admin && selectedOwner != null) {
+        androidx.activity.compose.BackHandler { owner = null }
+        Column(Modifier.fillMaxSize()) {
+            ScreenHeader("Acertos da equipe") { owner = null }
+            TeamWallet(refreshKey, selectedOwner) { vm.refreshPortal(silent = true) }
+        }
+        return
+    }
     val actions = buildList {
+        add(PanelAction("Registrar serviço", PanelIcon.Plus, vm::startRegistration))
         if (admin) adminTabs.drop(4).forEachIndexed { index, tab ->
             add(PanelAction(tab.title, tab.icon) { page = index + 4 })
         }
@@ -74,18 +98,21 @@ fun PortalScreen(vm: AppVm) {
         if (admin) {
             val state = root.optJSONObject("state") ?: JSONObject()
             when (active) {
-                0 -> AdminOverview(state) { page = it }
-                3 -> RecordsPage(adminTabs[active].title,
-                    state.optJSONArray("clients").objects() + state.optJSONArray("sellers").objects())
-                7 -> AdminReceipts(state)
+                0 -> AdminOverview(state, vm::startRegistration, { serviceId = it.str("id") }) { page = it }
+                1 -> RecordsPage(adminTabs[active].title, state.optJSONArray("services").objects(),
+                    filterStatus = true, register = vm::startRegistration, openRecord = { serviceId = it.str("id") })
+                3 -> AdminDirectory(vm, state, employees = false)
+                6 -> AdminDirectory(vm, state, employees = true)
+                7 -> AdminReceipts(state) { owner = it }
                 else -> RecordsPage(adminTabs[active].title, state.optJSONArray(adminKeys.getValue(active)).objects())
             }
         } else {
             when (active) {
-                0 -> SellerOverview({ page = it }, refreshKey)
-                1 -> TeamDataPage("/api/seller/services", "Ordens de serviço", "services", refreshKey)
+                0 -> SellerOverview({ page = it }, refreshKey, vm::startRegistration)
+                1 -> TeamDataPage("/api/seller/services", "Ordens de serviço", "services", refreshKey,
+                    register = vm::startRegistration, openRecord = { sellerOrder = it })
                 2 -> TeamDataPage("/api/seller/next-maintenance", "Próximas manutenções", "services", refreshKey)
-                3 -> TeamDataPage("/api/team/billing", "Meus acertos", "orders", refreshKey)
+                3 -> TeamWallet(refreshKey)
                 4 -> RecordsPage("Catálogo", root.optJSONArray("products").objects())
                 5 -> RecordsPage("Meus pedidos", root.optJSONArray("orders").objects())
             }
@@ -94,7 +121,7 @@ fun PortalScreen(vm: AppVm) {
 }
 
 @Composable
-private fun AdminOverview(state: JSONObject, select: (Int) -> Unit) {
+private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: (JSONObject) -> Unit, select: (Int) -> Unit) {
     val services = state.optJSONArray("services").objects().map(::Svc)
     val pending = services.count { it.employeeCompleted && !it.closed && !it.cancelled }
     val unpaid = eligibleReceipts(state).filter { it.optJSONObject("payment")?.str("status") != "paid" }
@@ -107,7 +134,10 @@ private fun AdminOverview(state: JSONObject, select: (Int) -> Unit) {
         item { PanelSearch(query, { query = it }, "Buscar cliente, ordem ou funcionário") }
         if (query.isNotBlank()) {
             if (search.isEmpty()) item { EmptyRecord("Nenhum resultado encontrado.") }
-            items(search) { RecordCard(it) }
+            items(search) { record ->
+                val isService = record.str("serviceType").isNotBlank() && record.has("items")
+                RecordCard(record, if (isService) openService else null)
+            }
         } else {
             item {
                 val description = when (pending) {
@@ -117,6 +147,7 @@ private fun AdminOverview(state: JSONObject, select: (Int) -> Unit) {
                 }
                 PanelIntro("CENTRO OPERACIONAL", "Seu dia, organizado.", description)
             }
+            item { PrimaryButton("＋ Nova ordem de serviço", onClick = register) }
             item {
                 PanelMetrics(listOf(
                     PanelMetric("Aguardando revisão", pending.toString(), "Execução enviada pela equipe"),
@@ -137,9 +168,13 @@ private fun eligibleReceipts(state: JSONObject) = state.optJSONArray("services")
     .map(::Svc).filter { it.closed && !it.cancelled }.mapNotNull { it.j.optJSONObject("finance") }
 
 @Composable
-private fun AdminReceipts(state: JSONObject) {
+private fun AdminReceipts(state: JSONObject, openWallet: (WalletOwner) -> Unit) {
     val receipts = eligibleReceipts(state)
     val (paid, open) = receipts.partition { it.optJSONObject("payment")?.str("status") == "paid" }
+    val owners = listOf("employees" to "employee", "sellers" to "seller").flatMap { (field, role) ->
+        state.optJSONArray(field).objects().filter { it.str("id").isNotEmpty() }
+            .map { WalletOwner(role, it.str("id"), it.str("name").ifBlank { it.str("id") }) }
+    }
     PanelList {
         item { PanelIntro("FINANCEIRO", "Custos e recebimentos", "Ordens finalizadas e não canceladas.") }
         item {
@@ -150,15 +185,22 @@ private fun AdminReceipts(state: JSONObject) {
                 PanelMetric("Ordens finalizadas", receipts.size.toString())
             ))
         }
+        if (owners.isNotEmpty()) item { Text("Acertos da equipe", style = MaterialTheme.typography.titleLarge) }
+        items(owners) { owner ->
+            PanelShortcut(owner.name, if (owner.role == "employee") "Funcionário" else "Vendedor", PanelIcon.Chart) {
+                openWallet(owner)
+            }
+        }
     }
 }
 
 @Composable
-private fun SellerOverview(select: (Int) -> Unit, refresh: Int) {
+private fun SellerOverview(select: (Int) -> Unit, refresh: Int, register: () -> Unit) {
     val orders = loadTeamSection("/api/seller/services", refresh)?.json?.optJSONArray("services").objects()
     val active = orders.map(::Svc).count { !it.closed && !it.cancelled }
     PanelList {
         item { PanelIntro("ÁREA COMERCIAL", "Suas ordens, em um só lugar.", "Acompanhe seus registros, a agenda e os acertos.") }
+        item { PrimaryButton("＋ Registrar serviço", onClick = register) }
         if (orders.isNotEmpty()) item {
             PanelMetrics(listOf(PanelMetric("Em acompanhamento", active.toString()),
                 PanelMetric("Finalizadas", orders.count { it.optBoolean("closed") }.toString())))
@@ -180,7 +222,8 @@ private fun loadTeamSection(path: String, refresh: Int): Api.ApiResult? {
 }
 
 @Composable
-internal fun TeamDataPage(path: String, title: String, field: String, refresh: Int) {
+internal fun TeamDataPage(path: String, title: String, field: String, refresh: Int, register: (() -> Unit)? = null,
+                          openRecord: ((JSONObject) -> Unit)? = null) {
     var retry by remember { mutableIntStateOf(0) }
     val response = loadTeamSection(path, refresh + retry)
     when {
@@ -194,24 +237,14 @@ internal fun TeamDataPage(path: String, title: String, field: String, refresh: I
                 TextButton(onClick = { retry++ }) { Text("Tentar novamente") }
             }
         }
-        path == "/api/team/billing" -> {
-            val data = response.json
-            val groups = data.optJSONArray("groups").objects()
-            val charges = data.optJSONArray(field).objects().ifEmpty { data.optJSONArray("bills").objects() }
-            PanelList {
-                item { PanelIntro("ACERTOS", title) }
-                item { PanelMetrics(listOf(PanelMetric("Saldo a pagar", currency(data.optLong("balanceCents") / 100.0)))) }
-                items(groups) { RecordCard(it) }
-                items(charges) { RecordCard(it) }
-            }
-        }
         else -> RecordsPage(title, response.json.optJSONArray(field).objects(),
-            filterStatus = path == "/api/seller/services")
+            filterStatus = path == "/api/seller/services", register = register, openRecord = openRecord)
     }
 }
 
 @Composable
-private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: Boolean = false) {
+private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: Boolean = false,
+                        register: (() -> Unit)? = null, openRecord: ((JSONObject) -> Unit)? = null) {
     var query by rememberSaveable(title) { mutableStateOf("") }
     var filter by rememberSaveable(title) { mutableIntStateOf(0) }
     val shown = records.filter { record ->
@@ -223,6 +256,7 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
     }
     PanelList {
         item { PanelIntro("", title) }
+        if (register != null) item { PrimaryButton("＋ Registrar serviço", onClick = register) }
         item { PanelSearch(query, { query = it }, "Buscar nesta seção") }
         if (filterStatus) item {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -232,7 +266,7 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
             }
         }
         if (shown.isEmpty()) item { EmptyRecord("Nenhum registro encontrado.") }
-        items(shown) { RecordCard(it) }
+        items(shown) { RecordCard(it, openRecord) }
     }
 }
 
@@ -257,7 +291,7 @@ internal fun matches(item: JSONObject, query: String): Boolean {
 }
 
 @Composable
-private fun RecordCard(item: JSONObject) {
+private fun RecordCard(item: JSONObject, openRecord: ((JSONObject) -> Unit)? = null) {
     var open by remember { mutableStateOf(false) }
     val code = item.str("code")
     val title = item.str("clientName").ifBlank { item.str("name") }.ifBlank { code }
@@ -275,7 +309,7 @@ private fun RecordCard(item: JSONObject) {
         }
     ).filter { it.second.isNotBlank() }
     val colors = MaterialTheme.colorScheme
-    Surface(onClick = { open = true }, shape = RoundedCornerShape(16.dp),
+    Surface(onClick = { if (openRecord != null) openRecord(item) else open = true }, shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, colors.outline), color = colors.surface) {
         Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             if (code.isNotBlank() && code != title) Text(code, style = MaterialTheme.typography.labelMedium, color = colors.primary)

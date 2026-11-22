@@ -66,6 +66,7 @@ private fun depth(screen: Screen): Int = when (screen) {
     Screen.Home -> 1
     Screen.Portal -> 1
     is Screen.Detail -> 2
+    is Screen.Registration -> 2
     is Screen.Wizard -> 3
 }
 
@@ -93,6 +94,7 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
                 is Screen.Portal -> PortalScreen(vm)
                 is Screen.Detail -> DetailScreen(vm, screen.id)
                 is Screen.Wizard -> WizardScreen(vm, screen.id, onRecord, onPick)
+                is Screen.Registration -> RegistrationScreen(vm)
             }
         }
         MessageBar(vm)
@@ -197,13 +199,14 @@ fun HomeScreen(vm: AppVm) {
     var refreshKey by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     PanelChrome(
         teamTabs, vm.employeePage, { vm.employeePage = it }, "FN",
-        panelActions(vm) { vm.refresh(); refreshKey++ }
+        listOf(PanelAction("Registrar serviço", PanelIcon.Plus, vm::startRegistration)) +
+            panelActions(vm) { vm.refresh(); refreshKey++ }
     ) { page ->
         when (page) {
             0 -> EmployeeOverview(vm, p)
             1 -> EmployeeOrders(vm, p)
             2 -> TeamDataPage("/api/employee/next-maintenance", "Próximas manutenções", "services", refreshKey)
-            3 -> TeamDataPage("/api/team/billing", "Meus acertos", "bills", refreshKey)
+            3 -> TeamWallet(refreshKey)
         }
     }
 }
@@ -216,6 +219,7 @@ private fun EmployeeOverview(vm: AppVm, profile: Profile) {
             PanelIntro("ÁREA TÉCNICA", "Seu trabalho, organizado.",
                 "Acompanhe os atendimentos da equipe e atualize cada etapa.")
         }
+        item { PrimaryButton("＋ Registrar serviço", onClick = vm::startRegistration) }
         item {
             PanelMetrics(listOf(
                 PanelMetric("Em atendimento", profile.mine.count { !it.finished && !it.paused }.toString()),
@@ -253,6 +257,7 @@ private fun EmployeeOrders(vm: AppVm, profile: Profile) {
     val shown = records.filter { matches(it.j, query) }
     PanelList {
         item { PanelIntro("", "Ordens de serviço") }
+        item { PrimaryButton("＋ Registrar serviço", onClick = vm::startRegistration) }
         item { PanelSearch(query, { query = it }, "Buscar cliente, ordem ou equipamento") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {

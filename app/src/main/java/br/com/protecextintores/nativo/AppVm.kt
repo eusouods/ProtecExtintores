@@ -11,6 +11,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -25,6 +27,7 @@ sealed class Screen {
     object Portal : Screen()
     data class Detail(val id: String) : Screen()
     data class Wizard(val id: String) : Screen()
+    data class Registration(val parent: Screen) : Screen()
 }
 
 class AppVm(app: Application) : AndroidViewModel(app) {
@@ -39,6 +42,19 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     var employeePage by mutableIntStateOf(0)
     var themeMode by mutableStateOf(Store.theme)
     val wizard = WizardState()
+    internal var registrationCatalog by mutableStateOf<RegistrationCatalog?>(null)
+        private set
+    internal var registrationDraft by mutableStateOf(newRegistrationDraft())
+        private set
+    internal var registrationError by mutableStateOf("")
+        private set
+    internal var registrationSaved by mutableStateOf(false)
+        private set
+
+    private val drafts = RegistrationDraftStore(app)
+    private val draftLock = Mutex()
+    private var registrationAccount = ""
+    private var waitingToSaveDraft = false
 
     private var pendingVideoKey: String? = null
     private var pendingVideoFile: File? = null
@@ -76,10 +92,12 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     }
 
     fun back() {
+        if (busy) return
         val current = screen
         screen = when (current) {
             is Screen.Wizard -> Screen.Detail(current.id)
             is Screen.Detail -> Screen.Home
+            is Screen.Registration -> current.parent
             else -> current
         }
     }
@@ -146,10 +164,302 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         profile = null
         portalRole = ""
         portalState = null
+        registrationCatalog = null
+        registrationDraft = newRegistrationDraft()
+        registrationError = ""
+        registrationAccount = ""
         tab = 0
         employeePage = 0
         screen = Screen.Login
         message = note
+    }
+
+    fun startRegistration() {
+        if (busy || screen !in listOf(Screen.Home, Screen.Portal)) return
+        val parent = screen
+        registrationCatalog = null
+        registrationDraft = newRegistrationDraft()
+        registrationError = ""
+        registrationSaved = false
+        registrationAccount = ""
+        screen = Screen.Registration(parent)
+        loadRegistration()
+    }
+
+    fun loadRegistration() {
+        val registration = screen as? Screen.Registration ?: return
+        if (busy) return
+        val token = Store.token
+        val admin = portalRole == "admin"
+        val path = if (admin) "/api/offline/admin/registration-catalog" else "/api/offline/bootstrap"
+        busy = true
+        busyText = "Carregando catálogo…"
+        viewModelScope.launch {
+            try {
+                val response = Api.teamSection(token, path)
+                if (token != Store.token || screen != registration) return@launch
+                if (response.code == 401) {
+                    logout("Sessão expirada. Entre de novo.")
+                    return@launch
+                }
+                val catalog = RegistrationCatalog(response.json)
+                if (!response.ok || catalog.account.isBlank() || catalog.data.optInt("version") < 8) {
+                    registrationError = if (admin && response.code == 404) {
+                        "Atualize a API da Protec para registrar ordens como administrador pelo app."
+                    } else response.error.ifEmpty { "Catálogo indisponível. Confira a conexão e tente novamente." }
+                    return@launch
+                }
+                if (registrationAccount != catalog.account) {
+                    val saved = runCatching { withContext(Dispatchers.IO) { draftLock.withLock { drafts.read(catalog.account) } } }
+                    if (token != Store.token || screen != registration) return@launch
+                    if (saved.isFailure) {
+                        registrationError = "O rascunho deste aparelho não pôde ser aberto. Tente novamente."
+                        return@launch
+                    }
+                    registrationDraft = saved.getOrNull() ?: newRegistrationDraft()
+                    registrationSaved = saved.getOrNull() != null
+                }
+                registrationAccount = catalog.account
+                registrationError = ""
+                registrationCatalog = catalog
+            } finally {
+                busy = false
+            }
+        }
+    }
+
+    internal fun editRegistration(change: JSONObject.() -> Unit) {
+        if (busy || registrationDraft.has("pendingOperation")) return
+        val next = JSONObject(registrationDraft.toString()).apply(change)
+        registrationDraft = next
+        registrationError = ""
+        registrationSaved = false
+        val account = registrationAccount
+        if (account.isBlank() || waitingToSaveDraft) return
+        waitingToSaveDraft = true
+        viewModelScope.launch {
+            // Save the newest snapshot when writes are already queued by fast typing.
+            while (registrationAccount == account && !busy) {
+                val snapshot = registrationDraft
+                val saved = persistRegistration(account, snapshot)
+                if (registrationAccount != account) break
+                if (registrationDraft === snapshot) {
+                    registrationSaved = saved
+                    if (!saved) registrationError = "Não foi possível salvar o rascunho neste aparelho."
+                    break
+                }
+            }
+            waitingToSaveDraft = false
+        }
+    }
+
+    fun registrationStep(step: Int) {
+        val catalog = registrationCatalog ?: return
+        val current = registrationDraft.optInt("step").coerceIn(0, 3)
+        if (step !in 0..3 || step == current || busy || registrationDraft.has("pendingOperation")) return
+        if (step > current) {
+            for (index in current until step) {
+                val issue = catalog.validate(registrationDraft, index) ?: continue
+                if (index != current) editRegistration { put("step", index) }
+                registrationError = issue
+                return
+            }
+        }
+        editRegistration { put("step", step) }
+    }
+
+    fun submitRegistration() {
+        val registration = screen as? Screen.Registration ?: return
+        val catalog = registrationCatalog ?: return
+        if (busy) return
+        val token = Store.token
+        val account = catalog.account
+        val admin = portalRole == "admin"
+        var draft = registrationDraft
+        var operation = draft.str("pendingOperation")
+        if (operation.isBlank()) {
+            val issue = catalog.validate(draft, 3)
+            if (issue != null) {
+                registrationError = issue
+                return
+            }
+            val payload = catalog.payload(draft, admin)
+            operation = JSONObject()
+                .put("accountKey", account)
+                .put("dataEpoch", catalog.epoch)
+                .put("id", UUID.randomUUID().toString())
+                .put("serviceId", if (admin) "admin-state" else payload.str("serviceId"))
+                .put("deviceId", Store.deviceId)
+                .put("kind", if (admin) "admin-create" else "create")
+                .put("createdAt", Instant.now().toString())
+                .put("payload", payload)
+                .toString()
+            draft = JSONObject(draft.toString()).put("pendingOperation", operation)
+        }
+        busy = true
+        busyText = "Registrando ordem…"
+        registrationError = ""
+        viewModelScope.launch {
+            try {
+                if (!persistRegistration(account, draft)) {
+                    registrationError = "Não foi possível gravar a ordem neste aparelho. O envio não foi iniciado."
+                    return@launch
+                }
+                registrationDraft = draft
+                registrationSaved = true
+                val response = Api.registerService(token, admin, operation)
+                if (token != Store.token || screen != registration) return@launch
+                if (response.code == 401) {
+                    logout("Sessão expirada. A ordem foi guardada. Entre de novo para conferir o envio.")
+                    return@launch
+                }
+                if (response.ok && response.json.optBoolean("ok")) {
+                    val removed = runCatching { withContext(Dispatchers.IO) { draftLock.withLock { drafts.clear(account) } } }
+                        .getOrDefault(false)
+                    val service = response.json.optJSONObject("service")
+                    val code = service?.str("code").orEmpty()
+                    if (token != Store.token || screen != registration) return@launch
+                    if (!removed) {
+                        registrationError = "A ordem foi confirmada, mas o rascunho não pôde ser limpo. Repita a verificação para concluir."
+                        return@launch
+                    }
+                    registrationDraft = newRegistrationDraft()
+                    registrationCatalog = null
+                    message = if (code.isBlank()) "Ordem registrada." else "Ordem registrada · $code"
+                    if (registration.parent == Screen.Home) {
+                        employeePage = 1
+                        tab = 0
+                        if (service == null) refresh(silent = true) else applyUpdate(response.json)
+                        screen = Screen.Home
+                    } else {
+                        screen = Screen.Portal
+                        refreshPortal(silent = true)
+                    }
+                } else if (response.code in 400..499 && !response.json.optBoolean("retry")) {
+                    val editable = JSONObject(draft.toString()).apply { remove("pendingOperation") }
+                    if (persistRegistration(account, editable)) registrationDraft = editable
+                    registrationError = response.error.ifEmpty { "A API recusou esta ordem. Confira os dados." }
+                    if (response.json.optBoolean("dataReset")) registrationCatalog = null
+                } else {
+                    registrationError = "Confirmação pendente. Toque em Verificar envio para repetir a mesma operação sem duplicar a ordem."
+                }
+            } finally {
+                busy = false
+            }
+        }
+    }
+
+    private suspend fun persistRegistration(account: String, draft: JSONObject): Boolean = runCatching {
+        withContext(Dispatchers.IO) { draftLock.withLock { drafts.write(account, draft) } }
+    }.getOrDefault(false)
+
+    internal fun saveAdminReview(service: JSONObject, updates: JSONObject, done: () -> Unit) {
+        val state = portalState?.optJSONObject("state") ?: return
+        val id = service.str("id")
+        val changes = JSONArray()
+        fun addChange(group: String, record: JSONObject, field: String, after: Any) {
+            if (record.opt(field)?.toString() == after.toString()) return
+            val previous = JSONObject().put("exists", record.has(field))
+            if (record.has(field)) previous.put("value", record.opt(field))
+            changes.put(JSONObject()
+                .put("path", JSONArray(listOf(group, record.str("id"), field)))
+                .put("before", previous)
+                .put("after", JSONObject().put("exists", true).put("value", after)))
+        }
+        for (field in listOf("clientName", "clientPhone", "clientEmail", "date", "nextMaintenanceMonth", "notes", "items")) {
+            updates.opt(field)?.let { addChange("services", service, field, it) }
+        }
+        val order = state.optJSONArray("orders").objects().firstOrNull { it.str("code") == service.str("code") }
+        if (order != null) {
+            for ((from, to) in listOf("clientName" to "name", "clientPhone" to "phone", "clientEmail" to "email", "notes" to "details")) {
+                if (updates.has(from)) addChange("orders", order, to, updates.str(from))
+            }
+        }
+        if (changes.length() == 0) {
+            done()
+            return
+        }
+        val now = Instant.now().toString()
+        val originalHistory = service.optJSONArray("history") ?: JSONArray()
+        val event = JSONObject().put("at", now).put("by", portalState?.str("username").orEmpty())
+            .put("action", "Dados e validades revisados pelo administrador")
+        if (service.has("history")) {
+            changes.put(JSONObject().put("path", JSONArray(listOf("services", id, "history")))
+                .put("before", originalHistory).put("append", JSONArray(listOf(event))))
+        } else addChange("services", service, "history", JSONArray(listOf(event)))
+        val operation = adminEnvelope(state, "admin-state")
+            .put("changes", changes)
+            // A concurrently closed or cancelled order may no longer be edited.
+            .put("guards", JSONArray(listOf(JSONObject().put("group", "services").put("id", id).put("value", service))))
+        adminAction("/api/offline/admin/sync", operation, "Dados da ordem atualizados.", done)
+    }
+
+    internal fun finalizeAdminService(service: JSONObject, done: () -> Unit) {
+        val state = portalState?.optJSONObject("state") ?: return
+        val payload = JSONObject().put("serviceId", service.str("id"))
+        val linked = state.optJSONArray("orders").objects().any { it.str("code") == service.str("code") && it.str("kind") == "Manutenção" }
+        if (linked) {
+            adminAction("/api/admin/finalize", payload, "Ordem finalizada.", done)
+        } else {
+            val operation = adminEnvelope(state, "admin-finalize").put("payload", payload)
+                .put("guards", JSONArray(listOf(JSONObject().put("group", "services").put("id", service.str("id")).put("value", service))))
+            adminAction("/api/offline/admin/sync", operation, "Ordem finalizada.", done)
+        }
+    }
+
+    private fun adminEnvelope(state: JSONObject, kind: String) = JSONObject()
+        .put("dataEpoch", state.str("__dataEpoch").ifBlank { "initial" })
+        .put("accountKey", "admin:1")
+        .put("serviceId", "admin-state")
+        .put("id", UUID.randomUUID().toString())
+        .put("deviceId", Store.deviceId)
+        .put("createdAt", Instant.now().toString())
+        .put("kind", kind)
+
+    internal fun saveContact(group: String, original: JSONObject?, fields: JSONObject, done: () -> Unit) {
+        val state = portalState?.optJSONObject("state") ?: return
+        if (group !in listOf("clients", "sellers", "employees")) return
+        val id = original?.str("id") ?: UUID.randomUUID().toString()
+        val next = JSONObject(original?.toString() ?: "{}").put("id", id)
+        fields.keys().forEach { next.put(it, fields.opt(it)) }
+        val before = JSONObject().put("exists", original != null)
+        if (original != null) before.put("value", original)
+        val changes = JSONArray(listOf(JSONObject().put("path", JSONArray(listOf(group, id)))
+            .put("before", before).put("after", JSONObject().put("exists", true).put("value", next))))
+        adminAction("/api/offline/admin/sync", adminEnvelope(state, "admin-state").put("changes", changes),
+            if (original == null) "Cadastro criado." else "Cadastro atualizado.", done)
+    }
+
+    internal fun adminAction(path: String, payload: JSONObject, success: String, done: () -> Unit) {
+        val token = Store.token
+        if (busy || portalRole != "admin" || token.isEmpty()) return
+        busy = true
+        busyText = "Salvando no sistema…"
+        viewModelScope.launch {
+            try {
+                val result = Api.postSection(token, path, payload)
+                if (token != Store.token) return@launch
+                if (result.code == 401) {
+                    logout("Sessão expirada. Entre de novo.")
+                    return@launch
+                }
+                if (result.ok && result.json.optBoolean("ok")) {
+                    val state = result.json.optJSONObject("state")
+                    if (state != null) {
+                        val session = JSONObject(portalState.toString()).put("state", state)
+                        portalState = session
+                        Store.portalState = session.toString()
+                    } else refreshPortal(silent = true)
+                    message = success
+                    done()
+                } else {
+                    message = result.error.ifEmpty { "O servidor não confirmou a alteração." }
+                    if (result.code == 409 || result.code == 0) refreshPortal(silent = true)
+                }
+            } finally {
+                busy = false
+            }
+        }
     }
 
     fun refresh(silent: Boolean = false) {

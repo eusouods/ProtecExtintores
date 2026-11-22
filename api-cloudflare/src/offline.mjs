@@ -93,6 +93,11 @@ async function hashBytes(bytes){return Array.from(new Uint8Array(await crypto.su
 async function handleAdminOffline(request,env,context,session,state){
  const {json,now,saveState}=context,path=new URL(request.url).pathname;
  if(session?.role!=='admin')return json({error:'Entre como administrador para sincronizar.'},401);
+ if(path==='/api/offline/admin/registration-catalog'&&request.method==='GET'){
+   const actor={role:'admin',id:'admin-account',name:session.username,username:session.username};
+   return json({accountKey:'admin:1',dataEpoch:state.__dataEpoch||'initial',actor,
+     registrationVersion:8,registrationCatalog:registrationCatalog(state),registrationContacts:registrationContacts(state,actor)});
+ }
  if(path.endsWith('/bootstrap')&&request.method==='GET')return json({state,username:session.username,preparedAt:now()});
  if(!path.endsWith('/sync')||request.method!=='POST')return json({error:'Não encontrado.'},404);
  const op=await request.json(),key='admin:1';
@@ -101,7 +106,7 @@ async function handleAdminOffline(request,env,context,session,state){
  if(JSON.stringify(op).length>16*1024*1024)fail('Registro muito grande. Divida a alteração em etapas.');
  const digest=await hash(JSON.stringify(op)),saved=await env.DB.prepare('SELECT request_hash,result FROM offline_receipts WHERE account_id=? AND operation_id=?').bind(key,op.id).first();
  if(saved){if(saved.request_hash!==digest)fail('Identificador já utilizado com outros dados.',409);return json({...JSON.parse(saved.result),duplicate:true});}
- const previous=structuredClone(state);let options={};
+ const previous=structuredClone(state);let options={},created=null;
  try{
    // Commands guard their business inputs as well as the edited service. Pricing
    // changes cannot silently alter a fee the administrator reviewed offline.
@@ -117,6 +122,9 @@ async function handleAdminOffline(request,env,context,session,state){
      applyAdminChanges(state,op.changes);
      if(state.services.some(s=>s.closed&&!previous.services.some(o=>o.id===s.id&&o.closed)))fail('Use a opção Finalizar serviço para fechar uma ordem.');
      if(state.services.some(s=>{const old=previous.services.find(o=>o.id===s.id);return s.status==='Recebido'&&old?.status!=='Recebido'||s.items?.some((i,n)=>i.status==='Recebido'&&old?.items?.[n]?.status!=='Recebido')}))fail('Somente o funcionário pode registrar o recebimento.');
+   }else if(op.kind==='admin-create'){
+     created=applyOperation(state,{role:'admin',id:'admin-account',name:session.username,username:session.username},
+       {id:op.id,serviceId:op.payload?.serviceId,deviceId:op.deviceId,createdAt:op.createdAt,kind:'create',payload:op.payload},now());
    }else if(op.kind==='admin-operation'){
      if(op.payload?.action==='mark-paid')fail('Confirme recebimentos com internet para conferir o acerto completo.');
      options=applyAdminOperation(state,op.payload,session.username,op.createdAt);
@@ -124,7 +132,8 @@ async function handleAdminOffline(request,env,context,session,state){
    else if(op.kind==='admin-update')updateAdminOrder(state,op.payload,session.username,op.createdAt);
    else fail('Ação administrativa desconhecida.');
  }catch(error){return json({error:error.message,conflict:true,field:error.field||''},error.status||409);}
- const result=clean=>JSON.stringify({ok:true,operationId:op.id,serverAt:now(),revision:clean.__rev,delta:adminChanges(previous,clean,true)});
+ const result=clean=>JSON.stringify({ok:true,operationId:op.id,serverAt:now(),revision:clean.__rev,
+   ...(created?{service:{id:created.id,code:created.code}}:{}),delta:adminChanges(previous,clean,true)});
  try{
    await saveState(env,state,session.username,{...options,offlineReceipt:{account:key,id:op.id,hash:digest,result}});
  }catch(error){

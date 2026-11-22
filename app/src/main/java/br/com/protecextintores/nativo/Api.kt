@@ -1,8 +1,11 @@
 package br.com.protecextintores.nativo
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,6 +32,7 @@ object Api {
         .build()
 
     private val jsonType = "application/json; charset=utf-8".toMediaType()
+    private val mediaClient by lazy { client.newBuilder().followRedirects(false).followSslRedirects(false).build() }
 
     private suspend fun exec(request: Request): ApiResult = withContext(Dispatchers.IO) {
         try {
@@ -59,6 +63,47 @@ object Api {
 
     suspend fun teamSection(token: String, path: String): ApiResult =
         exec(Request.Builder().url("$BASE$path").header("Authorization", "Bearer $token").get().build())
+
+    suspend fun postSection(token: String, path: String, payload: JSONObject): ApiResult =
+        postJson(token, path, payload.toString())
+
+    private suspend fun postJson(token: String, path: String, json: String): ApiResult =
+        exec(Request.Builder().url("$BASE$path").header("Authorization", "Bearer $token")
+            .post(json.toRequestBody(jsonType)).build())
+
+    suspend fun registerService(token: String, admin: Boolean, operation: String): ApiResult =
+        postJson(token, if (admin) "/api/offline/admin/sync" else "/api/offline/sync", operation)
+
+    suspend fun downloadEvidence(token: String, address: String, file: File): Boolean = withContext(Dispatchers.IO) {
+        val home = BASE.toHttpUrl()
+        val url = address.toHttpUrlOrNull() ?: return@withContext false
+        if (url.host != home.host || url.scheme != home.scheme || url.port != home.port ||
+            !url.encodedPath.startsWith("/media/service-media/") || token.isEmpty()) return@withContext false
+        try {
+            mediaClient.newCall(Request.Builder().url(url).header("Authorization", "Bearer $token").build()).execute().use { response ->
+                val body = response.body ?: return@use false
+                val max = 50L * 1024 * 1024
+                if (!response.isSuccessful || body.contentLength() > max) return@use false
+                body.byteStream().use { input ->
+                    file.outputStream().use { output ->
+                        val buffer = ByteArray(32 * 1024)
+                        var bytes = 0L
+                        while (true) {
+                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                            val n = input.read(buffer)
+                            if (n < 0) break
+                            bytes += n
+                            if (bytes > max) throw IOException("Limite excedido")
+                            output.write(buffer, 0, n)
+                        }
+                        bytes > 0
+                    }
+                }
+            }
+        } catch (_: IOException) {
+            false
+        }
+    }
 
     suspend fun sync(token: String, operation: JSONObject): ApiResult {
         val body = operation.toString().toRequestBody(jsonType)

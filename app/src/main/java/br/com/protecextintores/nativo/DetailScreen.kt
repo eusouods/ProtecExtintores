@@ -100,9 +100,11 @@ fun DetailScreen(vm: AppVm, id: String) {
                         if (parts.isNotEmpty()) {
                             Text("Peças: " + parts.joinToString(", "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        EvidenceLinks(item)
                     }
                 }
             }
+            ServiceSelections(svc.j)
             CardBox {
                 Text("Resumo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
