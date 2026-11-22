@@ -1,0 +1,219 @@
+@layer protecNeutral {
+.mobile-panel-brand, .mobile-panel-alert, .mobile-receipts-title, .mobile-receipts { display: none; }
+
+@media (max-width: 650px) {
+  :root {
+    --mobile-page: #eef2f7;
+    --mobile-paper: #fff;
+    --mobile-ink: #152640;
+    --mobile-muted: #526277;
+    --mobile-line: #dee6f0;
+    --mobile-brand: #123052;
+    --mobile-brand-rgb: 18 48 82;
+    --mobile-brand-ink: #f4f8ff;
+    --mobile-action: #1956c1;
+    --mobile-on-action: #fff;
+    --mobile-active: #eaf1ff;
+    --mobile-due: #76510c;
+    --mobile-due-bg: #fff4d9;
+    --mobile-shadow: #233f6823;
+    --mobile-scrim: #101e3e65;
+  }
+
+  :root[data-theme="dark"] {
+    --mobile-page: #0d1523;
+    --mobile-paper: #172335;
+    --mobile-ink: #edf3ff;
+    --mobile-muted: #a7b7cc;
+    --mobile-line: #2c3c55;
+    --mobile-brand: #1c3456;
+    --mobile-brand-rgb: 28 52 86;
+    --mobile-action: #a0c2ff;
+    --mobile-on-action: #10254c;
+    --mobile-active: #243b67;
+    --mobile-due: #ffdc91;
+    --mobile-due-bg: #44351a;
+    --mobile-shadow: #02070f80;
+  }
+
+  html:root body :is(#dashboard, #employeePortal[data-team-mobile-role]) {
+    --ui-bg: var(--mobile-page);
+    --ui-panel: var(--mobile-paper);
+    --ui-text: var(--mobile-ink);
+    --ui-muted: var(--mobile-muted);
+    --ui-border: var(--mobile-line);
+    --ui-raised: var(--mobile-active);
+    --ui-action: var(--mobile-action);
+    --ui-action-text: var(--mobile-on-action);
+    background: var(--mobile-page) !important;
+  }
+
+  html:root body.admin-open #dashboard .admin-top,
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top {
+    --ui-panel: var(--mobile-brand);
+    --ui-panel-rgb: var(--mobile-brand-rgb);
+    --ui-text: var(--mobile-brand-ink);
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px !important;
+    padding: 10px 16px 15px !important;
+    height: auto !important;
+    color: var(--mobile-brand-ink) !important;
+    background: var(--mobile-brand) !important;
+    border-bottom: 0 !important;
+  }
+  html:root body.admin-open #dashboard .admin-top .mobile-panel-brand,
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top .mobile-team-brand {
+    display: flex !important; min-width: 0; align-items: center; gap: 8px;
+    grid-column: 1; grid-row: 1; color: inherit; font-size: 13px; font-weight: 670;
+  }
+  .mobile-panel-brand img, .mobile-team-brand img {
+    width: 27px !important; height: 27px !important; border-radius: 6px; object-fit: cover; flex: none;
+  }
+  html:root body.admin-open #dashboard .admin-top .admin-top-right { grid-row: 1; grid-column: 2; flex-wrap: nowrap; gap: 5px; }
+  html:root body.admin-open #dashboard .admin-top :is(.avatar, #today) { display: none !important; }
+  html:root body.admin-open #dashboard .admin-top .crumb .company-admin-logo { display: none !important; }
+  html:root body.admin-open #dashboard .admin-top .crumb,
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top [data-team-mobile-title] > b {
+    grid-row: 2; grid-column: 1 / -1; color: inherit !important;
+    font-weight: 680 !important; font-size: 1.65rem !important; line-height: 1.22 !important;
+    letter-spacing: -.025em; padding: 0 !important; min-width: 0;
+  }
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top { grid-template-columns: minmax(0, 1fr) auto auto; }
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top [data-team-mobile-title] { display: contents !important; }
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top .theme-toggle { grid-row: 1; grid-column: 2; }
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top .sync-control { grid-row: 1; grid-column: 3; }
+  html:root body.admin-open #dashboard .admin-top .mobile-panel-alert {
+    display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0;
+    border: 1px solid #a2c6ed62; color: inherit; background: transparent; border-radius: 10px;
+  }
+  .mobile-panel-alert svg, #adminMore .admin-more-row svg {
+    width: 19px; height: 19px; fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round;
+  }
+  html:root body :is(#dashboard .admin-top, #employeePortal[data-team-mobile-role] .employee-top) :is(.theme-toggle, .sync-indicator) {
+    color: var(--mobile-brand-ink) !important; background: transparent !important; border-color: #a2c6ed62 !important;
+  }
+  html:root body.admin-open[data-mobile-admin-page="finance"] #dashboard .admin-top #crumb { display: none; }
+  html:root body.admin-open[data-mobile-admin-page="finance"] #dashboard .admin-top .mobile-receipts-title { display: inline; }
+  html:root body.admin-open[data-mobile-admin-page="finance"] #dashboard #pageTabs { display: none !important; }
+  html:root body.admin-open[data-mobile-admin-page="finance"] #dashboard #content > .page-title > div { display: none; }
+  html:root body.admin-open[data-mobile-admin-page="finance"] #dashboard #content > .page-title > button {
+    width: auto !important;
+    min-height: 44px;
+    margin-inline-start: auto;
+    padding-inline: 14px;
+    border: 1px solid var(--mobile-line) !important;
+    border-radius: 10px !important;
+    background: var(--mobile-paper) !important;
+    color: var(--mobile-ink) !important;
+  }
+
+  html:root body.admin-open #adminTabbar[aria-label],
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .team-mobile-bar[aria-label] {
+    position: fixed !important;
+    inset: auto 12px calc(9px + env(safe-area-inset-bottom, 0px)) !important;
+    max-width: 590px;
+    margin-inline: auto !important;
+    padding: 4px !important;
+    gap: 2px !important;
+    border: 1px solid var(--mobile-line) !important;
+    border-radius: 15px !important;
+    background: var(--mobile-paper) !important;
+    box-shadow: 0 4px 16px var(--mobile-shadow);
+  }
+  html:root body.admin-open #adminTabbar[aria-label] { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important; }
+  html:root body.admin-open #adminTabbar .admin-tab,
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button {
+    min-height: 48px !important; gap: 3px !important; padding: 5px 0 !important;
+    color: var(--mobile-muted) !important; border-radius: 10px !important; text-align: center; white-space: nowrap;
+  }
+  html:root body.admin-open #adminTabbar .admin-tab svg,
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button svg {
+    width: 19px !important; height: 19px !important; padding: 0 !important;
+    color: inherit !important; background: transparent !important; fill: none;
+    stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+  }
+  html:root body.admin-open #adminTabbar .admin-tab.active,
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button[aria-current="page"] {
+    color: var(--mobile-action) !important; font-weight: 700 !important;
+  }
+  html:root body.admin-open #adminTabbar[aria-label] .admin-tab.active svg,
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button[aria-current="page"] svg {
+    color: var(--mobile-action) !important;
+  }
+  html:root body .admin-tab-pill,
+  html:root body #employeePortal .team-mobile-pill {
+    border-radius: 10px !important; background: var(--mobile-active) !important;
+  }
+
+  html:root body.admin-open #adminMore[aria-labelledby]:not([open]) { display: none !important; }
+  html:root body.admin-open #adminMore[aria-labelledby][open],
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-more[aria-labelledby][open] {
+    display: block !important;
+    position: fixed !important;
+    inset: auto 12px calc(9px + env(safe-area-inset-bottom, 0px)) !important;
+    max-width: 590px !important;
+    width: min(590px, calc(100% - 24px)) !important;
+    height: auto !important;
+    max-height: 82dvh;
+    margin: 0 auto !important;
+    padding: 14px 16px 15px !important;
+    overflow-y: auto; overscroll-behavior: contain;
+    border: 1px solid var(--mobile-line); border-radius: 17px;
+    color: var(--mobile-ink); background: var(--mobile-paper) !important;
+    box-shadow: 0 12px 36px var(--mobile-shadow);
+    animation: mvSheet .26s cubic-bezier(.2,.75,.2,1) both;
+  }
+  html:root body.admin-open #adminMore > header { display: flex; justify-content: space-between; align-items: center; }
+  html:root body.admin-open #adminMore > header h2 { margin: 0 !important; font-size: 1.3rem !important; }
+  html:root body.admin-open #adminMore > header button {
+    width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; font-size: 24px;
+  }
+  html:root body.admin-open #adminMore .admin-more-row { color: var(--mobile-ink) !important; border-color: var(--mobile-line) !important; }
+  html:root body.admin-open #adminMore .admin-more-row .ic { background: var(--mobile-active) !important; }
+  html:root body.admin-open #adminMore::backdrop,
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-more::backdrop,
+  html:root body:is(.admin-open, :has(#employeePortal[data-team-mobile-role]:not(.hidden))) #modalRoot .modal-back {
+    background: var(--mobile-scrim) !important;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px) !important;
+  }
+  html:root:has(#adminMore[open], #teamMobileMore[open]) { overflow: hidden; }
+
+  .mobile-receipts { display: block; margin: 0 0 20px; color: var(--mobile-ink); }
+  .mobile-receipts-summary {
+    padding: 16px; border: 1px solid var(--mobile-line); border-radius: 16px;
+    background: var(--mobile-paper); box-shadow: 0 6px 20px var(--mobile-shadow);
+  }
+  .mobile-receipts-summary > span, .mobile-receipts-summary p { color: var(--mobile-muted); font-size: .875rem; }
+  .mobile-receipts-summary > span { font-weight: 620; }
+  .mobile-receipts-summary > strong {
+    display: block; font-size: 1.9rem; line-height: 1.25; letter-spacing: -.035em; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mobile-receipts-summary p { margin: 2px 0 0; }
+  html:root body.admin-open #dashboard .mobile-receipt-primary {
+    margin: 13px 0 0 !important; min-height: 44px !important; border-radius: 10px !important;
+    background: var(--mobile-action) !important; color: var(--mobile-on-action) !important; border-color: transparent !important;
+  }
+  .mobile-receipts h2 { margin: 21px 0 8px; font-size: 1rem; font-weight: 680; }
+  .mobile-receipts-list { overflow: hidden; border-radius: 14px; border: 1px solid var(--mobile-line); background: var(--mobile-paper); }
+  .mobile-receipt-line {
+    display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center;
+    padding: 10px 11px; min-height: 66px; border: 0;
+    background: transparent; color: var(--mobile-ink); text-align: left; font: inherit;
+  }
+  .mobile-receipt-line:focus-visible { outline-offset: -3px; }
+  .mobile-receipt-line + .mobile-receipt-line { border-top: 1px solid var(--mobile-line); }
+  .mobile-receipt-line :is(strong, small) { display: block; }
+  .mobile-receipt-line strong { font-size: .875rem; font-weight: 650; overflow-wrap: anywhere; }
+  .mobile-receipt-line small { font-size: .8125rem; color: var(--mobile-muted); margin: 2px 0 0; }
+  .mobile-receipt-amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .mobile-receipt-line .mobile-receipt-status {
+    display: inline-block; padding: 2px 6px; border-radius: 6px; color: var(--mobile-due); background: var(--mobile-due-bg);
+  }
+}
+}

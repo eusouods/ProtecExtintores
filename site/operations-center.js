@@ -180,6 +180,8 @@
     box:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
     person:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
     clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    wallet:'<path d="M20 8H5a2 2 0 0 1 0-4h13m2 4v12H5a2 2 0 0 1-2-2V6m17 6h-5a2 2 0 0 0 0 4h5"/>',
+    bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"/>',
     chart:'<path d="M5 20V11M11 20V4M17 20v-6M3 20h18"/>',
     cart:'<path d="M6 7h14l-1.5 9H8z"/><path d="M6 7 5 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/>',
     shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
@@ -206,15 +208,24 @@
   const gmap = Object.fromEntries(G.map(g => [g.id, g])), byPage = {};
   G.forEach(g => g.pages.forEach(([p]) => { byPage[p] = g; }));
   const SECTIONS = [[null,['overview']],['Operação',['services','extinguishers','clients','stock','insights']],['Equipe',['team','history']],['Comercial',['shop','after']],['Sistema',['data','settings','logout']]];
-  const TABS = ['overview','services','extinguishers','clients'], MORE = ['stock','insights','team','history','shop','after','data','settings','logout'];
+  const TABS = ['overview','services'], MORE = ['extinguishers','clients','stock','insights','team','history','shop','after','data','settings','logout'];
   const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
   const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const entry = (id, cls) => id === 'logout'
     ? `<button type="button" class="${cls}" data-nav-logout>${svg('out')}<span>Sair do painel</span></button>`
-    : `<button type="button" class="${cls}" data-nav-group="${id}" data-go="${gmap[id].pages[0][0]}">${svg(gmap[id].icon)}<span>${gmap[id].short && cls === 'admin-tab' ? gmap[id].short : gmap[id].label}</span></button>`;
+    : `<button type="button" class="${cls}" data-nav-group="${id}" data-go="${gmap[id].pages[0][0]}">${svg(gmap[id].icon)}<span>${id==='services'&&cls==='admin-tab'?'Serviços':gmap[id].label}</span></button>`;
 
   function mount() {
+    const header=document.querySelector('#dashboard .admin-top');
+    if(header&&!header.querySelector('.mobile-panel-brand')){
+      const brand=document.createElement('span');brand.className='mobile-panel-brand';
+      brand.innerHTML='<img src="./icons/company-logo.png" alt="">ProtecExtintores';
+      header.prepend(brand);
+      const alert=document.createElement('button');alert.type='button';alert.className='mobile-panel-alert';alert.dataset.go='alerts';
+      alert.setAttribute('aria-label','Alertas');alert.innerHTML=svg('bell');header.querySelector('.admin-top-right')?.prepend(alert);
+      const title=document.createElement('span');title.className='mobile-receipts-title';title.textContent='Recebimentos';header.querySelector('.crumb')?.append(title);
+    }
     const sidebar = document.querySelector('#dashboard .sidebar');
     if (sidebar && !document.getElementById('adminNav')) {
       const nav = document.createElement('nav');
@@ -225,22 +236,29 @@
     if (!document.getElementById('adminTabbar')) {
       const bar = document.createElement('nav');
       bar.id = 'adminTabbar'; bar.setAttribute('aria-label', 'Navegação principal');
-      bar.innerHTML = '<span class="admin-tab-pill" aria-hidden="true"></span>' + TABS.map(id => entry(id, 'admin-tab')).join('') + `<button type="button" class="admin-tab" data-nav-more aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
+      bar.innerHTML = '<span class="admin-tab-pill" aria-hidden="true"></span>' + TABS.map(id => entry(id, 'admin-tab')).join('') +
+        `<button type="button" class="admin-tab" data-go="finance" data-receipts-tab>${svg('wallet')}<span>Recebimentos</span></button><button type="button" class="admin-tab" data-nav-more aria-haspopup="dialog" aria-controls="adminMore" aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
       document.body.appendChild(bar);
-      const sheet = document.createElement('section');
-      sheet.id = 'adminMore'; sheet.hidden = true; sheet.setAttribute('aria-label', 'Mais opções');
-      sheet.innerHTML = '<h2>Mais</h2>' + MORE.map(id => id === 'logout'
+      const sheet = document.createElement('dialog');
+      sheet.id = 'adminMore'; sheet.hidden = true; sheet.setAttribute('aria-labelledby', 'adminMobileMoreTitle');
+      sheet.innerHTML = '<header><h2 id="adminMobileMoreTitle">Mais</h2><form method="dialog"><button type="submit" autofocus aria-label="Fechar">×</button></form></header>' + MORE.map(id => id === 'logout'
         ? `<button type="button" class="admin-more-row" data-nav-logout><span class="ic">${svg('out')}</span><b>Sair do painel</b></button>`
         : `<button type="button" class="admin-more-row" data-nav-group="${id}" data-go="${gmap[id].pages[0][0]}"><span class="ic">${svg(gmap[id].icon)}</span><b>${gmap[id].label}</b><span class="ch">${svg('chev')}</span></button>`).join('');
       document.body.appendChild(sheet);
+      sheet.addEventListener('close',()=>{sheet.hidden=true;document.querySelector('[data-nav-more]')?.setAttribute('aria-expanded','false');last=null;sync();});
+      sheet.addEventListener('click',event=>{
+        if(event.target!==sheet)return;
+        const bounds=sheet.getBoundingClientRect();
+        if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)sheet.close();
+      });
     }
   }
-  const closeMore = () => { const s = document.getElementById('adminMore'); if (s && !s.hidden) last = null; if (s) s.hidden = true; document.querySelector('[data-nav-more]')?.setAttribute('aria-expanded', 'false'); };
+  const closeMore = () => { const sheet = document.getElementById('adminMore'); if (sheet?.open) sheet.close(); };
 
   function tabs(group, current) {
     let el = document.getElementById('pageTabs');
     if (!el) { const c = document.getElementById('content'); if (!c) return; el = document.createElement('nav'); el.id = 'pageTabs'; el.setAttribute('aria-label', 'Seções'); c.insertAdjacentElement('beforebegin', el); }
-    if (!group || group.pages.length < 2) { el.hidden = true; el.innerHTML = ''; el.dataset.key = ''; return; }
+    if (!group || group.pages.length < 2 || (current==='finance' && matchMedia('(max-width:650px)').matches)) { el.hidden = true; el.innerHTML = ''; el.dataset.key = ''; return; }
     const key = group.id + ':' + current;
     if (el.dataset.key === key) return;
     const cs = getComputedStyle(document.getElementById('content'));
@@ -370,16 +388,22 @@
     mount();
     const dash = document.getElementById('dashboard'), open = Boolean(dash && !dash.classList.contains('hidden'));
     document.body.classList.toggle('admin-open', open);
-    if (!open) { closeMore(); return; }
+    if (!open) { closeMore(); delete document.body.dataset.mobileAdminPage; return; }
     const cur = window.page || 'overview', group = byPage[cur];
+    if(document.body.dataset.mobileAdminPage!==cur)document.body.dataset.mobileAdminPage=cur;
     if (cur !== last) {
       last = cur; pendingCount = cur === 'overview';
       document.querySelectorAll('[data-nav-group]').forEach(b => {
         const on = b.dataset.navGroup === group?.id;
         b.classList.toggle('active', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current');
       });
-      document.querySelector('[data-nav-more]')?.classList.toggle('active', Boolean(group) && !TABS.includes(group.id));
-      document.querySelectorAll('#adminTabbar [data-nav-group]').forEach(b => b.classList.toggle('active', b.dataset.navGroup === group?.id));
+      const selected = cur==='finance'?document.querySelector('[data-receipts-tab]'):
+        [...document.querySelectorAll('#adminTabbar [data-nav-group]')].find(b=>b.dataset.navGroup===group?.id);
+      const active=selected||document.querySelector('[data-nav-more]');
+      document.querySelectorAll('#adminTabbar button').forEach(b=>{
+        b.classList.toggle('active',b===active);
+        if(b===active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+      });
     }
     tabs(group, cur);
     if (cur === 'overview') search();
@@ -393,7 +417,11 @@
     const t = event.target.closest('button, a'); if (!t) return;
     if (t.dataset.go) { closeMore(); if (typeof go === 'function') go(t.dataset.go); setTimeout(sync, 60); return; }
     if (t.dataset.navLogout !== undefined) { closeMore(); if (typeof logout === 'function') logout(); return; }
-    if (t.dataset.navMore !== undefined) { const s = document.getElementById('adminMore'); s.hidden = !s.hidden; t.setAttribute('aria-expanded', String(!s.hidden)); if (s.hidden) last = null; else document.querySelectorAll('#adminTabbar .admin-tab').forEach(x => x.classList.toggle('active', x === t)); return; }
+    if (t.dataset.navMore !== undefined) {
+      const sheet=document.getElementById('adminMore');
+      if(sheet.open)closeMore();else{sheet.hidden=false;sheet.showModal();t.setAttribute('aria-expanded','true');}
+      return;
+    }
     if (t.dataset.searchService) { const id = t.dataset.searchService; if (typeof serviceOrder === 'function') serviceOrder(id); }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMore(); });
@@ -470,11 +498,11 @@
   window.__protecPill = function () {
     const bar = document.getElementById('adminTabbar'), pill = bar && bar.querySelector('.admin-tab-pill');
     if (!bar || !pill || getComputedStyle(bar).display === 'none') return;
-    const svg = bar.querySelector('.admin-tab.active svg');
+    const svg = bar.querySelector('.admin-tab.active');
     if (!svg) { pill.style.opacity = '0'; return; }
     const b = bar.getBoundingClientRect(), r = svg.getBoundingClientRect();
     pill.style.opacity = '1'; pill.style.width = r.width + 'px'; pill.style.height = r.height + 'px';
-    pill.style.transform = `translate(${r.left - b.left}px,${r.top - b.top}px)`;
+    pill.style.transform = `translate(${r.left - b.left - bar.clientLeft}px,${r.top - b.top - bar.clientTop}px)`;
   };
   window.addEventListener('resize', () => window.__protecPill && window.__protecPill());
 })();

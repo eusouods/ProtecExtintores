@@ -5,8 +5,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -61,6 +59,7 @@ import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -88,6 +87,8 @@ internal enum class PanelIcon(val data: String) {
     Search("M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0M20 20l-3.5-3.5"),
     Refresh("M20 11a8 8 0 1 0-2 6m2-12v6h-6"),
     Theme("M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0M12 7v10m-2-9v8M8.5 9v6"),
+    Bell("M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"),
+    Wallet("M20 8H5a2 2 0 0 1 0-4h13m2 4v12H5a2 2 0 0 1-2-2V6m17 6h-5a2 2 0 0 0 0 4h5"),
     Close("M6 6l12 12M18 6 6 18"),
     Chevron("m9 6 6 6-6 6"),
     Money("M12 2v20m5-15h-7a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H7"),
@@ -118,26 +119,25 @@ internal fun PanelChrome(
     tabs: List<PanelTab>,
     selected: Int,
     select: (Int) -> Unit,
-    initials: String,
     actions: List<PanelAction>,
     refresh: () -> Unit,
     changeTheme: () -> Unit,
     team: Boolean = false,
     title: String? = null,
     dockSection: Int = selected,
+    selectDock: (Int) -> Unit = select,
+    openAlerts: (() -> Unit)? = null,
     subTabs: List<Pair<Int, String>> = emptyList(),
     content: @Composable (Int) -> Unit
 ) {
     var more by remember { mutableStateOf(false) }
-    val colors = MaterialTheme.colorScheme
     val pages = rememberSaveableStateHolder()
     val closeMore = { more = false }
     BackHandler(selected != 0 || more) { if (more) closeMore() else select(0) }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             Column(Modifier.fillMaxSize()) {
-                PanelHeader(title ?: tabs.getOrNull(selected)?.title.orEmpty(), initials, refresh, changeTheme)
-                HorizontalDivider(color = colors.outline)
+                PanelHeader(title ?: tabs.getOrNull(selected)?.title.orEmpty(), refresh, changeTheme, openAlerts)
                 if (subTabs.size > 1) WebSectionTabs(subTabs, selected, select,
                     Modifier.padding(start = 12.dp, end = 12.dp, top = 14.dp))
                 pages.SaveableStateProvider(selected) {
@@ -147,15 +147,10 @@ internal fun PanelChrome(
                     }
                 }
             }
-            if (!team) androidx.compose.animation.AnimatedVisibility(more, Modifier.matchParentSize(),
-                enter = fadeIn(tween(200, easing = WebEase)), exit = fadeOut(tween(160, easing = WebEase))) {
-                Surface(color = colors.background) { PanelMore(actions, closeMore, team = false) }
-            }
         }
-        HorizontalDivider(color = colors.outline)
-        PanelDock(tabs, dockSection, more, team, { closeMore(); select(it) }) { more = !more }
+        PanelDock(tabs, dockSection, more, team, { closeMore(); selectDock(it) }) { more = !more }
     }
-    if (more && team) {
+    if (more) {
         ProtecSheet(onDismissRequest = closeMore, navigation = true) {
             PanelMore(actions, closeMore, team = true)
         }
@@ -163,32 +158,34 @@ internal fun PanelChrome(
 }
 
 @Composable
-private fun PanelHeader(title: String, initials: String, refresh: () -> Unit, changeTheme: () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    Surface(color = colors.surface.copy(alpha = .94f)) {
+private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> Unit, alerts: (() -> Unit)?) {
+    val brand = if (MaterialTheme.colorScheme.background.luminance() > .5f) Color(0xFF123052) else Color(0xFF1C3456)
+    val ink = Color(0xFFF4F8FF)
+    Surface(color = brand, contentColor = ink) {
+      Column(Modifier.fillMaxWidth().padding(start = 17.dp, end = 17.dp, top = 10.dp, bottom = 16.dp)) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 66.dp).padding(horizontal = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = 44.dp),
             horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(painterResource(R.drawable.company_logo), null, Modifier.size(30.dp).clip(RoundedCornerShape(5.dp)))
-            Text(title, Modifier.weight(1f), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Black,
-                maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Surface(onClick = refresh, shape = CircleShape, color = Color.Transparent, border = BorderStroke(1.dp, colors.outline)) {
-                Box(Modifier.size(38.dp, 44.dp).semantics { contentDescription = "Atualizar painel" },
-                    contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(7.dp).background(colors.onSurfaceVariant, CircleShape))
-                }
-            }
-            Box(Modifier.size(32.dp).background(colors.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
-                Text(initials, color = colors.secondary, fontSize = 11.sp, fontWeight = FontWeight.Black)
-            }
-            Surface(onClick = changeTheme, shape = RoundedCornerShape(11.dp), color = colors.surface,
-                border = BorderStroke(1.dp, colors.outlineVariant)) {
-                Box(Modifier.size(40.dp, 44.dp).semantics { contentDescription = "Alternar tema" },
-                    contentAlignment = Alignment.Center) {
-                    PanelGlyph(PanelIcon.Theme, colors.onSurface, 20.dp)
-                }
-            }
+            Image(painterResource(R.drawable.company_logo), null, Modifier.size(27.dp).clip(RoundedCornerShape(6.dp)))
+            Text("ProtecExtintores", Modifier.weight(1f), fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold,
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (alerts != null) HeaderPanelAction("Alertas", PanelIcon.Bell, ink, alerts)
+            else HeaderPanelAction("Atualizar painel", PanelIcon.Refresh, ink, refresh)
+            HeaderPanelAction("Alternar tema", PanelIcon.Theme, ink, changeTheme)
+        }
+        Text(title, fontSize = 27.sp, lineHeight = 33.sp, fontWeight = FontWeight(680), letterSpacing = (-.8).sp,
+            modifier = Modifier.padding(top = 12.dp))
+      }
+    }
+}
+
+@Composable
+private fun HeaderPanelAction(label: String, icon: PanelIcon, ink: Color, action: () -> Unit) {
+    Surface(onClick = action, shape = RoundedCornerShape(10.dp), color = Color.Transparent,
+        border = BorderStroke(1.dp, ink.copy(alpha = .29f))) {
+        Box(Modifier.size(44.dp).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
+            PanelGlyph(icon, ink, 19.dp)
         }
     }
 }
@@ -230,33 +227,35 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
 private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: Boolean, select: (Int) -> Unit, showMore: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val destinations = tabs + PanelTab("Mais", PanelIcon.Dots)
-    Surface(color = colors.surface.copy(alpha = .92f)) {
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 10.dp)) {
+    Surface(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 9.dp),
+        shape = RoundedCornerShape(15.dp), color = colors.surface, shadowElevation = 4.dp,
+        border = BorderStroke(1.dp, colors.outline)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(4.dp)) {
             val width = maxWidth / destinations.size
-            val pill = minOf(52.dp, width)
-            val index = if ((more && !team) || selected !in tabs.indices) tabs.size else selected
+            val pill = (width - 3.dp).coerceAtLeast(0.dp)
+            val index = if (more || selected !in tabs.indices) tabs.size else selected
             val x by animateDpAsState(width * index + (width - pill) / 2,
                 tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Pílula")
-            Box(Modifier.width(pill).height(30.dp).graphicsLayer { translationX = x.toPx(); translationY = 5.dp.toPx() }
-                .background(colors.primary, CircleShape))
+            Box(Modifier.width(pill).height(48.dp).graphicsLayer { translationX = x.toPx() }
+                .background(colors.primaryContainer, RoundedCornerShape(10.dp)))
             Row(Modifier.fillMaxWidth().selectableGroup()) {
                 destinations.forEachIndexed { item, tab ->
                     val active = item == index
                     val source = remember { MutableInteractionSource() }
-                    val iconColor by animateColorAsState(if (active) colors.onPrimary else colors.onSurfaceVariant,
+                    val iconColor by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
                         tween(250, easing = WebEase), label = "Cor do ícone")
-                    val labelColor by animateColorAsState(if (active) colors.onSurface else colors.onSurfaceVariant,
+                    val labelColor by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
                         tween(200, easing = WebEase), label = "Cor da aba")
                     Column(
-                        Modifier.weight(1f).heightIn(min = 56.dp).webPress(source, if (team) .94f else .96f).selectable(
+                        Modifier.weight(1f).heightIn(min = 48.dp).webPress(source, if (team) .94f else .96f).selectable(
                             selected = active, role = Role.Tab, interactionSource = source, indication = null,
                             onClick = { if (item == tabs.size) showMore() else select(item) }
-                        ).padding(top = 5.dp, bottom = 4.dp),
+                        ).padding(top = 6.dp, bottom = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Box(Modifier.height(30.dp), contentAlignment = Alignment.Center) {
-                            PanelGlyph(tab.icon, iconColor)
+                        Box(Modifier.height(20.dp), contentAlignment = Alignment.Center) {
+                            PanelGlyph(tab.icon, iconColor, 19.dp)
                         }
                         Text(tab.label, fontSize = 11.sp, lineHeight = 12.sp, letterSpacing = (-.11).sp,
                             fontWeight = if (active) FontWeight.ExtraBold else FontWeight.SemiBold,

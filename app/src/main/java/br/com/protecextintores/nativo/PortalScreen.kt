@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import org.json.JSONObject
 import java.text.NumberFormat
 import java.text.Normalizer
@@ -47,7 +48,7 @@ private val adminTabs = listOf(
     PanelTab("Pedidos", PanelIcon.List),
     PanelTab("Produtos", PanelIcon.Flame),
     PanelTab("Equipe", PanelIcon.People),
-    PanelTab("Recebimentos", PanelIcon.Chart, "Custos e recebimentos"),
+    PanelTab("Recebimentos", PanelIcon.Wallet),
     PanelTab("Estoque", PanelIcon.List),
     PanelTab("Agenda", PanelIcon.Clock),
     PanelTab("Alertas", PanelIcon.List),
@@ -60,6 +61,7 @@ private val adminTabs = listOf(
     PanelTab("Envios da equipe", PanelIcon.List)
 )
 private val adminKeys = mapOf(1 to "services", 2 to "types", 3 to "clients", 4 to "orders", 5 to "products", 6 to "employees")
+private val adminDockPages = listOf(0, 1, 7)
 private val sellerMore = listOf(
     PanelTab("Catálogo", PanelIcon.Flame),
     PanelTab("Pedidos", PanelIcon.List),
@@ -82,29 +84,30 @@ fun PortalScreen(vm: AppVm) {
     val root = vm.portalState ?: return
     val admin = role == "admin"
     val sellerTabs = teamTabs.toMutableList().apply { this[1] = PanelTab("Ordens", PanelIcon.Wrench, "Ordens de serviço") }
-    val tabs = if (admin) adminTabs.take(4) else sellerTabs
+    val tabs = if (admin) adminDockPages.map { if (it == 1) adminTabs[it].copy(label = "Serviços") else adminTabs[it] } else sellerTabs
     var page by rememberSaveable(role) { mutableIntStateOf(0) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var owner by remember { mutableStateOf<WalletOwner?>(null) }
     var serviceId by rememberSaveable { mutableStateOf<String?>(null) }
+    var receiptDetail by rememberSaveable { mutableStateOf(false) }
+    fun openOrder(id: String, finance: Boolean = false) {
+        receiptDetail = finance
+        serviceId = id
+    }
     var sellerOrder by remember { mutableStateOf<JSONObject?>(null) }
     val openSellerOrder = sellerOrder
     val currentOrder = root.optJSONObject("state")?.optJSONArray("services").objects()
         .firstOrNull { serviceId != null && it.str("id") == serviceId }
-    val selectedOwner = owner
-    if (admin && selectedOwner != null) {
-        androidx.activity.compose.BackHandler { owner = null }
-        Column(Modifier.fillMaxSize()) {
-            ScreenHeader("Acertos da equipe") { owner = null }
-            TeamWallet(refreshKey, selectedOwner) { vm.refreshPortal(silent = true) }
-        }
-        return
-    }
     val refresh = { vm.refreshPortal(); refreshKey++; Unit }
     val actions = buildList {
         if (!admin) add(PanelAction("Nova ordem de serviço", PanelIcon.Plus, vm::startRegistration))
-        if (admin) adminGroups.forEach { group ->
-            add(PanelAction(group.label, group.icon) { page = group.sections.first().first })
+        if (admin) {
+            add(PanelAction("Extintores", PanelIcon.Flame) { page = 2 })
+            add(PanelAction("Clientes e vendedores", PanelIcon.People) { page = 3 })
+            adminGroups.forEach { group ->
+                add(PanelAction(group.label, group.icon) { page = group.sections.first().first })
+            }
+            add(PanelAction("Atualizar painel", PanelIcon.Refresh, refresh))
         }
         if (!admin) sellerMore.forEachIndexed { index, tab ->
             add(PanelAction(tab.title, tab.icon) { page = index + 4 })
@@ -113,34 +116,36 @@ fun PortalScreen(vm: AppVm) {
         else addAll(panelActions(vm, refresh))
     }
     val title = if (admin) adminTabs.getOrNull(page)?.title else sellerMore.getOrNull(page - 4)?.title
-    val sections = if (!admin) emptyList() else if (maintenanceSections.any { it.first == page }) maintenanceSections
+    val sections = if (!admin || page == 7) emptyList() else if (maintenanceSections.any { it.first == page }) maintenanceSections
     else adminGroups.firstOrNull { group -> group.sections.any { it.first == page } }?.sections.orEmpty()
-    PanelChrome(tabs, page, { page = it }, if (admin) "AD" else "VD", actions,
+    PanelChrome(tabs, page, { page = it }, actions,
         refresh = refresh, changeTheme = vm::cycleTheme, team = !admin, title = title,
-        dockSection = if (admin && page == 9) 1 else page, subTabs = sections
+        dockSection = if (admin) adminDockPages.indexOf(if (page == 9) 1 else page) else page,
+        selectDock = { page = if (admin) adminDockPages[it] else it },
+        openAlerts = if (admin) ({ page = 10 }) else null, subTabs = sections
     ) { active ->
         if (admin) {
             val state = root.optJSONObject("state") ?: JSONObject()
             when (active) {
-                0 -> AdminOverview(state, vm::startRegistration, { serviceId = it.str("id") }) { page = it }
+                0 -> AdminOverview(state, vm::startRegistration, { openOrder(it.str("id")) }) { page = it }
                 1 -> RecordsPage(adminTabs[active].title, state.optJSONArray("services").objects(),
-                    filterStatus = true, register = vm::startRegistration, openRecord = { serviceId = it.str("id") })
+                    filterStatus = true, register = vm::startRegistration, openRecord = { openOrder(it.str("id")) })
                 2 -> AdminCatalog(vm, state, CatalogArea.Types)
                 3 -> AdminDirectory(vm, state, employees = false)
                 4 -> RecordsPage(adminTabs[active].title, state.optJSONArray("orders").objects())
                 5 -> AdminCatalog(vm, state, CatalogArea.Products)
                 6 -> AdminDirectory(vm, state, employees = true)
-                7 -> AdminReceipts(state) { owner = it }
+                7 -> AdminReceipts(state, { openOrder(it, finance = true) }) { owner = it }
                 8 -> AdminCatalog(vm, state, CatalogArea.Stock)
-                9 -> AdminAgenda(state) { serviceId = it }
-                10 -> AdminAlerts(state, { serviceId = it }) { page = 8 }
+                9 -> AdminAgenda(state) { openOrder(it) }
+                10 -> AdminAlerts(state, { openOrder(it) }) { page = 8 }
                 11 -> AdminReports(vm, state)
-                12 -> AdminTeamHistory(state) { serviceId = it }
+                12 -> AdminTeamHistory(state) { openOrder(it) }
                 13 -> AdminAccess(state)
                 14 -> AdminPowder(vm, state)
                 15 -> AdminCare(vm)
                 16 -> AdminPrices(vm, state)
-                17 -> AdminTransfers(vm, state) { serviceId = it }
+                17 -> AdminTransfers(vm, state) { openOrder(it) }
             }
         } else {
             when (active) {
@@ -155,10 +160,19 @@ fun PortalScreen(vm: AppVm) {
             }
         }
     }
+    owner?.let { selectedOwner ->
+        val close = { if (!vm.busy) owner = null }
+        ProtecSheet(onDismissRequest = close) {
+            Column(Modifier.fillMaxSize()) {
+                ScreenHeader("Acertos da equipe", close)
+                TeamWallet(refreshKey, selectedOwner) { vm.refreshPortal(silent = true) }
+            }
+        }
+    }
     if (admin && currentOrder != null) {
         val close = { if (!vm.busy) serviceId = null }
         ProtecSheet(onDismissRequest = close) {
-            AdminServiceScreen(vm, currentOrder, close = close)
+            AdminServiceScreen(vm, currentOrder, initialTab = if (receiptDetail) 1 else 0, close = close)
         }
     }
     if (!admin && openSellerOrder != null) {
@@ -180,9 +194,9 @@ fun PortalScreen(vm: AppVm) {
 private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: (JSONObject) -> Unit, select: (Int) -> Unit) {
     val services = state.optJSONArray("services").objects().map(::Svc)
     val pending = services.count { it.employeeCompleted && !it.closed && !it.cancelled }
-    val unpaid = eligibleReceipts(state).filter { it.optJSONObject("payment")?.str("status") != "paid" }
+    val unpaid = eligibleReceipts(state).filterNot { it.paid }
     val today = LocalDate.now().toString()
-    val overdue = unpaid.count { it.str("dueDate").let { date -> date.isNotEmpty() && date < today } }
+    val overdue = unpaid.count { it.finance.str("dueDate").let { date -> date.isNotEmpty() && date < today } }
     var query by rememberSaveable { mutableStateOf("") }
     val search = (1..6).flatMap { state.optJSONArray(adminKeys.getValue(it)).objects() }
         .filter { query.isNotBlank() && matches(it, query) }.take(20)
@@ -210,7 +224,7 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
                     PanelMetric("Aguardando revisão", pending.toString(), "Execução enviada pela equipe"),
                     PanelMetric("Em atendimento", services.count { !it.finished && !it.paused }.toString()),
                     PanelMetric("Serviços pausados", services.count { it.paused }.toString()),
-                    PanelMetric("A receber", currency(unpaid.sumOf { it.optLong("revenueCents") } / 100.0),
+                    PanelMetric("A receber", currency(unpaid.sumOf { it.finance.optLong("revenueCents") } / 100.0),
                         if (overdue == 1) "1 acerto vencido" else "$overdue acertos vencidos")
                 ), animateValues = true)
             }
@@ -226,36 +240,6 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
                     SoftButton("Agenda") { select(9) }
                     SoftButton("Alertas") { select(10) }
                 }
-            }
-        }
-    }
-}
-
-private fun eligibleReceipts(state: JSONObject) = state.optJSONArray("services").objects()
-    .map(::Svc).filter { it.closed && !it.cancelled }.mapNotNull { it.j.optJSONObject("finance") }
-
-@Composable
-private fun AdminReceipts(state: JSONObject, openWallet: (WalletOwner) -> Unit) {
-    val receipts = eligibleReceipts(state)
-    val (paid, open) = receipts.partition { it.optJSONObject("payment")?.str("status") == "paid" }
-    val owners = listOf("employees" to "employee", "sellers" to "seller").flatMap { (field, role) ->
-        state.optJSONArray(field).objects().filter { it.str("id").isNotEmpty() }
-            .map { WalletOwner(role, it.str("id"), it.str("name").ifBlank { it.str("id") }) }
-    }
-    PanelList {
-        item { PanelIntro("FINANCEIRO", "Custos e recebimentos", "Ordens finalizadas e não canceladas.") }
-        item {
-            PanelMetrics(listOf(
-                PanelMetric("Recebido", currency(paid.sumOf { it.optLong("revenueCents") } / 100.0)),
-                PanelMetric("A receber", currency(open.sumOf { it.optLong("revenueCents") } / 100.0)),
-                PanelMetric("Custos registrados", currency(receipts.sumOf { it.optLong("costCents") } / 100.0)),
-                PanelMetric("Ordens finalizadas", receipts.size.toString())
-            ))
-        }
-        if (owners.isNotEmpty()) item { Text("Acertos da equipe", style = MaterialTheme.typography.titleLarge) }
-        items(owners) { owner ->
-            PanelShortcut(owner.name, if (owner.role == "employee") "Funcionário" else "Vendedor", PanelIcon.Chart) {
-                openWallet(owner)
             }
         }
     }
@@ -343,14 +327,14 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
 }
 
 @Composable
-internal fun PanelList(content: LazyListScope.() -> Unit) {
+internal fun PanelList(spacing: Dp = 12.dp, content: LazyListScope.() -> Unit) {
     val team = LocalTeamPanel.current
     val openedAt = remember { SystemClock.uptimeMillis() }
     val appeared = remember { mutableSetOf<Any>() }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 18.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(spacing)
     ) {
         if (team) content() else PanelEntryScope(this, appeared, openedAt).content()
     }

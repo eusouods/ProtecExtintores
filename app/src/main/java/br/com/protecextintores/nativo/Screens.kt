@@ -227,7 +227,7 @@ fun HomeScreen(vm: AppVm) {
     var refreshKey by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val refresh = { vm.refresh(); refreshKey++; Unit }
     PanelChrome(
-        teamTabs, vm.employeePage, { vm.employeePage = it }, "FN",
+        teamTabs, vm.employeePage, { vm.employeePage = it },
         listOf(
             PanelAction("Nova ordem de serviço", PanelIcon.Plus, vm::startRegistration),
             PanelAction("Meu perfil", PanelIcon.People) { vm.employeePage = 4 }

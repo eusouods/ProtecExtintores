@@ -101,7 +101,25 @@ async function privateVideo(value){const url=new URL(value),api=new URL(API_BASE
 
 function enhanceFinance(){
  const host=document.getElementById('content');if(window.page!=='finance'||!host||host.querySelector('#opsFinance'))return;
- const totals=summarizeFinance(db.services||[]),section=document.createElement('section');section.id='opsFinance';section.className='ops-panel';
+ const services=db.services||[],totals=summarizeFinance(services),section=document.createElement('section');section.id='opsFinance';section.className='ops-panel';
+ const dueOf=s=>/^\d{4}-\d{2}-\d{2}$/.test(s.finance.dueDate||'')?s.finance.dueDate:'';
+ const pending=services.filter(s=>s.closed&&s.finance?.payment?.status!=='paid'&&s.finance&&!cancelled(s))
+  .sort((a,b)=>(dueOf(a)||'9999-12-31').localeCompare(dueOf(b)||'9999-12-31')||String(a.code||'').localeCompare(String(b.code||'')));
+ const next=pending.find(s=>dueOf(s)),featured=next||pending[0],today=localDay(new Date());
+ const mobile=document.createElement('section');mobile.className='mobile-receipts';mobile.setAttribute('aria-label','Cobranças a receber');
+ const lines=pending.map(s=>{
+  const payer=s.finance.payer?.name||billingOwner(s)?.name, due=dueOf(s);
+  const status=due&&due<today?'Vencida':s===next?'Vence primeiro':'';
+  return `<button class="mobile-receipt-line" type="button" data-mobile-receipt="${esc(s.id)}"><span><strong>${esc(payer||s.clientName||s.code||'Ordem')}</strong><small>${esc((payer?s.code:s.serviceType)||'Serviço')} · ${due?day(due):'Sem vencimento'}</small></span><span class="mobile-receipt-amount"><strong>${money(s.finance.revenueCents)}</strong>${status?`<small class="mobile-receipt-status">${status}</small>`:''}</span></button>`;
+ }).join('');
+ mobile.innerHTML=`<div class="mobile-receipts-summary"><span>Total a receber</span><strong>${money(totals.receivable)}</strong><p>${pending.length===0?'Nenhuma cobrança em aberto':pending.length===1?'1 cobrança em aberto':pending.length+' cobranças em aberto'}</p>${featured?`<button class="btn mobile-receipt-primary" type="button" data-mobile-receipt="${esc(featured.id)}">${next?'Ver próxima cobrança':'Ver cobrança'}</button>`:''}</div>${lines?`<h2>Cobranças em aberto</h2><div class="mobile-receipts-list">${lines}</div>`:''}`;
+ mobile.querySelectorAll('[data-mobile-receipt]').forEach(button=>button.addEventListener('click',()=>{
+  const s=(db.services||[]).find(order=>order.id===button.dataset.mobileReceipt);
+  if(!s)return window.toast('Ordem não encontrada. Atualize o painel.');
+  openOrderDetail(s);
+  document.querySelector('#modalRoot [data-ops-section="finance"]')?.click();
+ }));
+ host.prepend(mobile);
  section.innerHTML=`<h2>Resultados e recebimentos</h2><div class="ops-metrics">${metric('Recebido',money(totals.received),'Pagamentos confirmados')}${metric('A receber',money(totals.receivable),'Inclui recebimentos não registrados')}${metric('Resultado bruto realizado',money(totals.realized),'Ordens pagas com custos completos')}${metric('Resultado bruto previsto',money(totals.forecast),'Ordens finalizadas com custos completos')}</div><p class="ops-note">${totals.missing} ordem(ns) com custos incompletos não entram nos resultados. Custos registrados: ${money(totals.cost)}. ${totals.unrecorded} ordem(ns) diretas aguardam registro de recebimento.</p>`;
  const old=host.querySelector(':scope > .finance-metrics');if(old)old.replaceWith(section);else host.querySelector('.page-title')?.after(section);
  const direct=(db.services||[]).filter(s=>s.closed&&s.finance&&!billingOwner(s)&&!s.finance.payer&&s.finance.payment?.status!=='paid'&&!cancelled(s));

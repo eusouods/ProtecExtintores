@@ -46,10 +46,10 @@ private fun reviewDraft(order: JSONObject): JSONObject {
 @Composable
 internal fun AdminServiceScreen(
     vm: AppVm, order: JSONObject, readOnly: Boolean = false, staffProfile: Profile? = null,
-    afterTransfer: (() -> Unit)? = null, close: () -> Unit
+    afterTransfer: (() -> Unit)? = null, initialTab: Int = 0, close: () -> Unit
 ) {
     val svc = Svc(order)
-    var tab by remember { mutableIntStateOf(0) }
+    var tab by remember(order.str("id"), initialTab) { mutableIntStateOf(initialTab) }
     var edit by remember { mutableStateOf<JSONObject?>(null) }
     var confirm by remember { mutableStateOf(false) }
     var receipt by remember { mutableStateOf(false) }

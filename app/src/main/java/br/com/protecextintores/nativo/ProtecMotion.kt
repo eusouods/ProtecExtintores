@@ -4,6 +4,7 @@ import android.view.WindowManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,11 +36,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
@@ -127,6 +131,8 @@ internal fun ProtecSheet(
         overlays?.add(marker)
         onDispose { overlays?.remove(marker) }
     }
+    val covered = overlays?.lastOrNull()?.let { it !== marker } == true
+    val coveredBlur by animateDpAsState(if (covered) 8.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque da janela anterior")
     val colors = MaterialTheme.colorScheme
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -147,7 +153,8 @@ internal fun ProtecSheet(
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest)
                 .clearAndSetSemantics {})
             BoxWithConstraints(
-                Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
+                Modifier.fillMaxSize().safeDrawingPadding().imePadding()
+                    .padding(if (navigation) PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp) else PaddingValues(0.dp)),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 val maxSheetHeight = if (navigation) maxHeight * .85f else maxHeight
@@ -158,9 +165,9 @@ internal fun ProtecSheet(
                             alpha = if (navigation) .35f + .65f * value else value
                             translationY = (if (navigation) 28.dp else 32.dp).toPx() * (1f - value)
                         }
+                        .blur(coveredBlur)
                         .pointerInput(Unit) { detectTapGestures {} },
-                    shape = RoundedCornerShape(topStart = if (navigation) 24.dp else 16.dp,
-                        topEnd = if (navigation) 24.dp else 16.dp),
+                    shape = if (navigation) RoundedCornerShape(17.dp) else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                     color = colors.surface,
                     border = BorderStroke(1.dp, colors.outline)
                 ) {

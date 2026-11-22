@@ -66,14 +66,14 @@ function setSections(main) {
 }
 
 function updatePill() {
-  const active = bar?.querySelector('[aria-current="page"] svg');
+  const active = bar?.querySelector('[aria-current="page"]');
   if (!active || !bar.offsetWidth) return;
   const pill = bar.firstElementChild;
   const bounds = bar.getBoundingClientRect();
   const target = active.getBoundingClientRect();
   pill.style.width = target.width + 'px';
   pill.style.height = target.height + 'px';
-  pill.style.transform = `translate(${target.left - bounds.left}px, ${target.top - bounds.top}px)`;
+  pill.style.transform = `translate(${target.left - bounds.left - bar.clientLeft}px, ${target.top - bounds.top - bar.clientTop}px)`;
 }
 
 function show(tab) {
@@ -159,7 +159,7 @@ function sync() {
   if (header && !header.querySelector('[data-team-mobile-title]')) {
     const title = document.createElement('span');
     title.dataset.teamMobileTitle = '';
-    title.innerHTML = '<img src="./icons/company-logo.png" alt=""><b></b>';
+    title.innerHTML = '<span class="mobile-team-brand"><img src="./icons/company-logo.png" alt="">ProtecExtintores</span><b></b>';
     header.prepend(title);
   }
   mount(role);
