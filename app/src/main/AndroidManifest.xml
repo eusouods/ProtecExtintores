@@ -8,7 +8,7 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
-        android:label="Protec Funcionário"
+        android:label="ProtecExtintores"
         android:supportsRtl="true"
         android:theme="@style/Theme.Protec"
         android:usesCleartextTraffic="false">

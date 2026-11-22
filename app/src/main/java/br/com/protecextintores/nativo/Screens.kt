@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -133,7 +134,7 @@ private fun MessageBar(vm: AppVm) {
 @Composable
 fun LoginScreen(vm: AppVm) {
     var user by rememberSaveable { mutableStateOf("") }
-    var pass by rememberSaveable { mutableStateOf("") }
+    var pass by remember { mutableStateOf("") }
     var show by remember { mutableStateOf(false) }
     val visible = remember { MutableTransitionState(false).apply { targetState = true } }
     Column(
@@ -193,82 +194,81 @@ fun HomeScreen(vm: AppVm) {
         LaunchedEffect(Unit) { vm.logout() }
         return
     }
-    val mine = p.mine
-    val available = p.available
-    val list = if (vm.tab == 0) mine else available
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Serviços", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text(
-                    p.username.ifEmpty { p.company },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(onClick = { vm.refresh() }) { Icon(Icons.Filled.Refresh, contentDescription = "Atualizar") }
-            TextButton(onClick = { vm.cycleTheme() }) {
-                Text(
-                    when (vm.themeMode) {
-                        "light" -> "Claro"
-                        "dark" -> "Escuro"
-                        else -> "Auto"
-                    }
-                )
-            }
-            TextButton(onClick = { vm.logout() }) { Text("Sair") }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            TabPill("Meus serviços (${mine.size})", vm.tab == 0, Modifier.weight(1f)) { vm.tab = 0 }
-            TabPill("Para aceitar (${available.size})", vm.tab == 1, Modifier.weight(1f)) { vm.tab = 1 }
-        }
-        if (list.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.TopCenter) {
-                Text(
-                    if (vm.tab == 0) "Você não tem serviços no momento." else "Nenhum serviço disponível para aceitar.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                itemsIndexed(list, key = { _, svc -> svc.id }) { index, svc ->
-                    val visible = remember { MutableTransitionState(false).apply { targetState = true } }
-                    val delayMs = minOf(index, 8) * 45
-                    AnimatedVisibility(
-                        visibleState = visible,
-                        enter = fadeIn(tween(320, delayMillis = delayMs)) + slideInVertically(tween(320, delayMillis = delayMs)) { it / 6 }
-                    ) {
-                        ServiceCard(svc) { vm.open(svc.id) }
-                    }
-                }
-            }
+    var refreshKey by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    PanelChrome(
+        teamTabs, vm.employeePage, { vm.employeePage = it }, "FN",
+        panelActions(vm) { vm.refresh(); refreshKey++ }
+    ) { page ->
+        when (page) {
+            0 -> EmployeeOverview(vm, p)
+            1 -> EmployeeOrders(vm, p)
+            2 -> TeamDataPage("/api/employee/next-maintenance", "Próximas manutenções", "services", refreshKey)
+            3 -> TeamDataPage("/api/team/billing", "Meus acertos", "bills", refreshKey)
         }
     }
 }
 
 @Composable
-private fun TabPill(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val background = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-    val foreground = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(999.dp),
-        color = background,
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (selected) background else MaterialTheme.colorScheme.outline),
-        modifier = modifier
-    ) {
-        Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-            Text(text, color = foreground, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelLarge)
+private fun EmployeeOverview(vm: AppVm, profile: Profile) {
+    val current = profile.mine.firstOrNull { !it.finished && !it.paused }
+    PanelList {
+        item {
+            PanelIntro("ÁREA TÉCNICA", "Seu trabalho, organizado.",
+                "Acompanhe os atendimentos da equipe e atualize cada etapa.")
+        }
+        item {
+            PanelMetrics(listOf(
+                PanelMetric("Em atendimento", profile.mine.count { !it.finished && !it.paused }.toString()),
+                PanelMetric("Para aceitar", profile.available.size.toString()),
+                PanelMetric("Pausados", profile.mine.count { it.paused }.toString()),
+                PanelMetric("No histórico", profile.mine.count { it.finished }.toString())
+            ))
+        }
+        if (current != null) item {
+            PanelShortcut("Continuar atendimento", current.code + " · " + current.client, PanelIcon.Wrench) { vm.open(current.id) }
+        }
+        item {
+            PanelShortcut("Serviços para aceitar", "Veja o que está disponível para a equipe", PanelIcon.List) {
+                vm.tab = 1
+                vm.employeePage = 1
+            }
+        }
+        item {
+            PanelShortcut("Próximas manutenções", "Consulte as previsões registradas", PanelIcon.Clock) { vm.employeePage = 2 }
+        }
+        item {
+            PanelShortcut("Meus acertos", "Consulte o saldo e as cobranças", PanelIcon.Chart) { vm.employeePage = 3 }
+        }
+    }
+}
+
+@Composable
+private fun EmployeeOrders(vm: AppVm, profile: Profile) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val records = when (vm.tab) {
+        1 -> profile.available
+        2 -> profile.mine.filter { it.finished }
+        else -> profile.mine.filterNot { it.finished }
+    }
+    val shown = records.filter { matches(it.j, query) }
+    PanelList {
+        item { PanelIntro("", "Ordens de serviço") }
+        item { PanelSearch(query, { query = it }, "Buscar cliente, ordem ou equipamento") }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                listOf("Meus serviços", "Para aceitar", "Histórico").forEachIndexed { index, text ->
+                    FilterChip(vm.tab == index, { vm.tab = index }, label = { Text(text) })
+                }
+            }
+        }
+        if (shown.isEmpty()) item { EmptyRecord("Nenhuma ordem nesta seção.") }
+        itemsIndexed(shown, key = { _, svc -> svc.id }) { index, svc ->
+            val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+            AnimatedVisibility(
+                visibleState = visible,
+                enter = fadeIn(tween(240, delayMillis = minOf(index, 5) * 30)) +
+                    slideInVertically(tween(280, delayMillis = minOf(index, 5) * 30)) { it / 7 }
+            ) { ServiceCard(svc) { vm.open(svc.id) } }
         }
     }
 }

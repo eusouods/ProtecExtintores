@@ -1,4 +1,5 @@
 import {mountDataTools} from './data-tools.mjs?v=registration-flow-57';
+import './team-mobile.mjs';
 import {mountWorkshop,bindWorkshopOrder,groupedEquipmentMarkup} from './workshop-ui.mjs?v=registration-flow-57';
 import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=registration-flow-57';
 function complementaryWork(service){return service.complementaryServices?.length?'<h3>Serviços complementares</h3><ul>'+service.complementaryServices.map(row=>'<li><b>'+esc(row.name)+'</b> · '+esc(row.variant)+' · '+Number(row.quantity)+' unidade(s)'+Object.entries(row.parameters||{}).map(([key,value])=>' · '+esc(({lengthMeters:'Comprimento',widthCm:'Largura',diameterMm:'Diâmetro'})[key]||key)+': '+esc(value)+(key==='lengthMeters'?' m':key==='widthCm'?' cm':key==='diameterMm'?' mm':'')).join('')+'</li>').join('')+'</ul>':'';}

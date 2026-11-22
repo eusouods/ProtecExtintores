@@ -1,5 +1,5 @@
 {
-  "version": 57,
+  "version": 58,
   "assets": [
     "app-features.js",
     "brand-migration.js",
@@ -34,6 +34,7 @@
     "service-rules.mjs",
     "site-styles.css",
     "sw.js",
+    "team-mobile.mjs",
     "theme-mode.js",
     "theme-system.css",
     "theme-system.js",
@@ -58,6 +59,7 @@
     "service-rules.mjs?v=registration-flow-57",
     "site-styles.css?v=registration-flow-57",
     "sw.js?v=registration-flow-57",
+    "team-mobile.mjs?v=registration-flow-57",
     "theme-mode.js?v=registration-flow-57",
     "theme-system.css?v=registration-flow-57",
     "theme-system.js?v=registration-flow-57",

@@ -36,6 +36,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     var busyText by mutableStateOf("")
     var message by mutableStateOf<String?>(null)
     var tab by mutableIntStateOf(0)
+    var employeePage by mutableIntStateOf(0)
     var themeMode by mutableStateOf(Store.theme)
     val wizard = WizardState()
 
@@ -143,6 +144,10 @@ class AppVm(app: Application) : AndroidViewModel(app) {
     fun logout(note: String? = null) {
         Store.clearSession()
         profile = null
+        portalRole = ""
+        portalState = null
+        tab = 0
+        employeePage = 0
         screen = Screen.Login
         message = note
     }
@@ -157,6 +162,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             }
             try {
                 val b = Api.bootstrap(token)
+                if (Store.token != token) return@launch
                 if (b.ok) {
                     Store.profile = b.json.toString()
                     profile = Profile(b.json)
@@ -178,6 +184,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             if (!silent) { busy = true; busyText = "Atualizando…" }
             try {
                 val result = Api.session(token)
+                if (Store.token != token) return@launch
                 if (result.ok) {
                     portalRole = result.json.str("role")
                     portalState = result.json

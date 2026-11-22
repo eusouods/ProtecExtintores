@@ -57,6 +57,9 @@ object Api {
     suspend fun session(token: String): ApiResult =
         exec(Request.Builder().url("$BASE/api/session").header("Authorization", "Bearer $token").get().build())
 
+    suspend fun teamSection(token: String, path: String): ApiResult =
+        exec(Request.Builder().url("$BASE$path").header("Authorization", "Bearer $token").get().build())
+
     suspend fun sync(token: String, operation: JSONObject): ApiResult {
         val body = operation.toString().toRequestBody(jsonType)
         return exec(Request.Builder().url("$BASE/api/offline/sync").header("Authorization", "Bearer $token").post(body).build())
