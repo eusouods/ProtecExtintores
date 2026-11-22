@@ -1,0 +1,52 @@
+html:root body #dashboard .stock-heading { margin-bottom: 22px; }
+html:root body .stock-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }
+html:root body .stock-tabs .btn { min-height: 40px; background: transparent !important; box-shadow: none !important; border-color: transparent !important; }
+html:root body .stock-tabs .btn:is(:hover,[aria-pressed=true]) { background: var(--ui-selected) !important; color: var(--ui-accent) !important; }
+html:root body .stock-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(195px,30%); align-items: start; gap: clamp(15px,3vw,32px); }
+html:root body .stock-table { width: 100%; min-width: 0; border-collapse: separate; border-spacing: 0; }
+html:root body .stock-table :is(th,td) { padding: 9px 12px; border: 0; border-bottom: 1px solid var(--ui-border); background: transparent !important; }
+html:root body .stock-table th { font-size: 12px; }
+html:root body .stock-table :is(th,td):last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+html:root body .stock-table button { display: block; width: 100%; padding: 0; min-height: 40px; border: 0; background: transparent; color: var(--ui-text); font: inherit; font-weight: 650; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+html:root body .stock-table small { display: block; color: var(--ui-muted); font-weight: 400; }
+html:root body .stock-table tr:has(button[aria-pressed=true]) td { background: var(--ui-selected) !important; }
+html:root body .stock-table tr:has(button[aria-pressed=true]) td:first-child { border-radius: 8px 0 0 8px; }
+html:root body .stock-table tr:has(button[aria-pressed=true]) td:last-child { border-radius: 0 8px 8px 0; }
+html:root body .stock-detail { display: grid; gap: 7px; min-width: 0; padding: 18px; border-radius: 14px; background: var(--ui-raised); color: var(--ui-text); }
+html:root body .stock-detail :is(h2,p,dl,dd) { margin: 0; overflow-wrap: anywhere; }
+html:root body .stock-detail h2 { font-size: 19px; }
+html:root body .stock-detail :is(p,dt) { color: var(--ui-muted); font-size: 12px; }
+html:root body .stock-detail dl { margin: 4px 0 8px; }
+html:root body .stock-detail dd { font-weight: 650; margin-bottom: 7px; }
+html:root body .stock-detail dd:first-of-type { font-size: 24px; letter-spacing: -.03em; }
+html:root body .stock-detail .icon-btn { justify-self: start; border: 0 !important; background: transparent !important; color: var(--ui-accent) !important; box-shadow: none !important; }
+
+html:root body #modalRoot .stock-wizard { width: min(100%, 500px); }
+html:root body #modalRoot .stock-wizard .modal-body { display: grid; gap: 12px; }
+html:root body .stock-steps { list-style: none; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 7px; padding: 0; margin: 0 0 5px; }
+html:root body .stock-steps li { padding-top: 7px; border-top: 3px solid var(--ui-border); color: var(--ui-muted); font-size: 12px; }
+html:root body .stock-steps li[aria-current] { border-color: var(--ui-action); color: var(--ui-accent); font-weight: 700; }
+html:root body [data-stock-step] { display: grid; gap: 10px; }
+html:root body [data-stock-step] .form-field { margin: 0; }
+html:root body [data-stock-step] > h3 { margin: 0; }
+html:root body .stock-review { margin: 0; background: var(--ui-raised); border-radius: 10px; padding: 5px 12px; }
+html:root body .stock-review div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; }
+html:root body .stock-review dd { margin: 0; font-variant-numeric: tabular-nums; }
+html:root body .stock-review div:last-child { border-top: 1px solid var(--ui-border); font-weight: 700; }
+html:root body .stock-error { color: var(--ui-warning); margin: 0; }
+html:root body .stock-error[hidden] { display: none; }
+
+@media (min-width: 960px) {
+  html:root body #dashboard .sidebar { width: 220px; background: var(--admin-bg) !important; border-right: 0 !important; box-shadow: none !important; }
+  html:root body #dashboard .main { margin-left: 220px; }
+  html:root body #dashboard .admin-content { padding: clamp(24px,3.3vw,48px); }
+  html:root body #dashboard .admin-top { border-bottom: 0 !important; box-shadow: none !important; }
+  html:root body #dashboard .admin-content:has(.inventory-page) { background: var(--admin-panel) !important; min-height: calc(100vh - 70px); }
+  html:root body #dashboard .sidebar .side-nav button { border: 0 !important; box-shadow: none !important; }
+}
+@media (max-width: 760px) {
+  html:root body .stock-layout { grid-template-columns: 1fr; }
+  html:root body .stock-detail { grid-row: 1; }
+  html:root body .stock-detail .btn { justify-self: start; }
+  html:root body .stock-table button { min-height: 44px; }
+}

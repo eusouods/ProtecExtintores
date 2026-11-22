@@ -188,25 +188,6 @@
 
   const stockRows=()=>Array.isArray(db.inventory)?db.inventory.filter(row=>row&&typeof row==='object'&&!row.powderAgent):[];
   const stockNumber=value=>{const number=Number(value??0);return Number.isFinite(number)&&number>=0?number:null};
-  function stockOptions(value){
-    const current=stockNumber(value),values=new Set(Array.from({length:101},(_,i)=>i));
-    if(current!==null){values.add(current);const center=Math.floor(current);for(let offset=-10;offset<=10;offset++){const next=center+offset;if(Number.isSafeInteger(next)&&next>=0)values.add(next)}}
-    return (current===null?'<option value="" selected disabled>Revisar saldo</option>':'')+[...values].sort((a,b)=>a-b).map(n=>`<option value="${n}" ${n===current?'selected':''}>${n.toLocaleString('pt-BR')}</option>`).join('');
-  }
-  window.inventoryPage=function(c){
-    const rows=stockRows();
-    c.innerHTML=`<section class="inventory-page"><div class="page-title"><div><h1>Estoque</h1><p>Controle extintores, peças e materiais.</p></div><button type="button" class="btn btn-small" data-stock-create>＋ Cadastrar item</button></div><div class="inventory-powder-link"><p>O pó ABC e BC tem entradas e baixas próprias.</p><button type="button" class="btn btn-soft btn-small" data-stock-powder>Ver estoque de pó</button></div><div class="panel"><div class="panel-head"><div><h3>Itens em estoque</h3><p>${rows.length} item(ns) cadastrado(s)</p></div></div><div class="table-wrap inventory-table"><table><thead><tr><th>Item</th><th>Categoria</th><th>Quantidade</th><th>Alerta mínimo</th><th>Custo unitário</th><th>Ações</th></tr></thead><tbody>${rows.map(x=>{const qty=stockNumber(x.qty),minimum=stockNumber(x.minQty);return `<tr><td><span class="product-reference-label">${window.protecArtwork?.artwork(x,'tiny')||''}<span>${esc(x.name||'Item sem nome')}</span></span>${qty!==null&&minimum!==null&&qty<=minimum?'<small class="inventory-stock-note">Estoque baixo</small>':''}</td><td>${esc(x.category||'—')}</td><td><div class="inventory-quantity"><select aria-label="Quantidade de ${esc(x.name||'item')}" data-stock-id="${esc(x.id||'')}" ${x.id?'':'disabled'}>${stockOptions(x.qty)}</select><span>${esc(x.unit||'un')}</span></div></td><td>${minimum===null?'Revisar':minimum.toLocaleString('pt-BR')}</td><td>${stockNumber(x.unitCost)===null?'Revisar':money(x.unitCost||0)}</td><td><button type="button" class="icon-btn" data-stock-edit="${esc(x.id||'')}" ${x.id?'':'disabled'}>Editar</button></td></tr>`;}).join('')||'<tr><td colspan="6"><div class="empty">Nenhum item cadastrado. Use “Cadastrar item” para começar.</div></td></tr>'}</tbody></table></div></div></section>`;
-    c.querySelector('[data-stock-create]').onclick=()=>editStock();c.querySelector('[data-stock-powder]').onclick=()=>go('workshop');
-    c.querySelectorAll('[data-stock-edit]').forEach(button=>button.onclick=()=>editStock(button.dataset.stockEdit));
-    c.querySelectorAll('[data-stock-id]').forEach(select=>select.onchange=()=>changeStock(select.dataset.stockId,'qty',select.value));
-  };
-  window.changeStock=async function(stockId,key,value){
-    const x=stockRows().find(i=>String(i.id)===String(stockId));if(!x||key!=='qty')return false;
-    const qty=stockNumber(value);if(qty===null||value===''){toast('Selecione uma quantidade válida.');return false}
-    const previous=x.qty;x.qty=qty;
-    try{if(!await save()){x.qty=previous;saveLocal();renderPage();return false}}catch(error){x.qty=previous;saveLocal();renderPage();toast(error.message||'Não foi possível salvar o estoque.');return false}
-    renderPage();return true;
-  };
   window.editStock=function(stockId=''){
     const x=stockRows().find(i=>String(i.id)===String(stockId))||{id:'',name:'',category:'Peças',qty:0,unit:'un',minQty:0,unitCost:0};
     if(stockId&&!x.id){toast('Item não encontrado. Abra o estoque novamente.');return}
@@ -222,7 +203,15 @@
     });
   };
   const oldRenderPage=window.renderPage;
-  window.renderPage=function(){if(page==='inventory')return inventoryPage(document.getElementById('content'));return oldRenderPage();};
+  window.renderPage=function(){
+    if(page!=='inventory')return oldRenderPage();
+    const host=document.getElementById('content');
+    if(window.inventoryPage)return window.inventoryPage(host);
+    host.textContent='Carregando estoque…';
+    import('./inventory-ui.mjs?v=protec-vivid-62').then(()=>{if(page==='inventory')window.inventoryPage(host);}).catch(()=>{
+      if(page==='inventory')host.textContent='O estoque não pôde ser carregado. Abra a seção novamente.';
+    });
+  };
   const oldGo=window.go;
   window.go=function(p){if(p==='inventory'){page=p;window.page=p;document.querySelectorAll('.side-nav button[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===p));document.getElementById('crumb').textContent='Estoque';return renderPage(p);}return oldGo(p);};
   function addInventoryNav(){const nav=document.querySelector('.side-nav button[data-page="extinguishers"]')?.parentElement;if(nav&&!document.querySelector('[data-page="inventory"]')){const b=document.createElement('button');b.dataset.page='inventory';b.innerHTML='<span>▣</span><span class="navtext">Estoque</span>';b.onclick=()=>go('inventory');nav.appendChild(b);}}
@@ -1805,7 +1794,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=protec-navy-61';
+  style.href = './professional-updates.css?v=protec-vivid-62';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');

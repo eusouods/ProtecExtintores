@@ -136,7 +136,7 @@ fun PortalScreen(vm: AppVm) {
                 5 -> AdminCatalog(vm, state, CatalogArea.Products)
                 6 -> AdminDirectory(vm, state, employees = true)
                 7 -> AdminReceipts(state, { openOrder(it, finance = true) }) { owner = it }
-                8 -> AdminCatalog(vm, state, CatalogArea.Stock)
+                8 -> AdminStock(vm, state) { page = 14 }
                 9 -> AdminAgenda(state) { openOrder(it) }
                 10 -> AdminAlerts(state, { openOrder(it) }) { page = 8 }
                 11 -> AdminReports(vm, state)

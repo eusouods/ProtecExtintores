@@ -159,7 +159,7 @@ internal fun PanelChrome(
 @Composable
 private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> Unit, alerts: (() -> Unit)?) {
     val brand = MaterialTheme.colorScheme.protecBrand
-    val ink = ProtecOnBrand
+    val ink = MaterialTheme.colorScheme.protecOnBrand
     Surface(color = brand, contentColor = ink) {
       Column(Modifier.fillMaxWidth().padding(start = 17.dp, end = 17.dp, top = 10.dp, bottom = 16.dp)) {
         Row(
@@ -181,8 +181,7 @@ private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> U
 
 @Composable
 private fun HeaderPanelAction(label: String, icon: PanelIcon, ink: Color, action: () -> Unit) {
-    Surface(onClick = action, shape = RoundedCornerShape(10.dp), color = Color.Transparent,
-        border = BorderStroke(1.dp, ink.copy(alpha = .29f))) {
+    Surface(onClick = action, shape = RoundedCornerShape(10.dp), color = Color.Transparent) {
         Box(Modifier.size(44.dp).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
             PanelGlyph(icon, ink, 19.dp)
         }

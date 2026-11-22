@@ -1,5 +1,6 @@
-import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=protec-navy-61';
-import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=protec-navy-61';
+import {openInventoryEntry} from './inventory-ui.mjs?v=protec-vivid-62';
+import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=protec-vivid-62';
+import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=protec-vivid-62';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const when=v=>v?new Date(v).toLocaleString('pt-BR'):'—';
@@ -49,7 +50,7 @@ function renderWorkshop(){if(role()!=='admin')return;const host=document.getElem
    const count=movements.length,last=movements.at(-1)?.id;
    window.openModal('Limpar registros de pó',`<p>Retirar os <strong>${count} registro(s)</strong> desta lista?</p><p>Os saldos ABC e BC não serão zerados. Os custos das ordens e as informações necessárias para corrigir consumos continuarão preservados no sistema e nos backups.</p><label class="registration-choice"><input type="checkbox" name="confirmClear" required><span>Quero limpar a lista sem alterar o estoque.</span></label>`,async form=>{await command({action:'powder-history-clear',clearId:crypto.randomUUID(),expectedCount:count,expectedLastId:last,confirm:form.get('confirmClear')==='on'});return{afterClose:renderWorkshop};},'Limpar registros');
   };
-  body.querySelectorAll('[data-powder-entry]').forEach(b=>b.onclick=()=>window.openModal('Entrada de pó '+b.dataset.powderEntry,`<div class="form-grid"><label class="form-field">Quantidade recebida (kg)<input name="kg" type="number" min="0.01" max="100000" step="0.01" required></label><label class="form-field">Custo pago por kg (R$)<input name="unitCost" type="number" min="0" max="1000000" step="0.01" required></label><label class="form-field span2">Nota, fornecedor ou saldo inicial<input name="reference" minlength="3" maxlength="300" required></label></div>`,async form=>{await command({action:'powder-entry',entryId:crypto.randomUUID(),agent:b.dataset.powderEntry,kg:Number(form.get('kg')),unitCost:Number(form.get('unitCost')),reference:form.get('reference')});return{afterClose:renderWorkshop};}));
+  body.querySelectorAll('[data-powder-entry]').forEach(button=>button.onclick=()=>openInventoryEntry({group:'powder',agent:button.dataset.powderEntry,afterClose:renderWorkshop}));
   body.querySelectorAll('[data-powder-reverse]').forEach(button=>button.onclick=()=>{
    try{
     const preview=powderEntryReversal(db,button.dataset.powderReverse),entry=preview.entry;

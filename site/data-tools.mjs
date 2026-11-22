@@ -1,4 +1,4 @@
-import {vault,nativeCall} from './offline-vault.mjs?v=protec-navy-61';
+import {vault,nativeCall} from './offline-vault.mjs?v=protec-vivid-62';
 const utf8=new TextEncoder(),text=new TextDecoder('utf-8',{fatal:true}),MAGIC=utf8.encode('PROTECB1'),ITERATIONS=600000,MAX_FRAME=25*1024*1024;
 const join=(...parts)=>{const bytes=new Uint8Array(parts.reduce((n,p)=>n+p.byteLength,0));let at=0;for(const part of parts){bytes.set(new Uint8Array(part.buffer||part,part.byteOffset||0,part.byteLength),at);at+=part.byteLength;}return bytes;};
 const u32=n=>{const b=new Uint8Array(4);new DataView(b.buffer).setUint32(0,n);return b;};

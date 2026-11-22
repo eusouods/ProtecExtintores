@@ -165,14 +165,6 @@ html:root body :is(.ops-admin-home,.ops-order-detail,.ops-team-summary) button:f
  html:root body :is(#dashboard,.ops-order-detail) table[data-ops-cards] .icon-btn{min-height:44px;white-space:normal;text-align:center}
  html:root body :is(#dashboard,.ops-order-detail) .table-wrap:has(table[data-ops-cards]){overflow:visible;padding:10px;max-width:100%}
 }
-html:root body .inventory-powder-link{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;margin-bottom:20px;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-panel)}
-html:root body .inventory-powder-link p{margin:0;color:var(--ui-muted)}
-html:root body .inventory-quantity{display:flex;align-items:center;gap:8px;min-width:0}
-html:root body .inventory-quantity select{width:110px;min-width:0;padding-inline:10px}
-html:root body .inventory-stock-note{display:block;margin:6px 0 0;color:var(--ui-muted);font-size:12px}
-html:root body .inventory-table td{vertical-align:middle}
-html:root body .inventory-table .product-reference-label{min-width:0;white-space:normal;overflow-wrap:anywhere}
-@media(max-width:760px){html:root body .inventory-powder-link{align-items:stretch;flex-direction:column}html:root body .inventory-quantity{flex-wrap:wrap}html:root body .inventory-quantity select{width:100%}html:root body .inventory-table .empty{padding:16px 4px}}
 html:root body section[data-team-legacy][hidden]{display:none!important}
 html:root body .ops-wallet-summary{display:flex;align-items:center;justify-content:space-between;gap:16px}
 html:root body .ops-wallet-summary h2{font-size:17px;margin:0 0 5px}

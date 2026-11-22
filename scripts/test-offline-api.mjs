@@ -78,3 +78,41 @@ for(const [index,op] of concurrentOrders.entries()){
 state=await ok('/api/admin/state','GET',null,admin.token);
 for(const op of concurrentOrders)assert.equal(state.services.filter(service=>service.id===op.serviceId).length,1);
 console.log('Concorrência: ordens diferentes confirmadas ou reenviadas permanecem no banco, uma única vez.');
+
+// O navegador e o APK enviam a mesma operação novamente se a resposta se perder.
+const inventorySync='/api/offline/admin/sync';
+const inventoryEnvelope=kind=>({id:crypto.randomUUID(),deviceId:adminOp.deviceId,accountKey:'admin:1',serviceId:'admin-state',
+  kind,createdAt:new Date().toISOString(),dataEpoch:state.__dataEpoch});
+const registeredPart={id:'stock-part-test-'+suffix,name:'Peça de teste '+suffix,category:'Peças',unit:'un',qty:4,minQty:1,unitCost:5};
+const partCreation={...inventoryEnvelope('admin-state'),changes:[{path:['inventory',registeredPart.id],before:{exists:false},after:{exists:true,value:registeredPart}}]};
+assert.equal((await call(inventorySync,'POST',partCreation,seller.token)).status,401);
+await ok(inventorySync,'POST',partCreation,admin.token);
+assert.equal((await ok(inventorySync,'POST',partCreation,admin.token)).duplicate,true);
+
+function addPart(quantity){
+  const op=inventoryEnvelope('admin-state');
+  const updated={...registeredPart,qty:registeredPart.qty+quantity,stockEntries:[{id:op.id,at:op.createdAt,quantity}]};
+  op.changes=[{path:['inventory',registeredPart.id],before:{exists:true,value:registeredPart},after:{exists:true,value:updated}}];
+  return op;
+}
+const partEntry=addPart(3);
+await ok(inventorySync,'POST',partEntry,admin.token);
+assert.equal((await ok(inventorySync,'POST',partEntry,admin.token)).duplicate,true);
+assert.equal((await call(inventorySync,'POST',addPart(3),admin.token)).status,409);
+
+state=await ok('/api/admin/state','GET',null,admin.token);
+const partAfter=state.inventory.find(item=>item.id===registeredPart.id);
+assert.equal(partAfter.qty,7);
+assert.equal(partAfter.stockEntries.length,1);
+const powderBefore=state.inventory.find(item=>item.powderAgent==='ABC');
+const powderEntry=inventoryEnvelope('admin-operation');
+powderEntry.guards=[{group:'inventory',id:powderBefore.id,value:powderBefore}];
+powderEntry.payload={action:'powder-entry',entryId:powderEntry.id,agent:'ABC',kg:2.755,unitCost:6.5,reference:'NF QA '+suffix};
+await ok(inventorySync,'POST',powderEntry,admin.token);
+assert.equal((await ok(inventorySync,'POST',powderEntry,admin.token)).duplicate,true);
+const stalePowderId=crypto.randomUUID();
+assert.equal((await call(inventorySync,'POST',{...powderEntry,id:stalePowderId,payload:{...powderEntry.payload,entryId:stalePowderId}},admin.token)).status,409);
+state=await ok('/api/admin/state','GET',null,admin.token);
+assert.equal(state.inventory.find(item=>item.id===powderBefore.id).qty,(Math.round(powderBefore.qty*1000)+2755)/1000);
+assert.equal(state.powderMovements.filter(row=>row.id===powderEntry.id).length,1);
+console.log('Estoque D1: permissão de administrador, saldos revisados, pó fracionário, histórico e reenvio único verificados.');

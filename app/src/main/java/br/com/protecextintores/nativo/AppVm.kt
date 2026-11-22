@@ -480,7 +480,29 @@ class AppVm(app: Application) : AndroidViewModel(app) {
             "Registro removido.", done)
     }
 
-    internal fun adminAction(path: String, payload: JSONObject, success: String, done: () -> Unit) {
+    internal fun makeStockOperation(state: JSONObject, original: JSONObject?, updated: JSONObject, entryId: String, createdAt: String): JSONObject {
+        val before = JSONObject().put("exists", original != null)
+        if (original != null) before.put("value", original)
+        val change = JSONObject().put("path", JSONArray(listOf("inventory", updated.str("id"))))
+            .put("before", before).put("after", JSONObject().put("exists", true).put("value", updated))
+        return adminEnvelope(state, "admin-state").put("id", entryId).put("createdAt", createdAt)
+            .put("changes", JSONArray(listOf(change)))
+    }
+
+    internal fun makePowderEntryOperation(state: JSONObject, original: JSONObject?, payload: JSONObject, entryId: String, createdAt: String): JSONObject {
+        val guards = original?.let { listOf(JSONObject().put("group", "inventory").put("id", it.str("id")).put("value", it)) }.orEmpty()
+        return adminEnvelope(state, "admin-operation").put("id", entryId).put("createdAt", createdAt)
+            .put("payload", payload).put("guards", JSONArray(guards))
+    }
+
+    internal fun submitStockOperation(payload: JSONObject, done: () -> Unit, failed: (Int, String) -> Unit) {
+        adminAction("/api/offline/admin/sync", payload, "Entrada registrada.", done, failed)
+    }
+
+    internal fun adminAction(path: String, payload: JSONObject, success: String, done: () -> Unit) =
+        adminAction(path, payload, success, done, null)
+
+    private fun adminAction(path: String, payload: JSONObject, success: String, done: () -> Unit, failed: ((Int, String) -> Unit)?) {
         val token = Store.token
         if (busy || portalRole != "admin" || token.isEmpty()) return
         busy = true
@@ -503,7 +525,9 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                     message = success
                     done()
                 } else {
-                    message = result.error.ifEmpty { "O servidor não confirmou a alteração." }
+                    val error = result.error.ifEmpty { "O servidor não confirmou a alteração." }
+                    message = error
+                    failed?.invoke(result.code, error)
                     if (result.code == 409 || result.code == 0) refreshPortal(silent = true)
                 }
             } finally {

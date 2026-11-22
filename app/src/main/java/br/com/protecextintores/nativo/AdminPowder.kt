@@ -17,12 +17,6 @@ import java.text.NumberFormat
 import java.util.Locale
 import java.util.UUID
 
-private val powderFields = listOf(
-    CatalogField("kg", "Quantidade em kg", numeric = true),
-    CatalogField("unitCost", "Custo por kg", numeric = true),
-    CatalogField("reference", "Nota ou referência")
-)
-
 @Composable
 internal fun AdminPowder(vm: AppVm, state: JSONObject) {
     val stock = state.optJSONArray("inventory").objects().filter { it.str("powderAgent") in setOf("ABC", "BC") }
@@ -33,7 +27,7 @@ internal fun AdminPowder(vm: AppVm, state: JSONObject) {
         NumberFormat.getNumberInstance(Locale.forLanguageTag("pt-BR")).apply { maximumFractionDigits = 3 }
     }
     var archived by remember { mutableStateOf(false) }
-    var entry by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var entry by remember { mutableStateOf<String?>(null) }
     var correction by remember { mutableStateOf<JSONObject?>(null) }
     var clearing by remember { mutableStateOf<JSONObject?>(null) }
 
@@ -48,7 +42,7 @@ internal fun AdminPowder(vm: AppVm, state: JSONObject) {
                     Text("Custo médio · ${formatRegistrationMoney(Math.round(it * 100))} por kg")
                 }
                 SoftButton("Registrar entrada de $agent", enabled = !vm.busy) {
-                    entry = agent to UUID.randomUUID().toString()
+                    entry = agent
                 }
             }
         }
@@ -90,18 +84,8 @@ internal fun AdminPowder(vm: AppVm, state: JSONObject) {
             }
         }
     }
-    entry?.let { (agent, id) ->
-        NativeFieldsDialog("Registrar entrada de pó $agent", powderFields, busy = vm.busy, close = { entry = null }) { fields ->
-            when {
-                fields.optDouble("kg", 0.0) !in 0.001..100_000.0 -> "Confira a quantidade de pó."
-                fields.str("reference").length !in 3..300 -> "Informe uma referência de 3 a 300 caracteres."
-                else -> {
-                    fields.put("action", "powder-entry").put("agent", agent).put("entryId", id)
-                    vm.adminAction("/api/admin/operations", fields, "Entrada registrada.") { entry = null }
-                    null
-                }
-            }
-        }
+    entry?.let { agent ->
+        StockEntryDialog(vm, state, StockStart(StockGroup.Powder, "powder-$agent")) { entry = null }
     }
     correction?.let { payload ->
         PowderConfirmation(vm, "Estornar entrada?", "O sistema vai verificar o saldo e o custo da entrada antes de confirmar o estorno.", payload) {

@@ -28,11 +28,6 @@ internal data class CatalogField(val key: String, val label: String, val numeric
                                  val optional: Boolean = false, val default: String = "")
 
 internal enum class CatalogArea(val group: String, val title: String, val fields: List<CatalogField>) {
-    Stock("inventory", "Estoque", listOf(
-        CatalogField("name", "Nome do item"), CatalogField("category", "Categoria", default = "Peças"),
-        CatalogField("unit", "Unidade", default = "un"), CatalogField("qty", "Quantidade em estoque", true, default = "0"),
-        CatalogField("minQty", "Estoque mínimo", true, default = "0"), CatalogField("unitCost", "Custo unitário (R$)", true, default = "0")
-    )),
     Types("types", "Extintores", listOf(
         CatalogField("name", "Tipo de extintor"), CatalogField("kg", "Capacidade", optional = true),
         CatalogField("unit", "Unidade", default = "kg"), CatalogField("price", "Preço da manutenção (R$)", true, default = "0")
@@ -53,8 +48,7 @@ internal fun AdminCatalog(vm: AppVm, state: JSONObject, area: CatalogArea) {
     var editing by remember(area) { mutableStateOf<CatalogEdit?>(null) }
     var remove by remember(area) { mutableStateOf<JSONObject?>(null) }
     val records = state.optJSONArray(area.group).objects().filter { item ->
-        (area != CatalogArea.Stock || item.str("powderAgent").isEmpty()) &&
-            listOf("name", "category", "type", "model", "kg").any { item.str(it).contains(query.trim(), ignoreCase = true) }
+        listOf("name", "category", "type", "model", "kg").any { item.str(it).contains(query.trim(), ignoreCase = true) }
     }
     PanelList {
         item { PanelIntro("", area.title) }
@@ -66,19 +60,11 @@ internal fun AdminCatalog(vm: AppVm, state: JSONObject, area: CatalogArea) {
                 Text(entry.str("name"), fontWeight = FontWeight.ExtraBold)
                 val category = entry.str("category")
                 if (category.isNotBlank()) Text(category)
-                if (area == CatalogArea.Stock) {
-                    Text("${entry.str("qty")} ${entry.str("unit")} · mínimo ${entry.str("minQty")}")
-                    if (entry.optDouble("qty", 0.0) <= entry.optDouble("minQty", 0.0)) StatusChip("Estoque baixo")
-                    Text("Custo unitário · ${formatRegistrationMoney(Math.round(entry.optDouble("unitCost", 0.0) * 100))}")
-                } else {
-                    if (entry.str("kg").isNotBlank()) Text("${entry.str("kg")} ${entry.str("unit").ifBlank { "kg" }}")
-                    Text(formatRegistrationMoney(Math.round(entry.optDouble("price", 0.0) * 100)))
-                }
+                if (entry.str("kg").isNotBlank()) Text("${entry.str("kg")} ${entry.str("unit").ifBlank { "kg" }}")
+                Text(formatRegistrationMoney(Math.round(entry.optDouble("price", 0.0) * 100)))
                 Row {
                     TextButton(enabled = !vm.busy, onClick = { editing = CatalogEdit(entry) }) { Text("Editar") }
-                    if (area != CatalogArea.Stock) {
-                        TextButton(enabled = !vm.busy, onClick = { remove = entry }) { Text("Remover") }
-                    }
+                    TextButton(enabled = !vm.busy, onClick = { remove = entry }) { Text("Remover") }
                 }
             }
         }
