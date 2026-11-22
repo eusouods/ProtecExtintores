@@ -24,6 +24,14 @@ object Store {
             prefs.edit().putString("profile", value).apply()
         }
 
+    var portalRole: String
+        get() = prefs.getString("portalRole", "") ?: ""
+        set(value) { prefs.edit().putString("portalRole", value).apply() }
+
+    var portalState: String
+        get() = prefs.getString("portalState", "") ?: ""
+        set(value) { prefs.edit().putString("portalState", value).apply() }
+
     var theme: String
         get() = prefs.getString("theme", "auto") ?: "auto"
         set(value) {
@@ -41,6 +49,6 @@ object Store {
         }
 
     fun clearSession() {
-        prefs.edit().remove("token").remove("profile").apply()
+        prefs.edit().remove("token").remove("profile").remove("portalRole").remove("portalState").apply()
     }
 }

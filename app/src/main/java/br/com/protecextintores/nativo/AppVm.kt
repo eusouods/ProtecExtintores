@@ -22,6 +22,7 @@ import java.util.UUID
 sealed class Screen {
     object Login : Screen()
     object Home : Screen()
+    object Portal : Screen()
     data class Detail(val id: String) : Screen()
     data class Wizard(val id: String) : Screen()
 }
@@ -29,6 +30,8 @@ sealed class Screen {
 class AppVm(app: Application) : AndroidViewModel(app) {
     var screen by mutableStateOf<Screen>(Screen.Login)
     var profile by mutableStateOf<Profile?>(null)
+    var portalRole by mutableStateOf("")
+    var portalState by mutableStateOf<JSONObject?>(null)
     var busy by mutableStateOf(false)
     var busyText by mutableStateOf("")
     var message by mutableStateOf<String?>(null)
@@ -47,6 +50,15 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 profile = Profile(JSONObject(saved))
                 screen = Screen.Home
                 refresh(silent = true)
+            } catch (e: Exception) {
+                Store.clearSession()
+            }
+        } else if (token.isNotEmpty() && Store.portalRole.isNotEmpty() && Store.portalState.isNotEmpty()) {
+            try {
+                portalRole = Store.portalRole
+                portalState = JSONObject(Store.portalState)
+                screen = Screen.Portal
+                refreshPortal(silent = true)
             } catch (e: Exception) {
                 Store.clearSession()
             }
@@ -91,22 +103,37 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                     message = r.error.ifEmpty { "Não foi possível entrar." }
                     return@launch
                 }
-                if (r.json.str("role") != "employee") {
-                    message = "Este aplicativo é para contas de funcionário."
-                    return@launch
-                }
                 Store.token = r.json.str("token")
-                busyText = "Carregando serviços…"
-                val b = Api.bootstrap(Store.token)
-                if (!b.ok) {
-                    message = b.error.ifEmpty { "Não foi possível carregar os serviços." }
-                    Store.clearSession()
-                    return@launch
+                when (r.json.str("role")) {
+                    "employee" -> {
+                        busyText = "Carregando serviços…"
+                        val b = Api.bootstrap(Store.token)
+                        if (!b.ok) {
+                            message = b.error.ifEmpty { "Não foi possível carregar os serviços." }
+                            Store.clearSession()
+                            return@launch
+                        }
+                        Store.profile = b.json.toString()
+                        profile = Profile(b.json)
+                        tab = 0
+                        screen = Screen.Home
+                    }
+                    "admin", "seller" -> {
+                        busyText = "Carregando painel…"
+                        val b = Api.session(Store.token)
+                        if (!b.ok) {
+                            message = b.error.ifEmpty { "Não foi possível carregar o painel." }
+                            Store.clearSession()
+                            return@launch
+                        }
+                        portalRole = b.json.str("role")
+                        portalState = b.json
+                        Store.portalRole = portalRole
+                        Store.portalState = b.json.toString()
+                        screen = Screen.Portal
+                    }
+                    else -> { Store.clearSession(); message = "Esta conta não possui um painel de equipe." }
                 }
-                Store.profile = b.json.toString()
-                profile = Profile(b.json)
-                tab = 0
-                screen = Screen.Home
             } finally {
                 busy = false
             }
@@ -137,6 +164,29 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                     logout("Sessão expirada. Entre de novo.")
                 } else if (!silent) {
                     message = b.error.ifEmpty { "Não foi possível atualizar." }
+                }
+            } finally {
+                if (!silent) busy = false
+            }
+        }
+    }
+
+    fun refreshPortal(silent: Boolean = false) {
+        val token = Store.token
+        if (token.isEmpty()) return
+        viewModelScope.launch {
+            if (!silent) { busy = true; busyText = "Atualizando…" }
+            try {
+                val result = Api.session(token)
+                if (result.ok) {
+                    portalRole = result.json.str("role")
+                    portalState = result.json
+                    Store.portalRole = portalRole
+                    Store.portalState = result.json.toString()
+                } else if (result.code == 401 || result.code == 403) {
+                    logout("Sessão expirada. Entre de novo.")
+                } else if (!silent) {
+                    message = result.error.ifEmpty { "Não foi possível atualizar o painel." }
                 }
             } finally {
                 if (!silent) busy = false

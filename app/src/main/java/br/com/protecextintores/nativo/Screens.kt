@@ -63,13 +63,14 @@ import kotlinx.coroutines.delay
 private fun depth(screen: Screen): Int = when (screen) {
     Screen.Login -> 0
     Screen.Home -> 1
+    Screen.Portal -> 1
     is Screen.Detail -> 2
     is Screen.Wizard -> 3
 }
 
 @Composable
 fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
-    BackHandler(enabled = vm.screen !is Screen.Login && vm.screen !is Screen.Home) { vm.back() }
+    BackHandler(enabled = vm.screen !is Screen.Login && vm.screen !is Screen.Home && vm.screen !is Screen.Portal) { vm.back() }
     Box(modifier = Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
         AnimatedContent(
             targetState = vm.screen,
@@ -88,6 +89,7 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
             when (screen) {
                 is Screen.Login -> LoginScreen(vm)
                 is Screen.Home -> HomeScreen(vm)
+                is Screen.Portal -> PortalScreen(vm)
                 is Screen.Detail -> DetailScreen(vm, screen.id)
                 is Screen.Wizard -> WizardScreen(vm, screen.id, onRecord, onPick)
             }
@@ -151,7 +153,7 @@ fun LoginScreen(vm: AppVm) {
                 )
                 Spacer(Modifier.height(18.dp))
                 Text("ProtecExtintores", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("Painel do funcionário", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Acesso da equipe", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(28.dp))
                 OutlinedTextField(
                     value = user,
