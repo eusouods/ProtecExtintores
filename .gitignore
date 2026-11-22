@@ -1,0 +1,17 @@
+# Android/Gradle outputs
+.gradle/
+build/
+**/build/
+local.properties
+*.iml
+.idea/
+
+# Signing material: keep this out of Git and store it as GitHub Actions secrets.
+*.jks
+*.keystore
+*.p12
+app/release-keystore.p12
+
+# OS files
+.DS_Store
+Thumbs.db
