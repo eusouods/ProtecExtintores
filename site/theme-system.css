@@ -13,8 +13,8 @@ html:root,html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot
 html:root body{background:var(--ui-bg,#edf4fa)!important;color:var(--ui-text,#20374a)!important;font-family:Inter,"Segoe UI",Arial,sans-serif!important;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;accent-color:var(--ui-action,#226b99)!important}
 html:root body :is(h1,h2,h3,h4,h5,h6,.brand,.stat strong,.employee-main h1){font-family:Inter,"Segoe UI",Arial,sans-serif!important;letter-spacing:-.025em;font-weight:650}
 html:root body :is(#store,#login,#dashboard,#employeePortal,.main,.admin-content,.login-main,.employee-main,.seller-dashboard){background:var(--ui-bg,#edf4fa)!important;color:var(--ui-text,#20374a)!important}
-html:root body :is(#store .topbar,#dashboard .sidebar,#dashboard .admin-top,.employee-top,.seller-top,.site-footer,#store footer,.login-aside){background:var(--ui-panel,#f9fcff)!important;color:var(--ui-text,#20374a)!important;border-color:var(--ui-border,#c5d8e6)!important;background-image:none!important}
-html:root body :is(#store .topbar,#dashboard .sidebar,#dashboard .admin-top,.employee-top,.seller-top,#login .login-aside){
+html:root body :is(#store .topbar,#dashboard .sidebar,#employeePortal .team-desktop-sidebar,#dashboard .admin-top,.employee-top,.seller-top,.site-footer,#store footer,.login-aside){background:var(--ui-panel,#f9fcff)!important;color:var(--ui-text,#20374a)!important;border-color:var(--ui-border,#c5d8e6)!important;background-image:none!important}
+html:root body :is(#store .topbar,#dashboard .sidebar,#employeePortal .team-desktop-sidebar,#dashboard .admin-top,.employee-top,.seller-top,#login .login-aside){
   --ui-panel:var(--ui-brand);
   --ui-panel-rgb:var(--ui-brand-rgb);
   --ui-text:var(--ui-on-brand);

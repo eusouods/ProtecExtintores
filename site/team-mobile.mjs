@@ -1,4 +1,4 @@
-// The mobile shell presents the existing team modules without replacing their controls.
+// Both menus use the same team sections and existing controls.
 const tabs = {
   employee: [
     ['overview', 'Painel', 'grid'],
@@ -42,6 +42,7 @@ let account = '';
 let current = 'overview';
 let bar;
 let sheet;
+let sidebar;
 let queued = false;
 
 function setSections(main) {
@@ -49,9 +50,9 @@ function setSections(main) {
     if (element.matches('[data-workspace-heading], #opsTeamSummary, #employeePowderStock')) return 'overview';
     if (element.matches('#opsBillingWallet')) return 'payments';
     if (element.matches('#offlineToolbar')) return '';
-    if (element.matches('#employeeCards, .seller-service-tabs') || element.querySelector('#sellerServices')) return 'orders';
+    if (element.matches('#employeeCards, .employee-service, .employee-service-tools, .employee-tabs, .seller-service-tabs, .panel.empty') ||
+        element.querySelector('#sellerServices, [data-offline-workbench]')) return 'orders';
     if (element.matches('.ops-team-register')) return 'overview';
-    if (element.querySelector('[data-offline-workbench]')) return 'orders';
     return '';
   };
   for (const element of main.children) {
@@ -98,10 +99,21 @@ function show(tab) {
   window.scrollTo(0, 0);
 }
 
+function runAction(action, role) {
+  if (action === 'theme') root.querySelector('.theme-toggle')?.click();
+  if (action === 'register') root.querySelector('[data-team-register]')?.click();
+  if (action === 'refresh') {
+    if (role === 'employee') window.refreshEmployeePortal?.();
+    else window.loadSellerServices?.();
+  }
+  if (action === 'logout') window.logout?.();
+}
+
 function mount(role) {
-  if (bar?.dataset.role === role && bar.isConnected && sheet?.isConnected) return;
+  if (bar?.dataset.role === role && bar.isConnected && sheet?.isConnected && sidebar?.isConnected) return;
   bar?.remove();
   sheet?.remove();
+  sidebar?.remove();
   bar = document.createElement('nav');
   bar.className = 'team-mobile-bar';
   bar.dataset.role = role;
@@ -130,15 +142,26 @@ function mount(role) {
     const action = event.target.closest('[data-option]')?.dataset.option;
     if (!action) return;
     sheet.close();
-    if (action === 'theme') root.querySelector('.theme-toggle')?.click();
-    if (action === 'register') root.querySelector('[data-team-register]')?.click();
-    if (action === 'refresh') {
-      if (role === 'employee') window.refreshEmployeePortal?.();
-      else window.loadSellerServices?.();
-    }
-    if (action === 'logout') window.logout?.();
+    runAction(action, role);
   });
   root.append(sheet);
+
+  sidebar = document.createElement('aside');
+  sidebar.className = 'sidebar team-desktop-sidebar';
+  const destinations = tabs[role].filter(([id]) => id !== 'more');
+  sidebar.innerHTML =
+    '<div class="brand"><span class="brand-mark"><img class="company-logo" src="./icons/company-logo.png" alt="" width="42" height="42"></span><span>ProtecExtintores</span></div>' +
+    '<nav id="teamDesktopNav" aria-label="Navegação principal da equipe">' +
+    destinations.map(([id, label, mark]) => `<button type="button" class="admin-nav-item" data-destination="${id}">${icon(mark)}<span>${label}</span></button>`).join('') +
+    '<p class="admin-nav-title">Ações</p>' +
+    options.map(([action, label, mark]) => `<button type="button" class="admin-nav-item" data-option="${action}">${icon(mark)}<span>${action === 'register' ? 'Registrar serviço' : label}</span></button>`).join('') +
+    '</nav>';
+  sidebar.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (button?.dataset.destination) show(button.dataset.destination);
+    if (button?.dataset.option) runAction(button.dataset.option, role);
+  });
+  root.prepend(sidebar);
 }
 
 function sync() {
@@ -148,6 +171,7 @@ function sync() {
   if (!['employee', 'seller'].includes(role) || !main || root.classList.contains('hidden') || root.querySelector('[data-offline-locked]')) {
     if (sheet?.open) sheet.close();
     delete root.dataset.teamMobileRole;
+    delete root.dataset.teamMobilePage;
     account = '';
     return;
   }
@@ -164,18 +188,24 @@ function sync() {
   }
   mount(role);
   const agenda = root.querySelector('#teamNextMaintenancePage');
-  if (current === 'agenda' && agenda?.classList.contains('hidden')) current = 'overview';
+  if (current === 'agenda' && (!agenda || agenda.classList.contains('hidden'))) current = 'overview';
   else if (agenda && !agenda.classList.contains('hidden')) current = 'agenda';
   root.dataset.teamMobilePage = current;
   const title = root.querySelector('[data-team-mobile-title] b');
   const label = tabs[role].find(([id]) => id === current)[1];
   if (title && title.textContent !== label) title.textContent = label;
   setSections(main);
-  for (const button of bar.querySelectorAll('[data-destination]')) {
-    if (button.dataset.destination === current) button.setAttribute('aria-current', 'page');
-    else button.removeAttribute('aria-current');
-    if (button.dataset.destination === 'agenda') button.disabled = !agenda;
+  for (const nav of [bar, sidebar]) {
+    for (const button of nav.querySelectorAll('[data-destination]')) {
+      const selected = button.dataset.destination === current;
+      if (selected) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+      if (nav === sidebar) button.classList.toggle('active', selected);
+      if (button.dataset.destination === 'agenda') button.disabled = !agenda;
+    }
   }
+  sidebar.querySelector('[data-option="register"]').hidden = !root.querySelector('[data-team-register]');
+  sidebar.querySelector('[data-option="theme"]').hidden = !root.querySelector('.theme-toggle');
   updatePill();
 }
 
@@ -188,8 +218,9 @@ function schedule() {
 if (root) {
   new MutationObserver(schedule).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
   root.addEventListener('click', event => {
-    if (!mobile.matches) return;
-    if (event.target.closest('[data-ops-assigned], [data-team-last]')) show('orders');
+    if (!root.dataset.teamMobileRole) return;
+    const shortcut = mobile.matches ? '[data-ops-assigned], [data-team-last]' : '[data-ops-assigned]';
+    if (event.target.closest(shortcut)) show('orders');
   });
   window.addEventListener('resize', () => {
     if (!mobile.matches && sheet?.open) sheet.close();

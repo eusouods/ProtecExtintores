@@ -266,9 +266,9 @@ html:root body #employeePortal [data-employee-scope]{font-size:11px;padding:10px
 }
 
 @layer protecNeutral {
-html:root body #employeePortal .employee-main{display:flex!important;flex-direction:column!important;width:min(1180px,100%)!important;max-width:1180px!important;gap:24px!important;padding:28px 32px 40px!important}
+html:root body #employeePortal .employee-main:not(.hidden){display:flex!important;flex-direction:column!important;width:min(1180px,100%)!important;max-width:1180px!important;gap:24px!important;padding:28px 32px 40px!important}
 html:root body #employeePortal .employee-main>*{margin-block:0!important}
-html:root body #employeePortal button{font-weight:600!important}
+html:root body #employeePortal button:not(.admin-nav-item){font-weight:600!important}
 html:root body #employeePortal .workspace-current-actions{flex-basis:232px}
 html:root body #employeePortal .workspace-current-actions button{padding:12px 16px!important;white-space:nowrap!important}
 html:root body #employeePortal .workspace-metrics .ops-metric{min-height:0!important;padding:0 20px!important;gap:6px!important}
