@@ -1,28 +1,34 @@
 package br.com.protecextintores.nativo
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -35,9 +41,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.NumberFormat
@@ -78,24 +90,15 @@ internal fun RegistrationScreen(vm: AppVm) {
             }
             return
         }
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Text("Etapa ${step + 1} de ${steps.size} · ${steps[step]}", style = MaterialTheme.typography.labelLarge)
-            LinearProgressIndicator(progress = { (step + 1) / steps.size.toFloat() }, modifier = Modifier.fillMaxWidth())
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                steps.forEachIndexed { index, name ->
-                    FilterChip(step == index, { vm.registrationStep(index) }, label = { Text(name) },
-                        enabled = !vm.busy)
-                }
-            }
-        }
+        RegistrationSteps(step, !vm.busy, vm::registrationStep)
+        val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
         AnimatedContent(
             targetState = step,
             modifier = Modifier.fillMaxWidth().weight(1f),
             transitionSpec = {
                 val direction = if (targetState > initialState) 1 else -1
-                (slideInHorizontally { direction * it / 6 } + fadeIn()) togetherWith
-                    (slideOutHorizontally { -direction * it / 6 } + fadeOut())
+                (slideInHorizontally(tween(300, easing = WebEaseOut)) { direction * distance } +
+                    fadeIn(tween(300, easing = WebEaseOut))) togetherWith ExitTransition.None
             },
             label = "Etapas do registro"
         ) { page ->
@@ -146,6 +149,42 @@ internal fun RegistrationScreen(vm: AppVm) {
             }
             edit = null
         }
+    }
+}
+
+@Composable
+private fun RegistrationSteps(current: Int, enabled: Boolean, choose: (Int) -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(10.dp)
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            steps.forEachIndexed { index, label ->
+                val active = index == current
+                val source = remember { MutableInteractionSource() }
+                val background by animateColorAsState(if (active) colors.surfaceVariant else colors.surface,
+                    tween(300, easing = WebEase), label = "Etapa selecionada")
+                val circle by animateColorAsState(if (active) colors.primary else colors.surface,
+                    tween(300, easing = WebEase), label = "Número da etapa")
+                Column(
+                    Modifier.weight(1f).heightIn(min = 58.dp).webPress(source).clip(shape).background(background)
+                        .selectable(active, source, null, enabled, Role.Tab) { choose(index) }
+                        .padding(horizontal = 3.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically)
+                ) {
+                    Box(Modifier.size(24.dp).background(circle, CircleShape)
+                        .border(1.dp, if (active) colors.primary else colors.outlineVariant, CircleShape),
+                        contentAlignment = Alignment.Center) {
+                        Text((index + 1).toString(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                            color = if (active) colors.onPrimary else colors.onSurface)
+                    }
+                    Text(label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
+                        color = if (active) colors.onSurface else colors.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold, maxLines = 2)
+                }
+            }
+        }
+        HorizontalDivider(Modifier.padding(top = 12.dp), color = colors.outline)
     }
 }
 
@@ -249,7 +288,7 @@ private fun RegistrationRowEditor(catalog: RegistrationCatalog, edit: RowToEdit,
         invalid = false
         row = JSONObject(row.toString()).put(key, value)
     }
-    AlertDialog(
+    ProtecDialog(
         onDismissRequest = dismiss,
         title = { Text(registrationLabel(group)) },
         text = {
@@ -339,7 +378,7 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
     if (open) {
         var search by rememberSaveable { mutableStateOf("") }
         val filtered = options.filter { it.label.contains(search.trim(), ignoreCase = true) }
-        AlertDialog(
+        ProtecDialog(
             onDismissRequest = { open = false },
             title = { Text(label) },
             text = {

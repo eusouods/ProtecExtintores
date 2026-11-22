@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -102,7 +101,7 @@ internal fun AdminCatalog(vm: AppVm, state: JSONObject, area: CatalogArea) {
         }
     }
     remove?.let { record ->
-        AlertDialog(onDismissRequest = { if (!vm.busy) remove = null },
+        ProtecDialog(onDismissRequest = { if (!vm.busy) remove = null },
             title = { Text("Remover ${record.str("name")}?") },
             text = { Text("O item sairá do catálogo para novos registros.") },
             confirmButton = {
@@ -120,7 +119,7 @@ internal fun NativeFieldsDialog(
         mutableStateOf(fields.associate { it.key to (original?.str(it.key) ?: it.default) })
     }
     var issue by remember(original, fields) { mutableStateOf<String?>(null) }
-    AlertDialog(
+    ProtecDialog(
         onDismissRequest = { if (!busy) close() }, title = { Text(title) },
         text = {
             Column(Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {

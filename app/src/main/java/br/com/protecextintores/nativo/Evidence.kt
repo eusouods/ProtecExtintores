@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,7 +47,7 @@ private fun EvidenceDialog(part: String, url: String, close: () -> Unit) {
     var playbackError by remember(url) { mutableStateOf(false) }
     LaunchedEffect(url, token) { ready = Api.downloadEvidence(token, url, file) }
     DisposableEffect(file) { onDispose { file.delete() } }
-    AlertDialog(onDismissRequest = close, title = { Text(part) }, text = {
+    ProtecDialog(onDismissRequest = close, title = { Text(part) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             when (ready) {
                 null -> CircularProgressIndicator()

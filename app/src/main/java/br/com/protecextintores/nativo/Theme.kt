@@ -1,7 +1,9 @@
 package br.com.protecextintores.nativo
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -12,6 +14,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF003CFF),
@@ -27,7 +30,8 @@ private val LightColors = lightColorScheme(
     surfaceVariant = Color(0xFFE6ECFF),
     onSurfaceVariant = Color(0xFF4D5A80),
     outline = Color(0xFFD3DCFA),
-    outlineVariant = Color(0xFFD3DCFA),
+    outlineVariant = Color(0xFF8A99D6),
+    scrim = Color(0xFF0A1233),
     error = Color(0xFFB3261E),
     onError = Color(0xFFFFFFFF)
 )
@@ -46,33 +50,34 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = Color(0xFF1C2A44),
     onSurfaceVariant = Color(0xFF9BA7BF),
     outline = Color(0xFF26324D),
-    outlineVariant = Color(0xFF26324D),
+    outlineVariant = Color(0xFF5D6F93),
+    scrim = Color(0xFF02050C),
     error = Color(0xFFFF8A80),
     onError = Color(0xFF0F131F)
 )
 
 @OptIn(ExperimentalTextApi::class)
-private val Nunito = FontFamily(
-    listOf(400, 500, 600, 700, 800, 900).map { value ->
-        Font(R.font.nunito, weight = FontWeight(value),
+private val Inter = FontFamily(
+    listOf(400, 500, 600, 650, 700, 800, 900).map { value ->
+        Font(R.font.inter, weight = FontWeight(value),
             variationSettings = FontVariation.Settings(FontVariation.weight(value)))
     }
 )
 
 private val ProtecTypography = Typography().let {
     Typography(
-        headlineLarge = it.headlineLarge.copy(fontFamily = Nunito),
-        headlineMedium = it.headlineMedium.copy(fontFamily = Nunito),
-        headlineSmall = it.headlineSmall.copy(fontFamily = Nunito),
-        titleLarge = it.titleLarge.copy(fontFamily = Nunito),
-        titleMedium = it.titleMedium.copy(fontFamily = Nunito),
-        titleSmall = it.titleSmall.copy(fontFamily = Nunito),
-        bodyLarge = it.bodyLarge.copy(fontFamily = Nunito),
-        bodyMedium = it.bodyMedium.copy(fontFamily = Nunito),
-        bodySmall = it.bodySmall.copy(fontFamily = Nunito),
-        labelLarge = it.labelLarge.copy(fontFamily = Nunito),
-        labelMedium = it.labelMedium.copy(fontFamily = Nunito),
-        labelSmall = it.labelSmall.copy(fontFamily = Nunito)
+        headlineLarge = it.headlineLarge.copy(fontFamily = Inter),
+        headlineMedium = it.headlineMedium.copy(fontFamily = Inter),
+        headlineSmall = it.headlineSmall.copy(fontFamily = Inter),
+        titleLarge = it.titleLarge.copy(fontFamily = Inter),
+        titleMedium = it.titleMedium.copy(fontFamily = Inter),
+        titleSmall = it.titleSmall.copy(fontFamily = Inter),
+        bodyLarge = it.bodyLarge.copy(fontFamily = Inter),
+        bodyMedium = it.bodyMedium.copy(fontFamily = Inter),
+        bodySmall = it.bodySmall.copy(fontFamily = Inter),
+        labelLarge = it.labelLarge.copy(fontFamily = Inter),
+        labelMedium = it.labelMedium.copy(fontFamily = Inter),
+        labelSmall = it.labelSmall.copy(fontFamily = Inter)
     )
 }
 
@@ -83,5 +88,11 @@ fun ProtecTheme(mode: String, content: @Composable () -> Unit) {
         "light" -> false
         else -> isSystemInDarkTheme()
     }
-    MaterialTheme(colorScheme = if (dark) DarkColors else LightColors, typography = ProtecTypography, content = content)
+    MaterialTheme(
+        colorScheme = if (dark) DarkColors else LightColors,
+        typography = ProtecTypography,
+        shapes = Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(10.dp),
+            medium = RoundedCornerShape(14.dp), large = RoundedCornerShape(16.dp)),
+        content = content
+    )
 }

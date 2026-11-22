@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -50,8 +49,8 @@ internal fun AdminCare(vm: AppVm) {
         item { PanelIntro("ATENDIMENTO", "Garantias e avaliações") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(!reviews, { reviews = false }, label = { Text("Garantias") })
-                FilterChip(reviews, { reviews = true }, label = { Text("Avaliações") })
+                WebFilterChip(!reviews, { reviews = false }, label = { Text("Garantias") })
+                WebFilterChip(reviews, { reviews = true }, label = { Text("Avaliações") })
             }
         }
         when {

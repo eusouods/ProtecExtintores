@@ -2,6 +2,7 @@ package br.com.protecextintores.nativo
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -20,11 +21,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -35,38 +35,47 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
+internal fun Modifier.webPress(source: MutableInteractionSource, pressedScale: Float = .96f): Modifier {
+    val pressed by source.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) pressedScale else 1f,
+        tween(if (pressed) 80 else 200, easing = WebEase), label = "Pressão do toque")
+    return graphicsLayer { scaleX = scale; scaleY = scale }
+}
+
+@Composable
 fun PrimaryButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, label = "press")
     Button(
         onClick = onClick,
         enabled = enabled,
         interactionSource = source,
-        shape = RoundedCornerShape(14.dp),
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp).scale(scale)
+        shape = RoundedCornerShape(10.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 44.dp).webPress(source)
     ) {
-        Text(text, fontWeight = FontWeight.Bold)
+        Text(text, fontWeight = FontWeight.ExtraBold)
     }
 }
 
 @Composable
 fun SoftButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, label = "press")
+    val colors = MaterialTheme.colorScheme
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         interactionSource = source,
-        shape = RoundedCornerShape(14.dp),
-        modifier = modifier.heightIn(min = 52.dp).scale(scale)
+        shape = RoundedCornerShape(10.dp),
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.surface, contentColor = colors.onSurface),
+        border = BorderStroke(1.dp, if (enabled) colors.outlineVariant else colors.outline),
+        modifier = modifier.heightIn(min = 44.dp).webPress(source)
     ) {
         Text(text, fontWeight = FontWeight.SemiBold)
     }
@@ -75,7 +84,7 @@ fun SoftButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = t
 @Composable
 fun CardBox(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = modifier.fillMaxWidth()
@@ -102,18 +111,20 @@ fun StatusChip(status: String) {
 
 @Composable
 fun ScreenHeader(title: String, onBack: (() -> Unit)? = null) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (onBack != null) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+    val colors = MaterialTheme.colorScheme
+    Surface(color = colors.surface) {
+        Column {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 62.dp).padding(start = 16.dp, end = 8.dp, top = 5.dp, bottom = 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                if (onBack != null) IconButton(onClick = onBack, modifier = Modifier.semantics { contentDescription = "Voltar" }) {
+                    PanelGlyph(PanelIcon.Close, colors.onSurface, 20.dp)
+                }
             }
-        } else {
-            Box(modifier = Modifier.size(12.dp))
+            HorizontalDivider(color = colors.outline)
         }
-        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     }
 }
 

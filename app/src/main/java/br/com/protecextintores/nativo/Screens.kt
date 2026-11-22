@@ -1,17 +1,13 @@
 package br.com.protecextintores.nativo
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +21,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -36,22 +33,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -59,63 +63,67 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.delay
-
-private fun depth(screen: Screen): Int = when (screen) {
-    Screen.Login -> 0
-    Screen.Home -> 1
-    Screen.Portal -> 1
-    is Screen.Detail -> 2
-    is Screen.Registration -> 2
-    is Screen.Wizard -> 3
-}
 
 @Composable
 fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
-    BackHandler(enabled = vm.screen !is Screen.Login && vm.screen !is Screen.Home && vm.screen !is Screen.Portal) { vm.back() }
-    Box(modifier = Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
-        AnimatedContent(
-            targetState = vm.screen,
-            transitionSpec = {
-                val forward = depth(targetState) >= depth(initialState)
-                if (forward) {
-                    (slideInHorizontally(tween(320)) { it / 5 } + fadeIn(tween(320))) togetherWith
-                        (slideOutHorizontally(tween(260)) { -it / 8 } + fadeOut(tween(200)))
-                } else {
-                    (slideInHorizontally(tween(320)) { -it / 5 } + fadeIn(tween(320))) togetherWith
-                        (slideOutHorizontally(tween(260)) { it / 8 } + fadeOut(tween(200)))
-                }
-            },
-            label = "tela"
-        ) { screen ->
-            when (screen) {
-                is Screen.Login -> LoginScreen(vm)
-                is Screen.Home -> HomeScreen(vm)
-                is Screen.Portal -> PortalScreen(vm)
-                is Screen.Detail -> DetailScreen(vm, screen.id)
-                is Screen.Wizard -> WizardScreen(vm, screen.id, onRecord, onPick)
-                is Screen.Registration -> RegistrationScreen(vm)
-            }
+    val screen = vm.screen
+    val base = when (screen) {
+        is Screen.Registration -> screen.parent
+        is Screen.Detail, is Screen.Wizard -> Screen.Home
+        else -> screen
+    }
+    val dialogs = remember { mutableStateListOf<Any>() }
+    val workspace = rememberSaveableStateHolder()
+    val blur by animateDpAsState(if (dialogs.isNotEmpty()) 8.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque")
+    val message = vm.message
+    LaunchedEffect(message) {
+        if (message != null) {
+            delay(4500)
+            vm.message = null
         }
+    }
+    val feedback: @Composable () -> Unit = {
         MessageBar(vm)
         BusyOverlay(vm.busy, vm.busyText)
+    }
+    Box(modifier = Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
+        CompositionLocalProvider(LocalProtecDialogStack provides dialogs, LocalProtecDialogFeedback provides feedback) {
+            Box(Modifier.fillMaxSize().blur(blur)) {
+                key(base) {
+                    when (base) {
+                        Screen.Login -> LoginScreen(vm)
+                        Screen.Home -> workspace.SaveableStateProvider("employee:${Store.token.hashCode()}") { HomeScreen(vm) }
+                        Screen.Portal -> workspace.SaveableStateProvider("portal:${Store.token.hashCode()}") { PortalScreen(vm) }
+                        else -> Unit
+                    }
+                }
+            }
+            key(screen) {
+                when (screen) {
+                    is Screen.Detail -> ProtecSheet(onDismissRequest = vm::back) { DetailScreen(vm, screen.id) }
+                    is Screen.Wizard -> ProtecSheet(onDismissRequest = vm::back) { WizardScreen(vm, screen.id, onRecord, onPick) }
+                    is Screen.Registration -> ProtecSheet(onDismissRequest = vm::back) { RegistrationScreen(vm) }
+                    else -> Unit
+                }
+            }
+        }
+        if (dialogs.isEmpty()) feedback()
     }
 }
 
 @Composable
 private fun MessageBar(vm: AppVm) {
     val text = vm.message
-    LaunchedEffect(text) {
-        if (text != null) {
-            delay(4500)
-            vm.message = null
-        }
-    }
+    val distance = with(LocalDensity.current) { 14.dp.roundToPx() }
     Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
         AnimatedVisibility(
             visible = text != null,
-            enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { it / 2 },
-            exit = fadeOut(tween(200))
+            enter = fadeIn(tween(300, easing = WebEaseOut)) + slideInVertically(tween(300, easing = WebEaseOut)) { distance },
+            exit = fadeOut(tween(200, easing = WebEase))
         ) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
@@ -138,42 +146,57 @@ fun LoginScreen(vm: AppVm) {
     var user by rememberSaveable { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var show by remember { mutableStateOf(false) }
-    val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+    val colors = MaterialTheme.colorScheme
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        unfocusedContainerColor = colors.surface, focusedContainerColor = colors.surface,
+        unfocusedBorderColor = colors.outlineVariant, focusedBorderColor = colors.primary
+    )
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AnimatedVisibility(
-            visibleState = visible,
-            enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 6 }
-        ) {
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(
-                    painter = painterResource(R.drawable.company_logo),
-                    contentDescription = null,
-                    modifier = Modifier.size(84.dp).clip(RoundedCornerShape(22.dp))
-                )
-                Spacer(Modifier.height(18.dp))
-                Text("ProtecExtintores", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                Text("Acesso da equipe", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        WebRise(500, 16.dp) {
+            Column(Modifier.widthIn(max = 440.dp).fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(R.drawable.company_logo), null, Modifier.size(38.dp).clip(RoundedCornerShape(8.dp)))
+                    Text("ProtecExtintores", Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Surface(onClick = vm::cycleTheme, shape = RoundedCornerShape(10.dp), color = colors.surface,
+                        border = BorderStroke(1.dp, colors.outlineVariant)) {
+                        Box(Modifier.size(42.dp).semantics { contentDescription = "Alternar tema" },
+                            contentAlignment = Alignment.Center) { PanelGlyph(PanelIcon.Theme, colors.onSurface) }
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+                Text("PORTAL PROTECEXTINTORES", fontSize = 11.sp, letterSpacing = 1.32.sp,
+                    fontWeight = FontWeight.SemiBold, color = colors.secondary)
+                Spacer(Modifier.height(13.dp))
+                Text("Bem-vindo de volta.", fontSize = 30.sp, lineHeight = 36.sp,
+                    letterSpacing = (-1.05).sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(14.dp))
+                Text("Entre com o acesso fornecido pelo administrador. Seu painel é identificado automaticamente.",
+                    fontSize = 14.sp, lineHeight = 23.sp, color = colors.onSurfaceVariant)
                 Spacer(Modifier.height(28.dp))
+                Text("Usuário", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = user,
                     onValueChange = { user = it },
-                    label = { Text("Usuário") },
+                    placeholder = { Text("Seu usuário") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(10.dp), colors = fieldColors,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(18.dp))
+                Text("Senha", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = pass,
                     onValueChange = { pass = it },
-                    label = { Text("Senha") },
+                    placeholder = { Text("Sua senha") },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(10.dp), colors = fieldColors,
                     visualTransformation = if (show) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { vm.login(user, pass) }),
@@ -183,7 +206,12 @@ fun LoginScreen(vm: AppVm) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(20.dp))
-                PrimaryButton("Entrar") { vm.login(user, pass) }
+                PrimaryButton("Entrar", modifier = Modifier.height(52.dp), enabled = !vm.busy) { vm.login(user, pass) }
+                Spacer(Modifier.height(19.dp))
+                androidx.compose.material3.HorizontalDivider(color = colors.outline)
+                Spacer(Modifier.height(15.dp))
+                Text("Acesso exclusivo para administradores, funcionários e vendedores autorizados.",
+                    fontSize = 11.sp, lineHeight = 19.sp, color = colors.onSurfaceVariant)
             }
         }
     }
@@ -197,12 +225,14 @@ fun HomeScreen(vm: AppVm) {
         return
     }
     var refreshKey by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    val refresh = { vm.refresh(); refreshKey++; Unit }
     PanelChrome(
         teamTabs, vm.employeePage, { vm.employeePage = it }, "FN",
         listOf(
-            PanelAction("Registrar serviço", PanelIcon.Plus, vm::startRegistration),
+            PanelAction("Nova ordem de serviço", PanelIcon.Plus, vm::startRegistration),
             PanelAction("Meu perfil", PanelIcon.People) { vm.employeePage = 4 }
-        ) + panelActions(vm) { vm.refresh(); refreshKey++ },
+        ) + panelActions(vm, refresh),
+        refresh = refresh, changeTheme = vm::cycleTheme, team = true,
         title = if (vm.employeePage == 4) "Meu perfil" else null
     ) { page ->
         when (page) {
@@ -264,20 +294,12 @@ private fun EmployeeOrders(vm: AppVm, profile: Profile) {
         item { PrimaryButton("＋ Registrar serviço", onClick = vm::startRegistration) }
         item { PanelSearch(query, { query = it }, "Buscar cliente, ordem ou equipamento") }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                listOf("Meus serviços", "Para aceitar", "Histórico").forEachIndexed { index, text ->
-                    FilterChip(vm.tab == index, { vm.tab = index }, label = { Text(text) })
-                }
-            }
+            WebSectionTabs(listOf(0 to "Meus serviços", 1 to "Para aceitar", 2 to "Histórico"),
+                vm.tab, { vm.tab = it })
         }
         if (shown.isEmpty()) item { EmptyRecord("Nenhuma ordem nesta seção.") }
         itemsIndexed(shown, key = { _, svc -> svc.id }) { index, svc ->
-            val visible = remember { MutableTransitionState(false).apply { targetState = true } }
-            AnimatedVisibility(
-                visibleState = visible,
-                enter = fadeIn(tween(240, delayMillis = minOf(index, 5) * 30)) +
-                    slideInVertically(tween(280, delayMillis = minOf(index, 5) * 30)) { it / 7 }
-            ) { ServiceCard(svc) { vm.open(svc.id) } }
+            WebRise(450, 16.dp, minOf(index, 5) * 40) { ServiceCard(svc) { vm.open(svc.id) } }
         }
     }
 }

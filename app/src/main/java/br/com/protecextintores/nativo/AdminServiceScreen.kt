@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -46,7 +44,10 @@ private fun reviewDraft(order: JSONObject): JSONObject {
 }
 
 @Composable
-internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean = false, staffProfile: Profile? = null, close: () -> Unit) {
+internal fun AdminServiceScreen(
+    vm: AppVm, order: JSONObject, readOnly: Boolean = false, staffProfile: Profile? = null,
+    afterTransfer: (() -> Unit)? = null, close: () -> Unit
+) {
     val svc = Svc(order)
     var tab by remember { mutableIntStateOf(0) }
     var edit by remember { mutableStateOf<JSONObject?>(null) }
@@ -73,13 +74,8 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                 PanelIntro(svc.code, svc.client.ifBlank { "Serviço próprio" }, listOf(svc.type, svc.date).filter(String::isNotBlank).joinToString(" · "))
             }
             item { StatusChip(svc.displayStatus) }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    listOf("Resumo", "Financeiro", "Histórico").forEachIndexed { index, label ->
-                        FilterChip(tab == index, { tab = index }, label = { Text(label) })
-                    }
-                }
-            }
+            item { WebSectionTabs(listOf(0 to "Resumo", 1 to if (readOnly) "Pagamento" else "Custos e recebimento", 2 to "Histórico"),
+                tab, { tab = it }) }
             when (tab) {
                 0 -> {
                     item {
@@ -99,7 +95,7 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
                     item { ServiceSelections(order) }
                     if (readOnly) {
                         val authoritative = staffProfile?.find(svc.id)
-                        item { StaffTransfer(vm, staffProfile, authoritative ?: svc, close) }
+                        item { StaffTransfer(vm, staffProfile, authoritative ?: svc, afterTransfer ?: close) }
                     }
                     items(svc.items) { item ->
                         CardBox {
@@ -180,13 +176,13 @@ internal fun AdminServiceScreen(vm: AppVm, order: JSONObject, readOnly: Boolean 
     if (linkContacts) vm.portalState?.optJSONObject("state")?.let { state ->
         LinkContactsDialog(vm, state, order) { linkContacts = false }
     }
-    if (confirm) AlertDialog(
+    if (confirm) ProtecDialog(
         onDismissRequest = { confirm = false }, title = { Text("Finalizar ${svc.code}?") },
         text = { Text("Confira os equipamentos e as evidências. A finalização encerra a execução da ordem.") },
         confirmButton = { TextButton(onClick = { confirm = false; vm.finalizeAdminService(order) {} }) { Text("Finalizar serviço") } },
         dismissButton = { TextButton(onClick = { confirm = false }) { Text("Voltar") } }
     )
-    if (receipt) AlertDialog(
+    if (receipt) ProtecDialog(
         onDismissRequest = { receipt = false }, title = { Text("Registrar recebimento") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -212,7 +208,7 @@ private fun LinkContactsDialog(vm: AppVm, state: JSONObject, order: JSONObject, 
     val sellers = state.optJSONArray("sellers").objects().filter { it.optBoolean("active", true) }
     var clientId by remember { mutableStateOf(order.str("clientId").takeIf { id -> clients.any { it.str("id") == id } }.orEmpty()) }
     var sellerId by remember { mutableStateOf(order.str("sellerId").takeIf { id -> sellers.any { it.str("id") == id } }.orEmpty()) }
-    AlertDialog(
+    ProtecDialog(
         onDismissRequest = { if (!vm.busy) close() },
         title = { Text("Vincular cliente / vendedor") },
         text = {
@@ -240,7 +236,7 @@ private fun ContactPicker(
         query = ""
         expanded = true
     }
-    if (expanded) AlertDialog(
+    if (expanded) ProtecDialog(
         onDismissRequest = { expanded = false }, title = { Text(label) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {

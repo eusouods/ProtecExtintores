@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -148,7 +147,7 @@ fun DetailScreen(vm: AppVm, id: String) {
         val next = maxOf(0, minOf(current + 1, order.size - 1))
         val options = order.filterIndexed { i, _ -> flow.allowSkip || i <= current + 1 }
         var chosen by remember { mutableStateOf(order.getOrElse(next) { "" }) }
-        AlertDialog(
+        ProtecDialog(
             onDismissRequest = { stageDialog = false },
             title = { Text("Atualizar etapa") },
             text = {
@@ -178,7 +177,7 @@ fun DetailScreen(vm: AppVm, id: String) {
 
     if (pauseDialog) {
         var reason by remember { mutableStateOf("") }
-        AlertDialog(
+        ProtecDialog(
             onDismissRequest = { pauseDialog = false },
             title = { Text("Pausar serviço") },
             text = {

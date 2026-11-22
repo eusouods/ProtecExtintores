@@ -1,12 +1,11 @@
 package br.com.protecextintores.nativo
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -45,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -66,6 +66,7 @@ fun WizardScreen(vm: AppVm, id: String, onRecord: (String) -> Unit, onPick: (Str
     val cur = st.step.coerceIn(0, steps.size - 1)
     val step = steps[cur]
     val last = cur == steps.size - 1
+    val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
 
     Column(modifier = Modifier.fillMaxSize()) {
         ScreenHeader("Concluir execução", onBack = { vm.back() })
@@ -74,13 +75,9 @@ fun WizardScreen(vm: AppVm, id: String, onRecord: (String) -> Unit, onPick: (Str
             AnimatedContent(
                 targetState = step,
                 transitionSpec = {
-                    if (st.goingBack) {
-                        (slideInHorizontally(tween(300)) { -it / 4 } + fadeIn(tween(300))) togetherWith
-                            (slideOutHorizontally(tween(220)) { it / 4 } + fadeOut(tween(180)))
-                    } else {
-                        (slideInHorizontally(tween(300)) { it / 4 } + fadeIn(tween(300))) togetherWith
-                            (slideOutHorizontally(tween(220)) { -it / 4 } + fadeOut(tween(180)))
-                    }
+                    val direction = if (st.goingBack) -1 else 1
+                    (slideInHorizontally(tween(300, easing = WebEaseOut)) { direction * distance } +
+                        fadeIn(tween(300, easing = WebEaseOut))) togetherWith ExitTransition.None
                 },
                 label = "passo"
             ) { s ->
@@ -141,7 +138,7 @@ private fun StepDots(steps: List<WStep>, current: Int) {
             val active = index <= current
             val color by animateColorAsState(
                 if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                animationSpec = tween(350),
+                animationSpec = tween(300, easing = WebEase),
                 label = "ponto"
             )
             Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {

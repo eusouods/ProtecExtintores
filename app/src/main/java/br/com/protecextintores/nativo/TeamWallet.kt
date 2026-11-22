@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -163,7 +162,7 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
     }
     pix?.let { bill ->
         val clipboard = LocalClipboardManager.current
-        AlertDialog(onDismissRequest = { pix = null },
+        ProtecDialog(onDismissRequest = { pix = null },
             title = { Text("Pix do acerto") },
             text = {
                 Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
@@ -191,7 +190,7 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
             "settle" -> "Conferir recebimento"
             else -> "Informar pagamento realizado"
         }
-        AlertDialog(onDismissRequest = { action = null }, title = { Text(title) }, text = {
+        ProtecDialog(onDismissRequest = { action = null }, title = { Text(title) }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(formatRegistrationMoney(intent.target.optLong("amountCents")), fontWeight = FontWeight.Bold)
                 when (intent.action) {

@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -43,8 +41,8 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
         item { PanelIntro("", if (employees) "Funcionários" else "Clientes e vendedores") }
         if (!employees) item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(group == "clients", { group = "clients" }, label = { Text("Clientes") })
-                FilterChip(group == "sellers", { group = "sellers" }, label = { Text("Vendedores") })
+                WebFilterChip(group == "clients", { group = "clients" }, label = { Text("Clientes") })
+                WebFilterChip(group == "sellers", { group = "sellers" }, label = { Text("Vendedores") })
             }
         }
         item { PrimaryButton("＋ Novo cadastro", enabled = !vm.busy) { editing = ContactEdit(null) } }
@@ -67,7 +65,7 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
         }
         var values by remember(current) { mutableStateOf(fields.associate { field -> field.key to current.original?.str(field.key).orEmpty() }) }
         var error by remember(current) { mutableStateOf("") }
-        AlertDialog(onDismissRequest = { if (!vm.busy) editing = null },
+        ProtecDialog(onDismissRequest = { if (!vm.busy) editing = null },
             title = { Text(if (current.original == null) "Novo cadastro" else "Editar cadastro") },
             text = {
                 Column(Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(7.dp)) {

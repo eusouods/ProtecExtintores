@@ -3,7 +3,6 @@ package br.com.protecextintores.nativo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -48,7 +47,7 @@ internal fun AdminTransfers(vm: AppVm, state: JSONObject, open: (String) -> Unit
     }
     decision?.let { payload ->
         val accept = payload.optBoolean("accept")
-        AlertDialog(
+        ProtecDialog(
             onDismissRequest = { if (!vm.busy) decision = null },
             title = { Text(if (accept) "Aceitar ${payload.str("code")}?" else "Recusar ${payload.str("code")}?") },
             text = {
@@ -101,7 +100,7 @@ internal fun StaffTransfer(vm: AppVm, profile: Profile?, service: Svc, after: ()
         }
     }
     if (!show || profile == null) return
-    AlertDialog(
+    ProtecDialog(
         onDismissRequest = { if (!sending) show = false },
         title = { Text(if (pending) "Cancelar envio?" else "Enviar ordem à administração?") },
         text = {

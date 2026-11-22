@@ -10,8 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -69,8 +67,8 @@ internal fun AdminAccess(state: JSONObject) {
         item { PanelIntro("", "Acessos da equipe") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                FilterChip(!seller, { if (!processing) { seller = false; issue = "" } }, label = { Text("Funcionários") })
-                FilterChip(seller, { if (!processing) { seller = true; issue = "" } }, label = { Text("Vendedores") })
+                WebFilterChip(!seller, { if (!processing) { seller = false; issue = "" } }, label = { Text("Funcionários") })
+                WebFilterChip(seller, { if (!processing) { seller = true; issue = "" } }, label = { Text("Vendedores") })
             }
         }
         if (issue.isNotBlank()) item { EmptyRecord(issue) }
@@ -99,14 +97,14 @@ internal fun AdminAccess(state: JSONObject) {
         var password by remember(action) { mutableStateOf("") }
         var person by remember(action) { mutableStateOf<JSONObject?>(null) }
         var picking by remember(action) { mutableStateOf(false) }
-        if (picking) AlertDialog(onDismissRequest = { picking = false }, title = { Text("Selecionar pessoa") }, text = {
+        if (picking) ProtecDialog(onDismissRequest = { picking = false }, title = { Text("Selecionar pessoa") }, text = {
             LazyColumn(Modifier.heightIn(max = 330.dp)) {
                 items(people) { record ->
                     TextButton(onClick = { person = record; picking = false }) { Text(record.str("name")) }
                 }
             }
         }, confirmButton = { TextButton(onClick = { picking = false }) { Text("Voltar") } })
-        else AlertDialog(onDismissRequest = { if (!processing) editing = null }, title = {
+        else ProtecDialog(onDismissRequest = { if (!processing) editing = null }, title = {
             Text(when (action.action) {
                 "create" -> "Criar acesso"
                 "reset" -> "Redefinir senha"

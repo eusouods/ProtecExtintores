@@ -3,8 +3,6 @@ package br.com.protecextintores.nativo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,8 +55,8 @@ internal fun AdminPowder(vm: AppVm, state: JSONObject) {
         if (stock.isEmpty()) item { EmptyRecord("O sistema ainda não tem saldos de pó configurados.") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(!archived, { archived = false }, label = { Text("Movimentações") })
-                FilterChip(archived, { archived = true }, label = { Text("Arquivo") })
+                WebFilterChip(!archived, { archived = false }, label = { Text("Movimentações") })
+                WebFilterChip(archived, { archived = true }, label = { Text("Arquivo") })
             }
         }
         val movements = if (archived) archive else current
@@ -119,7 +117,7 @@ internal fun AdminPowder(vm: AppVm, state: JSONObject) {
 
 @Composable
 private fun PowderConfirmation(vm: AppVm, title: String, description: String, payload: JSONObject, close: () -> Unit) {
-    AlertDialog(
+    ProtecDialog(
         onDismissRequest = { if (!vm.busy) close() },
         title = { Text(title) },
         text = { Text(description) },

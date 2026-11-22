@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,8 +52,8 @@ internal fun AdminAgenda(state: JSONObject, open: (String) -> Unit) {
         item { PanelIntro("", "Agenda de manutenções") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                FilterChip(!nextOnly, { nextOnly = false }, label = { Text("Agenda") })
-                FilterChip(nextOnly, { nextOnly = true }, label = { Text("Próximas manutenções") })
+                WebFilterChip(!nextOnly, { nextOnly = false }, label = { Text("Agenda") })
+                WebFilterChip(nextOnly, { nextOnly = true }, label = { Text("Próximas manutenções") })
             }
         }
         if (entries.isEmpty()) item { EmptyRecord("Nenhuma data futura cadastrada.") }
@@ -148,8 +147,8 @@ internal fun AdminTeamHistory(state: JSONObject, open: (String) -> Unit) {
         item { PanelIntro("", "Histórico da equipe") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(!sellers, { sellers = false }, label = { Text("Funcionários") })
-                FilterChip(sellers, { sellers = true }, label = { Text("Vendedores") })
+                WebFilterChip(!sellers, { sellers = false }, label = { Text("Funcionários") })
+                WebFilterChip(sellers, { sellers = true }, label = { Text("Vendedores") })
             }
         }
         if (groups.isEmpty()) item { EmptyRecord("Ainda não há ordens vinculadas.") }

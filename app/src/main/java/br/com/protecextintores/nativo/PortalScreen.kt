@@ -1,5 +1,6 @@
 package br.com.protecextintores.nativo
 
+import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -10,12 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -64,6 +65,16 @@ private val sellerMore = listOf(
     PanelTab("Pedidos", PanelIcon.List),
     PanelTab("Meu perfil", PanelIcon.People)
 )
+private data class AdminNavGroup(val label: String, val icon: PanelIcon, val sections: List<Pair<Int, String>>)
+private val maintenanceSections = listOf(1 to "Histórico", 9 to "Próximas manutenções")
+private val adminGroups = listOf(
+    AdminNavGroup("Estoque e preços", PanelIcon.Box, listOf(8 to "Estoque", 16 to "Preços sugeridos", 14 to "Pó e movimentações", 17 to "Envios da equipe")),
+    AdminNavGroup("Alertas e relatórios", PanelIcon.Chart, listOf(10 to "Alertas", 11 to "Relatórios", 7 to "Custos e cobranças")),
+    AdminNavGroup("Funcionários e acessos", PanelIcon.People, listOf(6 to "Funcionários", 13 to "Acessos")),
+    AdminNavGroup("Histórico da equipe", PanelIcon.Clock, listOf(12 to "Histórico da equipe")),
+    AdminNavGroup("Loja e pedidos", PanelIcon.Cart, listOf(5 to "Produtos da loja", 4 to "Pedidos")),
+    AdminNavGroup("Garantias e avaliações", PanelIcon.Shield, listOf(15 to "Garantias e avaliações"))
+)
 
 @Composable
 fun PortalScreen(vm: AppVm) {
@@ -78,24 +89,8 @@ fun PortalScreen(vm: AppVm) {
     var serviceId by rememberSaveable { mutableStateOf<String?>(null) }
     var sellerOrder by remember { mutableStateOf<JSONObject?>(null) }
     val openSellerOrder = sellerOrder
-    if (!admin && openSellerOrder != null) {
-        val token = Store.token
-        var profile by remember(openSellerOrder.str("id"), token) { mutableStateOf<Profile?>(null) }
-        LaunchedEffect(openSellerOrder.str("id"), token) {
-            val result = Api.bootstrap(token)
-            if (result.ok && Store.token == token && result.json.str("role") == "seller") profile = Profile(result.json)
-        }
-        AdminServiceScreen(vm, openSellerOrder, readOnly = true, staffProfile = profile) {
-            sellerOrder = null
-        }
-        return
-    }
     val currentOrder = root.optJSONObject("state")?.optJSONArray("services").objects()
         .firstOrNull { serviceId != null && it.str("id") == serviceId }
-    if (admin && currentOrder != null) {
-        AdminServiceScreen(vm, currentOrder) { serviceId = null }
-        return
-    }
     val selectedOwner = owner
     if (admin && selectedOwner != null) {
         androidx.activity.compose.BackHandler { owner = null }
@@ -105,19 +100,24 @@ fun PortalScreen(vm: AppVm) {
         }
         return
     }
+    val refresh = { vm.refreshPortal(); refreshKey++; Unit }
     val actions = buildList {
-        add(PanelAction("Registrar serviço", PanelIcon.Plus, vm::startRegistration))
-        if (admin) adminTabs.drop(4).forEachIndexed { index, tab ->
-            add(PanelAction(tab.title, tab.icon) { page = index + 4 })
+        if (!admin) add(PanelAction("Nova ordem de serviço", PanelIcon.Plus, vm::startRegistration))
+        if (admin) adminGroups.forEach { group ->
+            add(PanelAction(group.label, group.icon) { page = group.sections.first().first })
         }
         if (!admin) sellerMore.forEachIndexed { index, tab ->
             add(PanelAction(tab.title, tab.icon) { page = index + 4 })
         }
-        addAll(panelActions(vm) { vm.refreshPortal(); refreshKey++ })
+        if (admin) add(PanelAction("Sair do painel", PanelIcon.Exit) { vm.logout() })
+        else addAll(panelActions(vm, refresh))
     }
     val title = if (admin) adminTabs.getOrNull(page)?.title else sellerMore.getOrNull(page - 4)?.title
+    val sections = if (!admin) emptyList() else if (maintenanceSections.any { it.first == page }) maintenanceSections
+    else adminGroups.firstOrNull { group -> group.sections.any { it.first == page } }?.sections.orEmpty()
     PanelChrome(tabs, page, { page = it }, if (admin) "AD" else "VD", actions,
-        title = title
+        refresh = refresh, changeTheme = vm::cycleTheme, team = !admin, title = title,
+        dockSection = if (admin && page == 9) 1 else page, subTabs = sections
     ) { active ->
         if (admin) {
             val state = root.optJSONObject("state") ?: JSONObject()
@@ -155,6 +155,25 @@ fun PortalScreen(vm: AppVm) {
             }
         }
     }
+    if (admin && currentOrder != null) {
+        val close = { if (!vm.busy) serviceId = null }
+        ProtecSheet(onDismissRequest = close) {
+            AdminServiceScreen(vm, currentOrder, close = close)
+        }
+    }
+    if (!admin && openSellerOrder != null) {
+        val token = Store.token
+        var profile by remember(openSellerOrder.str("id"), token) { mutableStateOf<Profile?>(null) }
+        LaunchedEffect(openSellerOrder.str("id"), token) {
+            val result = Api.bootstrap(token)
+            if (result.ok && Store.token == token && result.json.str("role") == "seller") profile = Profile(result.json)
+        }
+        val close = { sellerOrder = null }
+        ProtecSheet(onDismissRequest = close) {
+            AdminServiceScreen(vm, openSellerOrder, readOnly = true, staffProfile = profile,
+                afterTransfer = { refreshKey++; close() }, close = close)
+        }
+    }
 }
 
 @Composable
@@ -182,9 +201,10 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
                     1 -> "Há 1 ordem aguardando sua revisão."
                     else -> "Há $pending ordens aguardando sua revisão."
                 }
-                PanelIntro("CENTRO OPERACIONAL", "Seu dia, organizado.", description)
+                PanelIntro("CENTRO OPERACIONAL", "Seu dia, organizado.", description,
+                    modifier = Modifier.padding(top = 21.dp))
             }
-            item { PrimaryButton("＋ Nova ordem de serviço", onClick = register) }
+            item { PrimaryButton("+ Nova ordem de serviço", modifier = Modifier.padding(top = 5.dp, bottom = 20.dp), onClick = register) }
             item {
                 PanelMetrics(listOf(
                     PanelMetric("Aguardando revisão", pending.toString(), "Execução enviada pela equipe"),
@@ -192,14 +212,21 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
                     PanelMetric("Serviços pausados", services.count { it.paused }.toString()),
                     PanelMetric("A receber", currency(unpaid.sumOf { it.optLong("revenueCents") } / 100.0),
                         if (overdue == 1) "1 acerto vencido" else "$overdue acertos vencidos")
-                ))
+                ), animateValues = true)
             }
-            item { PanelShortcut("Ordens de serviço", "Consultar andamento e serviços em revisão", PanelIcon.List) { select(1) } }
-            item { PanelShortcut("Extintores", "Tipos, capacidades e preços", PanelIcon.Flame) { select(2) } }
-            item { PanelShortcut("Custos e recebimentos", "Conferir resultados", PanelIcon.Chart) { select(7) } }
-            item { PanelShortcut("Pó e movimentações", "Acompanhar estoque e entradas", PanelIcon.List) { select(14) } }
-            item { PanelShortcut("Agenda", "Manutenções e próximos prazos", PanelIcon.Clock) { select(9) } }
-            item { PanelShortcut("Alertas", "Validades, revisões e estoque baixo", PanelIcon.List) { select(10) } }
+            item {
+                Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PanelShortcut("Pó, preços e envios", "Estoque e aceite da equipe", PanelIcon.Money) { select(14) }
+                    PanelShortcut("Ordens de serviço", "Acompanhar e revisar", PanelIcon.List) { select(1) }
+                    PanelShortcut("Custos e recebimentos", "Conferir resultados", PanelIcon.Money) { select(7) }
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    SoftButton("Agenda") { select(9) }
+                    SoftButton("Alertas") { select(10) }
+                }
+            }
         }
     }
 }
@@ -306,7 +333,7 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
         if (filterStatus) item {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 categories.forEachIndexed { index, (label, services) ->
-                    FilterChip(filter == index, { filter = index }, label = { Text("$label (${services.size})") })
+                    WebFilterChip(filter == index, { filter = index }, label = { Text("$label (${services.size})") })
                 }
             }
         }
@@ -316,13 +343,51 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
 }
 
 @Composable
-internal fun PanelList(content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit) {
+internal fun PanelList(content: LazyListScope.() -> Unit) {
+    val team = LocalTeamPanel.current
+    val openedAt = remember { SystemClock.uptimeMillis() }
+    val appeared = remember { mutableSetOf<Any>() }
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 13.dp, end = 13.dp, top = 17.dp, bottom = 21.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp),
-        content = content
-    )
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 18.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (team) content() else PanelEntryScope(this, appeared, openedAt).content()
+    }
+}
+
+private class PanelEntryScope(
+    private val list: LazyListScope,
+    private val appeared: MutableSet<Any>,
+    private val openedAt: Long
+) : LazyListScope by list {
+    private var position = 0
+
+    override fun item(key: Any?, contentType: Any?, content: @Composable LazyItemScope.() -> Unit) {
+        val index = position++
+        list.item(key, contentType) {
+            val enter = remember { this@PanelEntryScope.shouldEnter(key ?: index) }
+            WebRise(500, 16.dp, minOf(index, 5) * 50, play = enter) { content() }
+        }
+    }
+
+    override fun items(
+        count: Int,
+        key: ((Int) -> Any)?,
+        contentType: (Int) -> Any?,
+        itemContent: @Composable LazyItemScope.(Int) -> Unit
+    ) {
+        val start = position
+        position += count
+        list.items(count, key, contentType) { index ->
+            val enter = remember {
+                this@PanelEntryScope.shouldEnter(key?.invoke(index) ?: (start + index))
+            }
+            WebRise(450, 16.dp, minOf(index, 5) * 40, play = enter) { itemContent(index) }
+        }
+    }
+
+    private fun shouldEnter(key: Any): Boolean = appeared.add(key) && SystemClock.uptimeMillis() - openedAt < 900
 }
 
 private fun normalized(text: String) = Normalizer.normalize(text, Normalizer.Form.NFD)
@@ -365,7 +430,7 @@ private fun RecordCard(item: JSONObject, openRecord: ((JSONObject) -> Unit)? = n
             if (status.isNotEmpty()) StatusChip(status)
         }
     }
-    if (open) AlertDialog(
+    if (open) ProtecDialog(
         onDismissRequest = { open = false },
         title = { Text(title) },
         text = {
