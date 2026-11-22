@@ -92,6 +92,7 @@ internal enum class PanelIcon(val data: String) {
     Wallet("M20 8H5a2 2 0 0 1 0-4h13m2 4v12H5a2 2 0 0 1-2-2V6m17 6h-5a2 2 0 0 0 0 4h5"),
     Close("M6 6l12 12M18 6 6 18"),
     Chevron("m9 6 6 6-6 6"),
+    ChevronDown("m6 9 6 6 6-6"),
     Money("M12 2v20m5-15h-7a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H7"),
     Box("M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5m-9 5v8"),
     Cart("M6 7h14l-1.5 9H8zM6 7 5 3H2M10 20a1 1 0 1 1-2 0 1 1 0 0 1 2 0m8 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0"),

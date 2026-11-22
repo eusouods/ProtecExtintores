@@ -1,7 +1,5 @@
 package br.com.protecextintores.nativo
 
-import androidx.activity.compose.BackHandler
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -78,6 +76,7 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
     val screen = vm.screen
     val base = when (screen) {
         is Screen.Detail, is Screen.Wizard -> Screen.Home
+        is Screen.Registration -> screen.parent
         else -> screen
     }
     val dialogs = remember { mutableStateListOf<ProtecSheetEntry>() }
@@ -100,14 +99,6 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
                         Screen.Login -> LoginScreen(vm)
                         Screen.Home -> workspace.SaveableStateProvider("employee:${Store.token.hashCode()}") { HomeScreen(vm) }
                         Screen.Portal -> workspace.SaveableStateProvider("portal:${Store.token.hashCode()}") { PortalScreen(vm) }
-                        is Screen.Registration -> {
-                            BackHandler(onBack = vm::back)
-                            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                                    Box(Modifier.widthIn(max = 650.dp).fillMaxSize()) { RegistrationScreen(vm) }
-                                }
-                            }
-                        }
                         else -> Unit
                     }
                 }
@@ -116,13 +107,14 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
                 when (screen) {
                     is Screen.Detail -> ProtecSheet(onDismissRequest = vm::back) { DetailScreen(vm, screen.id) }
                     is Screen.Wizard -> ProtecSheet(onDismissRequest = vm::back) { WizardScreen(vm, screen.id, onRecord, onPick) }
+                    is Screen.Registration -> ProtecSheet(onDismissRequest = vm::back, registration = true) { RegistrationScreen(vm) }
                     else -> Unit
                 }
             }
             ProtecSheetHost(dialogs.toList())
         }
         MessageBar(vm)
-        BusyOverlay(vm.busy, vm.busyText)
+        BusyOverlay(vm.busy && screen !is Screen.Registration, vm.busyText)
     }
 }
 

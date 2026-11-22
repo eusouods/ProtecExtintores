@@ -332,12 +332,19 @@ html:root body #employeePortal .workspace-powder-stock p{font-size:14px}
 html:root body #employeePortal .workspace-powder-stock small{font-size:12px}
 html:root body :is(#dashboard,#employeePortal,#modalRoot) .helper,html:root body .ops-note{font-size:13px!important;line-height:1.65!important}
 html:root body #modalRoot .maintenance-registration-form{max-width:900px!important}
+@media(max-width:760px){
+ html:root body #modalRoot .maintenance-registration-form{
+  max-height:min(520px,max(56dvh,min(400px,100dvh)))!important;
+ }
+ html:root body #modalRoot .maintenance-registration-form .modal-actions>button{flex:1;min-width:0!important}
+}
 html:root body .registration-step-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--ui-border)}
 html:root body .registration-step-nav button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 8px;border:0;border-radius:10px;background:transparent;color:var(--ui-muted);font-size:13px;font-weight:600;cursor:pointer;white-space:normal}
 html:root body .registration-step-nav button>span{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid var(--ui-control);border-radius:50%;font-size:12px;flex-shrink:0}
 html:root body .registration-step-nav button[aria-current=step]{background:var(--ui-raised);color:var(--ui-text)}
 html:root body .registration-step-nav button[aria-current=step]>span{background:var(--ui-action);border-color:var(--ui-action);color:var(--ui-action-text)}
 html:root body .registration-step{display:flex;flex-direction:column;gap:22px;min-width:0}
+html:root body #modalRoot .maintenance-registration-form .modal-body{overflow-x:hidden}
 html:root body .registration-step :is(h3,.registration-section-head h3){font-size:16px!important}
 html:root body .registration-step :is(input,select,textarea){font-size:15px!important;min-height:46px}
 html:root body .registration-step .registration-service-card{border-radius:12px;box-shadow:none;background:var(--ui-panel)}

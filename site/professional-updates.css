@@ -448,7 +448,7 @@ html:root body .modal-back>.modal{animation:mvModal .34s var(--ease-out) both}
 html:root body #toast:not(.hidden){animation:mvToast .3s var(--ease-out) both}
 @media(max-width:760px){html:root body .modal-back>.modal{animation-name:mvSheet}}
 /* toques e passagem do mouse */
-html:root body :is(.btn,.icon-btn,.ibtn,.wiz-opt,#pageTabs button,.admin-tab,.admin-nav-item,.admin-more-row):active{transform:scale(.96)!important;transition-duration:.08s!important}
+html:root body :is(.btn,.icon-btn,.ibtn,.wiz-opt,#pageTabs button,.admin-tab,.admin-nav-item,.admin-more-row,.registration-step-nav button):active{transform:scale(.96)!important;transition-duration:.08s!important}
 html:root body .btn .rip{position:absolute;border-radius:50%;background:currentColor;opacity:.22;pointer-events:none;transform:scale(0);animation:mvRipple .6s ease-out forwards}
 html:root body .admin-nav-item svg{transition:transform .25s var(--ease-spring)}
 html:root body .admin-nav-item:hover svg{transform:translateX(3px) scale(1.08)}
@@ -461,6 +461,16 @@ html:root body .admin-tab svg{transition:color .25s ease}
 html:root body .wiz-step.wiz-anim{animation:wizIn .3s var(--ease-out) both}
 html:root body .wiz-step.wiz-anim.is-back{animation-name:wizInBack}
 html:root body .wiz-steps li span{transition:background-color .3s ease,border-color .3s ease,color .3s ease}
+html:root body .registration-step-nav button{transition:background-color .24s ease,color .24s ease,transform .2s var(--ease-out)}
+html:root body .registration-step-nav button>span{transition:background-color .24s ease,border-color .24s ease,color .24s ease}
+@media(prefers-reduced-motion:no-preference){
+ html:root body .maintenance-registration-form :is([data-customer-fields],[data-sale-section]):not([hidden]){
+  animation:mvRise .24s var(--ease-out) both;
+ }
+ html:root body :is(.workspace-history,.workspace-sync-details)[open]>:not(summary):not([hidden]){
+  animation:mvFade .24s var(--ease-out) both;
+ }
+}
 /* ações da tabela de Manutenções em ícones */
 html:root body #servicesTable .ops-cell-actions .ibtn{overflow:visible!important;position:relative!important;display:inline-grid!important;place-items:center!important;width:38px!important;height:38px!important;min-height:0!important;padding:0!important;gap:0!important;border-radius:12px!important;transition:transform .2s var(--ease-spring),background-color .15s ease,border-color .15s ease!important}
 html:root body #servicesTable .ops-cell-actions .ibtn[hidden]{display:none!important}

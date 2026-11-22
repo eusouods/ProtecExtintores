@@ -177,17 +177,19 @@ internal fun ProtecDialog(
 internal fun ProtecSheet(
     onDismissRequest: () -> Unit,
     navigation: Boolean = false,
+    registration: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val host = LocalProtecSheets.current
     val dismiss by rememberUpdatedState(onDismissRequest)
     val sheetContent by rememberUpdatedState(content)
     val navSheet by rememberUpdatedState(navigation)
+    val registrationSheet by rememberUpdatedState(registration)
     val team by rememberUpdatedState(LocalTeamPanel.current)
     val entry = remember {
         ProtecSheetEntry { top ->
             CompositionLocalProvider(LocalTeamPanel provides team) {
-                ProtecSheetLayer(top, navSheet, dismiss, sheetContent)
+                ProtecSheetLayer(top, navSheet, registrationSheet, dismiss, sheetContent)
             }
         }
     }
@@ -209,6 +211,7 @@ internal fun ProtecSheetHost(sheets: List<ProtecSheetEntry>) {
 private fun ProtecSheetLayer(
     top: Boolean,
     navigation: Boolean,
+    registration: Boolean,
     onDismissRequest: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -233,14 +236,19 @@ private fun ProtecSheetLayer(
             .clearAndSetSemantics {})
         BoxWithConstraints(
             Modifier.fillMaxSize()
-                .padding(if (navigation) PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp) else PaddingValues(bottom = 8.dp))
+                .padding(when {
+                    navigation -> PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp)
+                    registration -> PaddingValues()
+                    else -> PaddingValues(bottom = 8.dp)
+                })
                 .clipToBounds(),
             contentAlignment = Alignment.BottomCenter
         ) {
-            val maxSheetHeight = maxHeight * when {
-                maxHeight < 360.dp -> 1f
-                navigation -> .82f
-                else -> .92f
+            val maxSheetHeight = when {
+                registration -> (maxHeight * .56f).coerceIn(minOf(400.dp, maxHeight), minOf(520.dp, maxHeight))
+                maxHeight < 360.dp -> maxHeight
+                navigation -> maxHeight * .82f
+                else -> maxHeight * .92f
             }
             Surface(
                 modifier = Modifier.widthIn(max = if (navigation) 590.dp else 650.dp).fillMaxWidth().heightIn(max = maxSheetHeight)
@@ -251,7 +259,7 @@ private fun ProtecSheetLayer(
                     .blur(coveredBlur)
                     .semantics { isTraversalGroup = true }
                     .pointerInput(Unit) { detectTapGestures {} },
-                shape = RoundedCornerShape(17.dp),
+                shape = if (registration) RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp) else RoundedCornerShape(17.dp),
                 color = colors.surface,
                 border = BorderStroke(1.dp, colors.outline)
             ) {

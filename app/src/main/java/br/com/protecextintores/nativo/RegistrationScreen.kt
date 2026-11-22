@@ -1,10 +1,14 @@
 package br.com.protecextintores.nativo
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -22,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -43,6 +48,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,6 +67,14 @@ private data class RowToEdit(val group: String, val index: Int, val value: JSONO
 
 @Composable
 internal fun RegistrationScreen(vm: AppVm) {
+    Box(Modifier.fillMaxSize()) {
+        RegistrationContent(vm)
+        BusyOverlay(vm.busy, vm.busyText)
+    }
+}
+
+@Composable
+private fun RegistrationContent(vm: AppVm) {
     val catalog = vm.registrationCatalog
     val draft = vm.registrationDraft
     val step = draft.optInt("step").coerceIn(0, 3)
@@ -68,7 +82,7 @@ internal fun RegistrationScreen(vm: AppVm) {
     var edit by remember { mutableStateOf<RowToEdit?>(null) }
     if (catalog == null) {
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader("Registrar serviço") { vm.back() }
+            RegistrationHeader(vm)
             PanelList {
                 item {
                     Text(vm.registrationError.ifEmpty { "Carregando opções do sistema…" })
@@ -80,7 +94,7 @@ internal fun RegistrationScreen(vm: AppVm) {
     }
     if (pending) {
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader("Registrar serviço") { vm.back() }
+            RegistrationHeader(vm)
             PanelList {
                 item {
                     PanelIntro("", "Verificar envio", "A ordem está guardada neste aparelho. Verifique o envio antes de registrar outra.")
@@ -106,28 +120,56 @@ internal fun RegistrationScreen(vm: AppVm) {
 }
 
 @Composable
+private fun RegistrationHeader(vm: AppVm) {
+    val colors = MaterialTheme.colorScheme
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            "Registrar manutenção / serviço",
+            Modifier.weight(1f).semantics { heading() },
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
+        ExpressiveIconButton(vm::back, Modifier.semantics { contentDescription = "Fechar cadastro" },
+            enabled = !vm.busy, contentColor = colors.onSurfaceVariant, outline = colors.outlineVariant) {
+            PanelGlyph(PanelIcon.Close, iconSize = 18.dp)
+        }
+    }
+    HorizontalDivider(color = colors.outline)
+}
+
+@Composable
 private fun RegistrationForm(vm: AppVm, catalog: RegistrationCatalog, draft: JSONObject, step: Int, open: (RowToEdit) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val fontScale = LocalDensity.current.fontScale
         val compact = maxWidth < 360.dp || fontScale >= 1.25f
-        val showStepLabels = maxWidth >= 450.dp * fontScale
-        val short = maxHeight < 360.dp
-        val showHeader = maxHeight >= 260.dp
-        val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
+        val showStepLabels = maxWidth >= 355.dp * fontScale
+        val short = maxHeight < 350.dp
+        val showHeader = maxHeight >= 250.dp
+        val distance = with(LocalDensity.current) { 18.dp.roundToPx() }
         Column(Modifier.fillMaxSize()) {
-            if (showHeader) ScreenHeader("Registrar serviço") { vm.back() }
+            if (showHeader) RegistrationHeader(vm)
             if (!short) RegistrationSteps(step, !vm.busy, showStepLabels, vm::registrationStep)
+            else if (showHeader) Text("Etapa ${step + 1} de ${steps.size} · ${steps[step]}",
+                Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp), style = MaterialTheme.typography.labelMedium)
             AnimatedContent(
                 targetState = step,
                 modifier = Modifier.fillMaxWidth().weight(1f).clipToBounds(),
                 transitionSpec = {
                     val direction = if (targetState > initialState) 1 else -1
-                    (slideInHorizontally(tween(300, easing = WebEaseOut)) { direction * distance } +
-                        fadeIn(tween(300, easing = WebEaseOut))) togetherWith ExitTransition.None
+                    (slideInHorizontally(tween(240, easing = WebEaseOut)) { direction * distance } +
+                        fadeIn(tween(240, easing = WebEaseOut))) togetherWith ExitTransition.None
                 },
                 label = "Etapas do registro"
             ) { page ->
-                PanelList {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     if (short && vm.registrationError.isNotEmpty()) item { RegistrationError(vm.registrationError) }
                     when (page) {
                         0 -> item { RegistrationContact(vm, catalog, draft) }
@@ -159,11 +201,12 @@ private fun RegistrationForm(vm: AppVm, catalog: RegistrationCatalog, draft: JSO
                     else if (vm.registrationSaved) Text("Rascunho salvo neste aparelho", style = MaterialTheme.typography.bodySmall)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (step > 0) ExpressiveOutlinedButton(onClick = { vm.registrationStep(step - 1) }, enabled = !vm.busy,
-                        modifier = if (compact) Modifier.weight(.38f) else Modifier,
-                        contentPadding = PaddingValues(horizontal = if (compact) 8.dp else 24.dp, vertical = 8.dp)) { Text("Voltar") }
-                    val primaryWeight = if (compact && step > 0) .62f else 1f
-                    PrimaryButton(if (step == 3) "Registrar ordem" else "Avançar", modifier = Modifier.weight(primaryWeight), enabled = !vm.busy) {
+                    ExpressiveOutlinedButton(
+                        onClick = { if (step == 0) vm.back() else vm.registrationStep(step - 1) },
+                        enabled = !vm.busy, modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = if (compact) 8.dp else 16.dp, vertical = 8.dp)
+                    ) { Text(if (step == 0) "Cancelar" else "Voltar") }
+                    PrimaryButton(if (step == 3) "Registrar ordem" else "Avançar", modifier = Modifier.weight(1f), enabled = !vm.busy) {
                         if (step == 3) vm.submitRegistration() else vm.registrationStep(step + 1)
                     }
                 }
@@ -207,7 +250,7 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, showLabels: Boolea
                         Text((index + 1).toString(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             color = if (active) colors.onPrimary else colors.onSurface)
                     }
-                    if (showLabels) Text(label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
+                    if (showLabels) Text(label, fontSize = 10.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
                         color = if (active) colors.onSurface else colors.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -222,15 +265,25 @@ private fun RegistrationContact(vm: AppVm, catalog: RegistrationCatalog, draft: 
     val own = catalog.actorName.takeIf { it.isNotEmpty() }?.let { "Serviço próprio · $it" } ?: "Serviço próprio"
     val clients = directoryChoices(catalog, "clients")
     val choices = listOf(Choice("__self__", own), Choice("__new__", "Informar novo cliente")) + clients
+    val client = draft.str("clientChoice").ifBlank { "__self__" }
     Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
-        PanelIntro("", "Cliente")
-        Pick("Cliente", draft.str("clientChoice"), choices) { choice ->
+        Pick("Cliente", client, choices) { choice ->
             vm.editRegistration { put("clientChoice", choice) }
         }
-        if (draft.str("clientChoice") == "__new__") {
-            DraftField(vm, draft, "clientName", "Nome do cliente", limit = 100)
-            DraftField(vm, draft, "clientPhone", "Telefone (opcional)", KeyboardType.Phone, 30)
-            DraftField(vm, draft, "clientEmail", "E-mail (opcional)", KeyboardType.Email, 254)
+        if (client == "__self__" && vm.portalRole != "admin" && catalog.actorName.isNotBlank()) {
+            Text("Serviço próprio de ${catalog.actorName}. A cobrança interna continua vinculada à sua conta.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        }
+        AnimatedVisibility(
+            visible = client == "__new__",
+            enter = expandVertically(tween(240, easing = WebEaseOut)) + fadeIn(tween(240, easing = WebEaseOut)),
+            exit = shrinkVertically(tween(160, easing = WebEase)) + fadeOut(tween(160, easing = WebEase))
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                DraftField(vm, draft, "clientName", "Nome do cliente", limit = 100)
+                DraftField(vm, draft, "clientPhone", "Telefone (opcional)", KeyboardType.Phone, 30)
+                DraftField(vm, draft, "clientEmail", "E-mail (opcional)", KeyboardType.Email, 254)
+            }
         }
         if (vm.portalRole == "admin") {
             Pick("Vendedor responsável", draft.str("sellerChoice"), listOf(Choice("", "Sem vendedor")) + directoryChoices(catalog, "sellers")) {
@@ -398,10 +451,11 @@ private fun JSONObject.removeField(field: String): JSONObject = apply { remove(f
 private fun Pick(label: String, selected: String?, options: List<Choice>, choose: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val value = options.firstOrNull { it.value == selected }?.label ?: "Selecionar"
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(label, style = MaterialTheme.typography.labelMedium)
         ExpressiveOutlinedButton(onClick = { open = true }, enabled = options.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-            Text(value, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(value, Modifier.weight(1f), maxLines = 3, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start)
+            PanelGlyph(PanelIcon.ChevronDown, iconSize = 16.dp)
         }
     }
     if (open) {

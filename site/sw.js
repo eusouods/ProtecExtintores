@@ -1,5 +1,5 @@
 /* Cache the public shell; private records remain in the encrypted account vault. */
-const CACHE='protecextintores-vivid-v63',VERSION=63;
+const CACHE='protecextintores-vivid-v64',VERSION=64;
 const root=new URL('./',self.location.href),marker=new URL('__shell-ready',root);
 let preparing;
 function prepareShell(){

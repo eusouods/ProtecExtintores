@@ -360,7 +360,7 @@ if(typeof document!=='undefined'){document.addEventListener('click',event=>{if(e
 
 export function enhanceRegistrationSteps(form,initialStep=0){
  if(!form||form.dataset.stepsReady)return;form.dataset.stepsReady='true';form.noValidate=true;form.querySelector('[data-registration-version]')?.remove();
- const body=form.querySelector('.modal-body'),footer=form.querySelector('.modal-actions'),submit=footer.lastElementChild;
+ const body=form.querySelector('.modal-body'),footer=form.querySelector('.modal-actions'),cancel=footer.firstElementChild,submit=footer.lastElementChild;
  const nav=document.createElement('nav');nav.className='registration-step-nav';nav.setAttribute('aria-label','Etapas do registro');
  const titles=['Cliente','Equipamentos','Complementos','Conferir'],panels=titles.map((title,index)=>{const panel=document.createElement('section');panel.className='registration-step';panel.id='registration-step-'+index;panel.dataset.step=index;const button=document.createElement('button');button.type='button';button.innerHTML='<span>'+String(index+1)+'</span>'+title;button.setAttribute('aria-controls',panel.id);button.onclick=()=>move(index);nav.append(button);return panel});
  const customerFields=document.createElement('div');customerFields.className='form-grid registration-customer-fields';customerFields.dataset.customerFields='';
@@ -373,7 +373,7 @@ export function enhanceRegistrationSteps(form,initialStep=0){
  for(const node of nodes){let index=3;if(node.matches('.team-contact-grid,[data-customer-fields],[data-customer-owner-note]'))index=0;else if(node.matches('.team-equipment-section,.registration-purchase-card'))index=1;else if(node.matches('[data-complement-section],.registration-complementary'))index=2;else if(node.matches('.registration-required-note,[data-draft-state]'))continue;panels[index].append(node)}
  body.prepend(nav);nav.after(...panels);const review=document.createElement('div');review.className='registration-review-summary';panels[3].prepend(review);
  const previous=document.createElement('button'),next=document.createElement('button');previous.type=next.type='button';previous.className='btn btn-soft btn-small';next.className='btn btn-small';previous.textContent='Voltar';next.textContent='Avançar';footer.insertBefore(previous,submit);footer.insertBefore(next,submit);
- let step=0;
+ let step=0,stepAnimation;
  const refresh=()=>{
   const lines=[],value=(row,key)=>row.querySelector(key)?.selectedOptions[0]?.textContent||'';
   for(const row of form.querySelectorAll('[data-equipment-row]'))lines.push(['Manutenção · '+value(row,'[data-type]')+' · '+value(row,'[data-kg]'),value(row,'[data-qty]')]);
@@ -385,7 +385,27 @@ export function enhanceRegistrationSteps(form,initialStep=0){
   review.innerHTML='<h3>Confira a ordem</h3><p><b>'+esc(customer)+'</b></p><p>Revise suas escolhas antes de registrar. O envio ao sistema acontece automaticamente.</p><div class="workshop-equipment-summary">'+lines.map(([name,qty])=>'<div><span>'+esc(name)+'</span><b>'+esc(qty)+' unidade(s)</b></div>').join('')+'</div>';
  };
  const invalid=index=>[...panels[index].querySelectorAll('input,select,textarea')].find(input=>!input.disabled&&!input.checkValidity());
- function show(index){step=index;panels.forEach((panel,n)=>panel.hidden=n!==step);[...nav.children].forEach((button,n)=>{button.setAttribute('aria-current',n===step?'step':'false')});previous.hidden=step===0;next.hidden=step===3;submit.hidden=step!==3;form.dataset.currentStep=step;if(step===3){const contact=panels[3].querySelector('details');if(contact)contact.open=true;refresh();}body.scrollTop=0;form.dispatchEvent(new Event('protec-registration-step'));}
+ function show(index){
+  const direction=Math.sign(index-step);
+  step=index;
+  panels.forEach((panel,n)=>panel.hidden=n!==step);
+  [...nav.children].forEach((button,n)=>button.setAttribute('aria-current',n===step?'step':'false'));
+  cancel.hidden=step!==0;
+  previous.hidden=step===0;
+  next.hidden=step===3;
+  submit.hidden=step!==3;
+  form.dataset.currentStep=step;
+  if(step===3){const contact=panels[3].querySelector('details');if(contact)contact.open=true;refresh();}
+  body.scrollTop=0;
+  if(direction){
+   stepAnimation?.cancel();
+   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    stepAnimation=panels[step].animate([{opacity:0,transform:`translateX(${direction*18}px)`},{opacity:1,transform:'none'}],
+     {duration:240,easing:'cubic-bezier(.22,1,.36,1)'});
+   }
+  }
+  form.dispatchEvent(new Event('protec-registration-step'));
+ }
  function move(index){if(index>step){for(let n=0;n<index;n++){const control=invalid(n);if(control){show(n);control.focus();control.reportValidity();return}}}show(index)}
  previous.onclick=()=>show(Math.max(0,step-1));next.onclick=()=>move(Math.min(3,step+1));
  form.addEventListener('submit',event=>{if(step<3){event.preventDefault();event.stopImmediatePropagation();move(step+1);return;}for(let index=0;index<4;index++){const control=invalid(index);if(control){event.preventDefault();event.stopImmediatePropagation();show(index);control.focus();control.reportValidity();return}}},true);

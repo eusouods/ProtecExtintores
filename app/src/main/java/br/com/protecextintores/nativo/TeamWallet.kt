@@ -1,6 +1,12 @@
 package br.com.protecextintores.nativo
 
 import android.util.Base64
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -222,7 +228,15 @@ private fun BillCard(bill: JSONObject, group: Boolean, content: @Composable () -
             ExpressiveTextButton(onClick = { expanded = !expanded }) {
                 Text(if (expanded) "Ocultar ordens" else "Ver ordens incluídas (${orders.size})")
             }
-            if (expanded) orders.forEach { Text(it.str("code") + " · " + formatRegistrationMoney(it.optLong("amountCents"))) }
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(tween(240, easing = WebEaseOut)) + fadeIn(tween(240, easing = WebEaseOut)),
+                exit = shrinkVertically(tween(160, easing = WebEase)) + fadeOut(tween(160, easing = WebEase))
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    orders.forEach { Text(it.str("code") + " · " + formatRegistrationMoney(it.optLong("amountCents"))) }
+                }
+            }
         }
         content()
     }
