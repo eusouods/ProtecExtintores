@@ -4,8 +4,11 @@
   const key = 'protec-theme-mode';
   const assetRoot=new URL('./',document.currentScript.src);
   const systemTheme=window.matchMedia('(prefers-color-scheme: dark)');
-  let mode = systemTheme.matches ? 'dark' : 'light';
-  try { const saved=localStorage.getItem(key);if(saved==='dark'||saved==='light')mode=saved; } catch {}
+  const validMode = value => value === 'dark' || value === 'light' ? value : null;
+  const defaultMode = () => systemTheme.matches ? 'dark' : 'light';
+  let savedMode = null;
+  try { savedMode = validMode(localStorage.getItem(key)); } catch {}
+  let mode = savedMode ?? defaultMode();
 
   function host() {
     const selectors = [
@@ -32,8 +35,8 @@
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = mode === 'dark' ? '#1c3456' : '#123052';
     const appleBar=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(appleBar)appleBar.content=mode==='dark'?'black-translucent':'default';
-    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const icon=link.rel==='apple-touch-icon'?'icon-192':link.sizes.value==='16x16'?'favicon-16':'favicon-32';const href=new URL('./icons/'+icon+'.png?v=protec-navy-60',assetRoot).href;if(link.href!==href)link.href=href;});
-    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=protec-navy-60',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
+    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const icon=link.rel==='apple-touch-icon'?'icon-192':link.sizes.value==='16x16'?'favicon-16':'favicon-32';const href=new URL('./icons/'+icon+'.png?v=protec-navy-61',assetRoot).href;if(link.href!==href)link.href=href;});
+    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=protec-navy-61',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
     const button = document.querySelector('.theme-toggle');
     if (!button) return;
     const dark = mode === 'dark';
@@ -59,7 +62,8 @@
       button.className = 'theme-toggle';
       button.addEventListener('click', () => {
         mode = mode === 'dark' ? 'light' : 'dark';
-        try { localStorage.setItem(key, mode); } catch {}
+        savedMode = mode;
+        try { localStorage.setItem(key, savedMode); } catch {}
         apply();
       });
       parent.append(button);
@@ -77,11 +81,16 @@
       attributeFilter: ['class']
     });
     window.addEventListener('storage', event => {
-      if (event.key !== key) return;
-      mode = event.newValue === 'dark' ? 'dark' : 'light';
+      if (event.key !== key && event.key !== null) return;
+      savedMode = validMode(event.newValue);
+      mode = savedMode ?? defaultMode();
       apply();
     });
-    systemTheme.addEventListener?.('change',event=>{try{if(localStorage.getItem(key))return;}catch{}mode=event.matches?'dark':'light';apply();});
+    systemTheme.addEventListener?.('change', () => {
+      if (savedMode) return;
+      mode = defaultMode();
+      apply();
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

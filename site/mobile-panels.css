@@ -142,8 +142,7 @@
   html:root body.admin-open #adminMore .admin-more-row { color: var(--mobile-ink) !important; border-color: var(--mobile-line) !important; }
   html:root body.admin-open #adminMore .admin-more-row .ic { background: var(--mobile-active) !important; }
   html:root body.admin-open #adminMore::backdrop,
-  html:root body #employeePortal[data-team-mobile-role] .team-mobile-more::backdrop,
-  html:root body:is(.admin-open, :has(#employeePortal[data-team-mobile-role]:not(.hidden))) #modalRoot .modal-back {
+  html:root body #employeePortal[data-team-mobile-role] .team-mobile-more::backdrop {
     background: var(--mobile-scrim) !important;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px) !important;

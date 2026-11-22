@@ -69,7 +69,11 @@ html:root body th{background:var(--ui-raised,#dce9f3)!important;color:var(--ui-m
 html:root body td{font-size:12px;color:var(--ui-text,#20374a)!important}
 html:root body :is(.progress-bar,.meter-fill,.timeline-dot,.process-step.done i,.process-step.current i,.process-step.done:before,.process-step.current:before){background:var(--ui-text,#20374a)!important;border-color:var(--ui-text,#20374a)!important}
 html:root body :is(.fab,.floating-action,.whatsapp-button,.whatsapp-float,.contact-float,.toast){background:var(--ui-action,#226b99)!important;color:var(--ui-action-text,#ffffff)!important;border-color:var(--ui-control,#6b879a)!important;box-shadow:var(--ui-shadow)!important}
-html:root body .modal-back{background:rgb(var(--ui-scrim-rgb,17 14 12) / 68%)!important;backdrop-filter:blur(3px)}
+html:root body .modal-back{
+  background:rgb(var(--ui-scrim-rgb) / 40%)!important;
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+}
 html:root body .admin-content{padding-top:30px;padding-bottom:40px}
 html:root body .page-title h1{font-size:clamp(23px,2.5vw,29px);line-height:1.25}
 html:root body .page-title p{font-size:13px;line-height:1.6}
