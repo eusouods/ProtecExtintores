@@ -9,7 +9,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +30,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -186,6 +183,7 @@ private fun YesNo(value: Boolean?, onChange: (Boolean) -> Unit) {
 
 @Composable
 private fun ChoiceButton(text: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val source = remember { MutableInteractionSource() }
     val background by animateColorAsState(
         if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         animationSpec = tween(250),
@@ -197,10 +195,12 @@ private fun ChoiceButton(text: String, selected: Boolean, modifier: Modifier, on
         label = "texto"
     )
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        onClick = onClick,
+        interactionSource = source,
+        shape = expressiveActionShape(source, resting = if (selected) 16.dp else 26.dp),
         color = background,
         border = BorderStroke(1.5.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
-        modifier = modifier.heightIn(min = 60.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick)
+        modifier = modifier.heightIn(min = 60.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp), contentAlignment = Alignment.Center) {
             Text(text, color = foreground, fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -211,7 +211,7 @@ private fun ChoiceButton(text: String, selected: Boolean, modifier: Modifier, on
 @Composable
 private fun QtyStepper(value: Int, min: Int, max: Int, suffix: String = "", onChange: (Int) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        FilledTonalIconButton(onClick = { if (value > min) onChange(value - 1) }, enabled = value > min) {
+        ExpressiveIconButton(onClick = { if (value > min) onChange(value - 1) }, enabled = value > min) {
             Text("−", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
         Text(
@@ -221,7 +221,7 @@ private fun QtyStepper(value: Int, min: Int, max: Int, suffix: String = "", onCh
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp
         )
-        FilledTonalIconButton(onClick = { if (value < max) onChange(value + 1) }, enabled = value < max) {
+        ExpressiveIconButton(onClick = { if (value < max) onChange(value + 1) }, enabled = value < max) {
             Text("+", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
     }
@@ -306,7 +306,7 @@ private fun PartRowUi(ctx: WizardCtx, index: Int, row: PartRow) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             QtyStepper(row.qty, 1, max) { st.rows[index] = row.copy(qty = it) }
-            TextButton(onClick = { st.rows.removeAt(index) }) { Text("Remover") }
+            ExpressiveTextButton(onClick = { st.rows.removeAt(index) }) { Text("Remover") }
         }
     }
 }

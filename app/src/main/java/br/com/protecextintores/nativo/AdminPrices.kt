@@ -2,7 +2,6 @@ package br.com.protecextintores.nativo
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,7 +30,7 @@ internal fun AdminPrices(vm: AppVm, state: JSONObject) {
             response == null -> item { Text("Carregando preços…") }
             !response.ok || data == null -> item {
                 EmptyRecord(response.error.ifBlank { "Não foi possível carregar o catálogo." })
-                TextButton(onClick = { reload++ }) { Text("Tentar novamente") }
+                ExpressiveTextButton(onClick = { reload++ }) { Text("Tentar novamente") }
             }
             else -> {
                 item { PanelSearch(query, { query = it }, "Buscar tipo, capacidade, peça ou serviço") }

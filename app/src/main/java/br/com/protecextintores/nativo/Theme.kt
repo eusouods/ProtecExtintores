@@ -120,7 +120,7 @@ private val ProtecTypography = Typography().let {
         bodyLarge = it.bodyLarge.copy(fontFamily = Inter),
         bodyMedium = it.bodyMedium.copy(fontFamily = Inter),
         bodySmall = it.bodySmall.copy(fontFamily = Inter),
-        labelLarge = it.labelLarge.copy(fontFamily = Inter),
+        labelLarge = it.labelLarge.copy(fontFamily = Inter, fontWeight = FontWeight(650)),
         labelMedium = it.labelMedium.copy(fontFamily = Inter),
         labelSmall = it.labelSmall.copy(fontFamily = Inter)
     )

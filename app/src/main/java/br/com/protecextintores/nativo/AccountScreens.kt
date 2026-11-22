@@ -13,7 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,7 +76,7 @@ internal fun AdminAccess(state: JSONObject) {
         if (list == null) item { Text("Carregando acessos…") }
         else if (!list.ok) item {
             Text(list.error.ifBlank { "Acessos indisponíveis." })
-            TextButton(onClick = { reload++ }) { Text("Tentar novamente") }
+            ExpressiveTextButton(onClick = { reload++ }) { Text("Tentar novamente") }
         } else {
             val accounts = list.json.optJSONArray("items").objects()
             if (accounts.isEmpty()) item { EmptyRecord("Nenhum acesso cadastrado.") }
@@ -85,8 +84,8 @@ internal fun AdminAccess(state: JSONObject) {
                 CardBox {
                     Text(account.str(role + "Name"), fontWeight = FontWeight.Bold)
                     Text(account.str("username"))
-                    TextButton(enabled = !processing, onClick = { editing = AccessEdit("reset", account) }) { Text("Redefinir senha") }
-                    TextButton(enabled = !processing, onClick = { editing = AccessEdit("remove", account) }) { Text("Revogar acesso") }
+                    ExpressiveTextButton(enabled = !processing, onClick = { editing = AccessEdit("reset", account) }) { Text("Redefinir senha") }
+                    ExpressiveTextButton(enabled = !processing, onClick = { editing = AccessEdit("remove", account) }) { Text("Revogar acesso") }
                 }
             }
         }
@@ -100,10 +99,10 @@ internal fun AdminAccess(state: JSONObject) {
         if (picking) ProtecDialog(onDismissRequest = { picking = false }, title = { Text("Selecionar pessoa") }, text = {
             LazyColumn(Modifier.heightIn(max = 330.dp)) {
                 items(people) { record ->
-                    TextButton(onClick = { person = record; picking = false }) { Text(record.str("name")) }
+                    ExpressiveTextButton(onClick = { person = record; picking = false }) { Text(record.str("name")) }
                 }
             }
-        }, confirmButton = { TextButton(onClick = { picking = false }) { Text("Voltar") } })
+        }, confirmButton = { ExpressiveTextButton(onClick = { picking = false }) { Text("Voltar") } })
         else ProtecDialog(onDismissRequest = { if (!processing) editing = null }, title = {
             Text(when (action.action) {
                 "create" -> "Criar acesso"
@@ -113,7 +112,7 @@ internal fun AdminAccess(state: JSONObject) {
         }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 if (action.action == "create") {
-                    TextButton(onClick = { picking = true }) { Text(person?.str("name") ?: "Selecionar pessoa") }
+                    ExpressiveTextButton(onClick = { picking = true }) { Text(person?.str("name") ?: "Selecionar pessoa") }
                     OutlinedTextField(username, { if (it.length <= 30) username = it }, label = { Text("Nome de usuário") }, singleLine = true)
                     SecretField("Senha (mínimo 5 caracteres)", password) { password = it }
                 } else {
@@ -129,7 +128,7 @@ internal fun AdminAccess(state: JSONObject) {
                 "reset" -> password.length >= 8
                 else -> account != null
             }
-            TextButton(enabled = enabled && !processing, onClick = {
+            ExpressiveTextButton(enabled = enabled && !processing, onClick = {
                 when (action.action) {
                     "create" -> send { Api.postSection(token, endpoint, JSONObject().put("username", username.trim())
                         .put("password", password).put(role + "Id", person?.str("id"))) }
@@ -138,7 +137,7 @@ internal fun AdminAccess(state: JSONObject) {
                     else -> send { Api.revokeTeamAccess(token, endpoint, account?.str("id").orEmpty()) }
                 }
             }) { Text(if (action.action == "remove") "Revogar acesso" else "Salvar") }
-        }, dismissButton = { TextButton(onClick = { if (!processing) editing = null }) { Text("Cancelar") } })
+        }, dismissButton = { ExpressiveTextButton(onClick = { if (!processing) editing = null }) { Text("Cancelar") } })
     }
 }
 
@@ -161,7 +160,7 @@ internal fun AccountProfile(vm: AppVm) {
         val profile = response
         if (profile?.ok != true) item {
             Text(profile?.error?.ifBlank { "Perfil indisponível." } ?: "Carregando…")
-            if (profile != null) TextButton(onClick = { attempt++ }) { Text("Tentar novamente") }
+            if (profile != null) ExpressiveTextButton(onClick = { attempt++ }) { Text("Tentar novamente") }
         } else item {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(username, { if (it.length <= 30) username = it }, label = { Text("Usuário") }, modifier = Modifier.fillMaxWidth())

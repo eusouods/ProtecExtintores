@@ -31,7 +31,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -166,12 +165,12 @@ fun DetailScreen(vm: AppVm, id: String) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                ExpressiveTextButton(onClick = {
                     stageDialog = false
                     if (chosen.isNotEmpty()) vm.updateStage(svc, chosen)
                 }) { Text("Atualizar") }
             },
-            dismissButton = { TextButton(onClick = { stageDialog = false }) { Text("Cancelar") } }
+            dismissButton = { ExpressiveTextButton(onClick = { stageDialog = false }) { Text("Cancelar") } }
         )
     }
 
@@ -189,7 +188,7 @@ fun DetailScreen(vm: AppVm, id: String) {
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                ExpressiveTextButton(onClick = {
                     if (reason.trim().length < 3) {
                         vm.message = "Informe o motivo da pausa."
                     } else {
@@ -198,7 +197,7 @@ fun DetailScreen(vm: AppVm, id: String) {
                     }
                 }) { Text("Pausar") }
             },
-            dismissButton = { TextButton(onClick = { pauseDialog = false }) { Text("Cancelar") } }
+            dismissButton = { ExpressiveTextButton(onClick = { pauseDialog = false }) { Text("Cancelar") } }
         )
     }
 }

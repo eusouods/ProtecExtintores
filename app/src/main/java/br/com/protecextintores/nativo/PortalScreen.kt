@@ -20,7 +20,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -285,7 +284,7 @@ internal fun TeamDataPage(path: String, title: String, field: String, refresh: I
             item { PanelIntro("", title) }
             item {
                 EmptyRecord(response.error.ifEmpty { "Não foi possível carregar esta seção." })
-                TextButton(onClick = { retry++ }) { Text("Tentar novamente") }
+                ExpressiveTextButton(onClick = { retry++ }) { Text("Tentar novamente") }
             }
         }
         else -> RecordsPage(title, response.json.optJSONArray(field).objects(),
@@ -432,7 +431,7 @@ private fun RecordCard(item: JSONObject, openRecord: ((JSONObject) -> Unit)? = n
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { open = false }) { Text("Fechar") } },
+        confirmButton = { ExpressiveTextButton(onClick = { open = false }) { Text("Fechar") } },
         scrollBody = false
     )
 }

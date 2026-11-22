@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -181,10 +181,8 @@ private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> U
 
 @Composable
 private fun HeaderPanelAction(label: String, icon: PanelIcon, ink: Color, action: () -> Unit) {
-    Surface(onClick = action, shape = RoundedCornerShape(10.dp), color = Color.Transparent) {
-        Box(Modifier.size(44.dp).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
-            PanelGlyph(icon, ink, 19.dp)
-        }
+    ExpressiveIconButton(onClick = action, modifier = Modifier.semantics { contentDescription = label }, contentColor = ink) {
+        PanelGlyph(icon, ink, 19.dp)
     }
 }
 
@@ -196,9 +194,8 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
         Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Mais", Modifier.weight(1f), fontSize = if (team) 23.sp else 26.sp, fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-.7).sp)
-            if (team) Surface(onClick = close, shape = CircleShape, color = Color.Transparent) {
-                Box(Modifier.size(44.dp).semantics { contentDescription = "Fechar menu" },
-                    contentAlignment = Alignment.Center) { PanelGlyph(PanelIcon.Close) }
+            if (team) ExpressiveIconButton(onClick = close, modifier = Modifier.semantics { contentDescription = "Fechar menu" }) {
+                PanelGlyph(PanelIcon.Close)
             }
         }
         for (action in actions) {
@@ -206,8 +203,8 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
             val source = remember { MutableInteractionSource() }
             Row(
                 Modifier.fillMaxWidth().heightIn(min = if (team) 57.dp else 63.dp)
-                    .webPress(source)
-                    .clickable(interactionSource = source, indication = null) { close(); action.run() }
+                    .clip(expressiveActionShape(source, resting = 18.dp))
+                    .clickable(interactionSource = source, indication = ripple(), role = Role.Button) { close(); action.run() }
                     .padding(vertical = if (team) 7.dp else 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically
             ) {
@@ -235,7 +232,7 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: 
             val x by animateDpAsState(width * index + (width - pill) / 2,
                 tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Pílula")
             Box(Modifier.width(pill).height(48.dp).graphicsLayer { translationX = x.toPx() }
-                .background(colors.primaryContainer, RoundedCornerShape(10.dp)))
+                .background(colors.primaryContainer, RoundedCornerShape(24.dp)))
             Row(Modifier.fillMaxWidth().selectableGroup()) {
                 destinations.forEachIndexed { item, tab ->
                     val active = item == index
@@ -245,8 +242,8 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: 
                     val labelColor by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
                         tween(200, easing = WebEase), label = "Cor da aba")
                     Column(
-                        Modifier.weight(1f).heightIn(min = 48.dp).webPress(source, if (team) .94f else .96f).selectable(
-                            selected = active, role = Role.Tab, interactionSource = source, indication = null,
+                        Modifier.weight(1f).heightIn(min = 48.dp).clip(expressiveActionShape(source)).selectable(
+                            selected = active, role = Role.Tab, interactionSource = source, indication = ripple(),
                             onClick = { if (item == tabs.size) showMore() else select(item) }
                         ).padding(top = 6.dp, bottom = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -306,13 +303,13 @@ internal fun WebSectionTabs(options: List<Pair<Int, String>>, selected: Int, cho
 internal fun WebFilterChip(selected: Boolean, onClick: () -> Unit, enabled: Boolean = true, label: @Composable () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val source = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(10.dp)
-    val background by animateColorAsState(if (selected) colors.surfaceVariant else colors.surface,
+    val shape = expressiveActionShape(source, resting = if (selected) 16.dp else 24.dp)
+    val background by animateColorAsState(if (selected) colors.secondaryContainer else colors.surface,
         tween(170, easing = WebEase), label = "Fundo da seção")
     Box(
-        Modifier.heightIn(min = 44.dp).webPress(source).clip(shape).background(background)
-            .border(1.dp, if (selected) colors.outlineVariant else colors.outline, shape)
-            .selectable(selected, source, null, enabled, Role.Tab, onClick)
+        Modifier.heightIn(min = 48.dp).clip(shape).background(background)
+            .border(1.dp, if (selected) Color.Transparent else colors.outline, shape)
+            .selectable(selected, source, ripple(), enabled, Role.Tab, onClick)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -391,9 +388,9 @@ internal fun PanelShortcut(title: String, subtitle: String, icon: PanelIcon, cli
     val colors = MaterialTheme.colorScheme
     val source = remember { MutableInteractionSource() }
     Surface(
-        onClick = click, shape = RoundedCornerShape(16.dp), color = colors.surfaceVariant,
+        onClick = click, shape = expressiveActionShape(source, resting = 20.dp), color = colors.surfaceVariant,
         border = BorderStroke(1.dp, colors.outline), interactionSource = source,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 65.dp).webPress(source)
+        modifier = Modifier.fillMaxWidth().heightIn(min = 65.dp)
     ) {
         Row(Modifier.padding(13.dp), horizontalArrangement = Arrangement.spacedBy(9.dp),
             verticalAlignment = Alignment.CenterVertically) {

@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,7 +56,7 @@ internal fun AdminCare(vm: AppVm) {
             result == null -> item { Text("Carregando atendimentos…") }
             !result.ok -> item {
                 EmptyRecord(result.error.ifBlank { "Não foi possível carregar os atendimentos." })
-                TextButton(onClick = { reload++ }) { Text("Tentar novamente") }
+                ExpressiveTextButton(onClick = { reload++ }) { Text("Tentar novamente") }
             }
             else -> {
                 val records = result.json.optJSONArray(if (reviews) "reviews" else "claims").objects()

@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -179,8 +178,8 @@ internal fun AdminServiceScreen(
     if (confirm) ProtecDialog(
         onDismissRequest = { confirm = false }, title = { Text("Finalizar ${svc.code}?") },
         text = { Text("Confira os equipamentos e as evidências. A finalização encerra a execução da ordem.") },
-        confirmButton = { TextButton(onClick = { confirm = false; vm.finalizeAdminService(order) {} }) { Text("Finalizar serviço") } },
-        dismissButton = { TextButton(onClick = { confirm = false }) { Text("Voltar") } }
+        confirmButton = { ExpressiveTextButton(onClick = { confirm = false; vm.finalizeAdminService(order) {} }) { Text("Finalizar serviço") } },
+        dismissButton = { ExpressiveTextButton(onClick = { confirm = false }) { Text("Voltar") } }
     )
     if (receipt) ProtecDialog(
         onDismissRequest = { receipt = false }, title = { Text("Registrar recebimento") },
@@ -191,14 +190,14 @@ internal fun AdminServiceScreen(
             }
         },
         confirmButton = {
-            TextButton(enabled = reference.trim().length >= 3, onClick = {
+            ExpressiveTextButton(enabled = reference.trim().length >= 3, onClick = {
                 receipt = false
                 vm.adminAction("/api/admin/operations", JSONObject().put("action", "mark-paid")
                     .put("serviceIds", JSONArray(listOf(svc.id))).put("reference", reference.trim()),
                     "Recebimento registrado.") { reference = "" }
             }) { Text("Confirmar recebimento") }
         },
-        dismissButton = { TextButton(onClick = { receipt = false }) { Text("Cancelar") } }
+        dismissButton = { ExpressiveTextButton(onClick = { receipt = false }) { Text("Cancelar") } }
     )
 }
 
@@ -219,9 +218,9 @@ private fun LinkContactsDialog(vm: AppVm, state: JSONObject, order: JSONObject, 
             }
         },
         confirmButton = {
-            TextButton(enabled = !vm.busy, onClick = { vm.linkAdminContacts(order, clientId, sellerId, close) }) { Text("Salvar vínculos") }
+            ExpressiveTextButton(enabled = !vm.busy, onClick = { vm.linkAdminContacts(order, clientId, sellerId, close) }) { Text("Salvar vínculos") }
         },
-        dismissButton = { TextButton(enabled = !vm.busy, onClick = close) { Text("Cancelar") } }
+        dismissButton = { ExpressiveTextButton(enabled = !vm.busy, onClick = close) { Text("Cancelar") } }
     )
 }
 
@@ -243,15 +242,15 @@ private fun ContactPicker(
                 PanelSearch(query, { query = it }, "Buscar pelo nome")
                 LazyColumn(Modifier.heightIn(max = 255.dp)) {
                     item {
-                        TextButton(onClick = { choose(""); expanded = false }) { Text(blankLabel) }
+                        ExpressiveTextButton(onClick = { choose(""); expanded = false }) { Text(blankLabel) }
                     }
                     items(options.filter { matches(it, query) }) { contact ->
-                        TextButton(onClick = { choose(contact.str("id")); expanded = false }) { Text(contact.str("name")) }
+                        ExpressiveTextButton(onClick = { choose(contact.str("id")); expanded = false }) { Text(contact.str("name")) }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { expanded = false }) { Text("Voltar") } }
+        confirmButton = { ExpressiveTextButton(onClick = { expanded = false }) { Text("Voltar") } }
     )
 }
 

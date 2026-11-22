@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,9 +105,9 @@ private fun PowderConfirmation(vm: AppVm, title: String, description: String, pa
         title = { Text(title) },
         text = { Text(description) },
         confirmButton = {
-            TextButton(enabled = !vm.busy,
+            ExpressiveTextButton(enabled = !vm.busy,
                 onClick = { vm.adminAction("/api/admin/operations", payload, "Movimentações atualizadas.", close) }) { Text("Confirmar") }
         },
-        dismissButton = { TextButton(enabled = !vm.busy, onClick = close) { Text("Cancelar") } }
+        dismissButton = { ExpressiveTextButton(enabled = !vm.busy, onClick = close) { Text("Cancelar") } }
     )
 }

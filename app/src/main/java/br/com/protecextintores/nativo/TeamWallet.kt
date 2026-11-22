@@ -17,7 +17,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -103,7 +102,7 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
         if (response?.ok == false) {
             item {
                 EmptyRecord(response.error.ifEmpty { "Não foi possível carregar os pagamentos." })
-                TextButton(onClick = { reload++ }) { Text("Tentar novamente") }
+                ExpressiveTextButton(onClick = { reload++ }) { Text("Tentar novamente") }
             }
         }
         if (response?.ok == true && wallet != null) {
@@ -131,11 +130,11 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
                             if (bill.str("reportedAt").isNotBlank()) Text("Pagamento informado. Aguardando conferência.")
                             PrimaryButton("Ver Pix", enabled = !pending) { send(BillAction("pix", bill)) }
                             if (owner != null) {
-                                TextButton(enabled = !pending, onClick = { action = BillAction("settle", bill) }) {
+                                ExpressiveTextButton(enabled = !pending, onClick = { action = BillAction("settle", bill) }) {
                                     Text("Conferir recebimento")
                                 }
                             } else {
-                                TextButton(enabled = !pending, onClick = { action = BillAction("report", bill) }) {
+                                ExpressiveTextButton(enabled = !pending, onClick = { action = BillAction("report", bill) }) {
                                     Text("Já paguei · avisar administrador")
                                 }
                             }
@@ -173,15 +172,15 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
                     SelectionContainer { Text(bill.str("payload"), style = MaterialTheme.typography.bodySmall) }
                     Text("Confira o recebedor e o valor no aplicativo do banco.",
                         style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = {
+                    ExpressiveTextButton(onClick = {
                         pix = null
                         action = BillAction(if (owner == null) "report" else "settle", bill)
                     }) { Text(if (owner == null) "Já paguei · avisar administrador" else "Conferir recebimento") }
                 }
-            }, confirmButton = { TextButton(onClick = {
+            }, confirmButton = { ExpressiveTextButton(onClick = {
                 clipboard.setText(AnnotatedString(bill.str("payload")))
                 notice = "Código Pix copiado."
-            }) { Text("Copiar Pix") } }, dismissButton = { TextButton(onClick = { pix = null }) { Text("Fechar") } })
+            }) { Text("Copiar Pix") } }, dismissButton = { ExpressiveTextButton(onClick = { pix = null }) { Text("Fechar") } })
     }
     action?.let { intent ->
         var reference by remember(intent) { mutableStateOf("") }
@@ -204,9 +203,9 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
                 }
             }
         }, confirmButton = {
-            TextButton(enabled = !pending && (intent.action == "pix" || reference.trim().length >= 3),
+            ExpressiveTextButton(enabled = !pending && (intent.action == "pix" || reference.trim().length >= 3),
                 onClick = { action = null; send(intent, reference) }) { Text("Confirmar") }
-        }, dismissButton = { TextButton(onClick = { action = null }) { Text("Cancelar") } })
+        }, dismissButton = { ExpressiveTextButton(onClick = { action = null }) { Text("Cancelar") } })
     }
 }
 
@@ -223,7 +222,7 @@ private fun BillCard(bill: JSONObject, group: Boolean, content: @Composable () -
         if (date.isNotBlank()) Text(date)
         if (orders.isNotEmpty()) {
             var expanded by remember { mutableStateOf(false) }
-            TextButton(onClick = { expanded = !expanded }) {
+            ExpressiveTextButton(onClick = { expanded = !expanded }) {
                 Text(if (expanded) "Ocultar ordens" else "Ver ordens incluídas (${orders.size})")
             }
             if (expanded) orders.forEach { Text(it.str("code") + " · " + formatRegistrationMoney(it.optLong("amountCents"))) }

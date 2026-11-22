@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,11 +54,11 @@ internal fun AdminTransfers(vm: AppVm, state: JSONObject, open: (String) -> Unit
                 else "A ordem e a cobrança continuam com quem a registrou.")
             },
             confirmButton = {
-                TextButton(enabled = !vm.busy, onClick = {
+                ExpressiveTextButton(enabled = !vm.busy, onClick = {
                     vm.adminAction("/api/admin/operations", payload, if (accept) "Envio aceito." else "Envio recusado.") { decision = null }
                 }) { Text("Confirmar") }
             },
-            dismissButton = { TextButton(enabled = !vm.busy, onClick = { decision = null }) { Text("Cancelar") } }
+            dismissButton = { ExpressiveTextButton(enabled = !vm.busy, onClick = { decision = null }) { Text("Cancelar") } }
         )
     }
 }
@@ -116,7 +115,7 @@ internal fun StaffTransfer(vm: AppVm, profile: Profile?, service: Svc, after: ()
             }
         },
         confirmButton = {
-            TextButton(enabled = !sending, onClick = {
+            ExpressiveTextButton(enabled = !sending, onClick = {
                 val token = Store.token
                 val op = operation ?: JSONObject()
                     .put("id", UUID.randomUUID().toString()).put("deviceId", Store.deviceId)
@@ -143,6 +142,6 @@ internal fun StaffTransfer(vm: AppVm, profile: Profile?, service: Svc, after: ()
                 }
             }) { Text(if (pending) "Cancelar envio" else "Enviar para aceite") }
         },
-        dismissButton = { TextButton(enabled = !sending, onClick = { show = false }) { Text("Voltar") } }
+        dismissButton = { ExpressiveTextButton(enabled = !sending, onClick = { show = false }) { Text("Voltar") } }
     )
 }

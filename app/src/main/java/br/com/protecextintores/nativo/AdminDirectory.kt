@@ -11,7 +11,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +51,7 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
             CardBox {
                 Text(contact.str("name"), fontWeight = FontWeight.ExtraBold)
                 listOf("role", "phone", "email", "document").map(contact::str).filter(String::isNotBlank).forEach { Text(it) }
-                TextButton(onClick = { editing = ContactEdit(contact) }, enabled = !vm.busy) { Text("Editar cadastro") }
+                ExpressiveTextButton(onClick = { editing = ContactEdit(contact) }, enabled = !vm.busy) { Text("Editar cadastro") }
             }
         }
     }
@@ -76,7 +75,7 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
                 }
             },
             confirmButton = {
-                TextButton(enabled = !vm.busy, onClick = {
+                ExpressiveTextButton(enabled = !vm.busy, onClick = {
                     val name = values["name"].orEmpty().trim()
                     val phone = values["phone"].orEmpty().trim()
                     val email = values["email"].orEmpty().trim()
@@ -91,6 +90,6 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
                     }
                 }) { Text("Salvar") }
             },
-            dismissButton = { TextButton(onClick = { if (!vm.busy) editing = null }) { Text("Cancelar") } })
+            dismissButton = { ExpressiveTextButton(onClick = { if (!vm.busy) editing = null }) { Text("Cancelar") } })
     }
 }

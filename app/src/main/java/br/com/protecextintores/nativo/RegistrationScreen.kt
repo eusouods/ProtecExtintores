@@ -27,14 +27,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -113,13 +111,15 @@ internal fun RegistrationScreen(vm: AppVm) {
 @Composable
 private fun RegistrationForm(vm: AppVm, catalog: RegistrationCatalog, draft: JSONObject, step: Int, open: (RowToEdit) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val compact = maxWidth < 360.dp || LocalDensity.current.fontScale >= 1.25f
+        val fontScale = LocalDensity.current.fontScale
+        val compact = maxWidth < 360.dp || fontScale >= 1.25f
+        val showStepLabels = maxWidth >= 450.dp * fontScale
         val short = maxHeight < 360.dp
         val showHeader = maxHeight >= 260.dp
         val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
         Column(Modifier.fillMaxSize()) {
             if (showHeader) ScreenHeader("Registrar serviço") { vm.back() }
-            if (!short) RegistrationSteps(step, !vm.busy, compact, vm::registrationStep)
+            if (!short) RegistrationSteps(step, !vm.busy, showStepLabels, vm::registrationStep)
             AnimatedContent(
                 targetState = step,
                 modifier = Modifier.fillMaxWidth().weight(1f).clipToBounds(),
@@ -162,7 +162,7 @@ private fun RegistrationForm(vm: AppVm, catalog: RegistrationCatalog, draft: JSO
                     else if (vm.registrationSaved) Text("Rascunho salvo neste aparelho", style = MaterialTheme.typography.bodySmall)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (step > 0) OutlinedButton(onClick = { vm.registrationStep(step - 1) }, enabled = !vm.busy,
+                    if (step > 0) ExpressiveOutlinedButton(onClick = { vm.registrationStep(step - 1) }, enabled = !vm.busy,
                         modifier = if (compact) Modifier.weight(.38f) else Modifier,
                         contentPadding = PaddingValues(horizontal = if (compact) 8.dp else 24.dp, vertical = 8.dp)) { Text("Voltar") }
                     val primaryWeight = if (compact && step > 0) .62f else 1f
@@ -181,24 +181,24 @@ private fun RegistrationError(message: String) {
 }
 
 @Composable
-private fun RegistrationSteps(current: Int, enabled: Boolean, compact: Boolean, choose: (Int) -> Unit) {
+private fun RegistrationSteps(current: Int, enabled: Boolean, showLabels: Boolean, choose: (Int) -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(10.dp)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        if (compact) Text("Etapa ${current + 1} de ${steps.size} · ${steps[current]}",
+        if (!showLabels) Text("Etapa ${current + 1} de ${steps.size} · ${steps[current]}",
             Modifier.padding(bottom = 6.dp), style = MaterialTheme.typography.labelMedium)
         Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             steps.forEachIndexed { index, label ->
                 val active = index == current
                 val source = remember { MutableInteractionSource() }
+                val shape = expressiveActionShape(source)
                 val background by animateColorAsState(if (active) colors.surfaceVariant else colors.surface,
                     tween(300, easing = WebEase), label = "Etapa selecionada")
                 val circle by animateColorAsState(if (active) colors.primary else colors.surface,
                     tween(300, easing = WebEase), label = "Número da etapa")
                 Column(
-                    Modifier.weight(1f).heightIn(min = if (compact) 44.dp else 58.dp).webPress(source).clip(shape).background(background)
-                        .selectable(active, source, null, enabled, Role.Tab) { choose(index) }
-                        .semantics { if (compact) contentDescription = label }
+                    Modifier.weight(1f).heightIn(min = if (showLabels) 58.dp else 48.dp).clip(shape).background(background)
+                        .selectable(active, source, ripple(), enabled, Role.Tab) { choose(index) }
+                        .semantics { if (!showLabels) contentDescription = label }
                         .padding(horizontal = 3.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically)
@@ -209,9 +209,9 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, compact: Boolean, 
                         Text((index + 1).toString(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             color = if (active) colors.onPrimary else colors.onSurface)
                     }
-                    if (!compact) Text(label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
+                    if (showLabels) Text(label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
                         color = if (active) colors.onSurface else colors.onSurfaceVariant,
-                        fontWeight = FontWeight.SemiBold, maxLines = 2)
+                        fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -296,11 +296,11 @@ private fun RegistrationRows(group: String, rows: List<JSONObject>, catalog: Reg
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             Text("${line?.count ?: 1} × ${line?.label.orEmpty()}", style = MaterialTheme.typography.bodyMedium)
             FlowRow {
-                TextButton(onClick = { open(index, row) }) { Text("Editar") }
-                TextButton(onClick = { remove(index) }) { Text("Remover") }
+                ExpressiveTextButton(onClick = { open(index, row) }) { Text("Editar") }
+                ExpressiveTextButton(onClick = { remove(index) }) { Text("Remover") }
             }
         }
-        OutlinedButton(enabled = rows.size < 50, onClick = {
+        ExpressiveOutlinedButton(enabled = rows.size < 50, onClick = {
             val choice = JSONObject().put(if (group == "items") "qty" else "quantity", "1")
             if (group == "soldExtinguishers") choice.put("condition", "new")
             if (group == "hydrantHoses") choice.put("type", "Tipo 1").put("diameterMm", "38").put("lengthMeters", "15")
@@ -384,13 +384,13 @@ private fun RegistrationRowEditor(catalog: RegistrationCatalog, edit: RowToEdit,
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            ExpressiveButton(onClick = {
                 val data = JSONObject().put(group, JSONArray(listOf(row)))
                 if (catalog.validate(data, if (group in registrationGroups.take(2)) 1 else 2) == null) apply(row)
                 else invalid = true
             }) { Text("Salvar item") }
         },
-        dismissButton = { TextButton(onClick = dismiss) { Text("Cancelar") } }
+        dismissButton = { ExpressiveTextButton(onClick = dismiss) { Text("Cancelar") } }
     )
 }
 
@@ -402,7 +402,7 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
     val value = options.firstOrNull { it.value == selected }?.label ?: "Selecionar"
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium)
-        OutlinedButton(onClick = { open = true }, enabled = options.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
+        ExpressiveOutlinedButton(onClick = { open = true }, enabled = options.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
             Text(value, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
     }
@@ -417,14 +417,14 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
                     if (options.size > 12) PanelSearch(search, { search = it }, "Buscar")
                     LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
                         items(filtered) { option ->
-                            TextButton(onClick = { choose(option.value); open = false }, modifier = Modifier.fillMaxWidth()) {
+                            ExpressiveTextButton(onClick = { choose(option.value); open = false }, modifier = Modifier.fillMaxWidth()) {
                                 Text(option.label, fontWeight = if (option.value == selected) FontWeight.Bold else FontWeight.Normal)
                             }
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { open = false }) { Text("Fechar") } },
+            confirmButton = { ExpressiveTextButton(onClick = { open = false }) { Text("Fechar") } },
             scrollBody = false
         )
     }

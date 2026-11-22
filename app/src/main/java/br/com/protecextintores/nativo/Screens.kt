@@ -1,5 +1,7 @@
 package br.com.protecextintores.nativo
 
+import androidx.activity.compose.BackHandler
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -7,7 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +20,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.mandatorySystemGestures
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -31,13 +38,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -72,7 +77,6 @@ import kotlinx.coroutines.delay
 fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
     val screen = vm.screen
     val base = when (screen) {
-        is Screen.Registration -> screen.parent
         is Screen.Detail, is Screen.Wizard -> Screen.Home
         else -> screen
     }
@@ -90,7 +94,10 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
         MessageBar(vm)
         BusyOverlay(vm.busy, vm.busyText)
     }
-    Box(modifier = Modifier.fillMaxSize().safeDrawingPadding().clipToBounds()) {
+    val insets = if (screen is Screen.Registration) {
+        WindowInsets.safeDrawing.union(WindowInsets.mandatorySystemGestures.only(WindowInsetsSides.Bottom))
+    } else WindowInsets.safeDrawing
+    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(insets).clipToBounds()) {
         CompositionLocalProvider(LocalProtecDialogStack provides dialogs, LocalProtecDialogFeedback provides feedback) {
             Box(Modifier.fillMaxSize().blur(blur)) {
                 key(base) {
@@ -98,6 +105,14 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
                         Screen.Login -> LoginScreen(vm)
                         Screen.Home -> workspace.SaveableStateProvider("employee:${Store.token.hashCode()}") { HomeScreen(vm) }
                         Screen.Portal -> workspace.SaveableStateProvider("portal:${Store.token.hashCode()}") { PortalScreen(vm) }
+                        is Screen.Registration -> {
+                            BackHandler(onBack = vm::back)
+                            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                                    Box(Modifier.widthIn(max = 650.dp).fillMaxSize()) { RegistrationScreen(vm) }
+                                }
+                            }
+                        }
                         else -> Unit
                     }
                 }
@@ -106,7 +121,6 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
                 when (screen) {
                     is Screen.Detail -> ProtecSheet(onDismissRequest = vm::back) { DetailScreen(vm, screen.id) }
                     is Screen.Wizard -> ProtecSheet(onDismissRequest = vm::back) { WizardScreen(vm, screen.id, onRecord, onPick) }
-                    is Screen.Registration -> ProtecSheet(onDismissRequest = vm::back) { RegistrationScreen(vm) }
                     else -> Unit
                 }
             }
@@ -161,10 +175,8 @@ fun LoginScreen(vm: AppVm) {
                     verticalAlignment = Alignment.CenterVertically) {
                     Image(painterResource(R.drawable.company_logo), null, Modifier.size(38.dp).clip(RoundedCornerShape(8.dp)))
                     Text("ProtecExtintores", Modifier.weight(1f), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                    Surface(onClick = vm::cycleTheme, shape = RoundedCornerShape(10.dp), color = colors.surface,
-                        border = BorderStroke(1.dp, colors.outlineVariant)) {
-                        Box(Modifier.size(42.dp).semantics { contentDescription = "Alternar tema" },
-                            contentAlignment = Alignment.Center) { PanelGlyph(PanelIcon.Theme, colors.onSurface) }
+                    ExpressiveIconButton(onClick = vm::cycleTheme, modifier = Modifier.semantics { contentDescription = "Alternar tema" }) {
+                        PanelGlyph(PanelIcon.Theme, colors.onSurface)
                     }
                 }
                 Spacer(Modifier.height(32.dp))
@@ -201,7 +213,7 @@ fun LoginScreen(vm: AppVm) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { vm.login(user, pass) }),
                     trailingIcon = {
-                        TextButton(onClick = { show = !show }) { Text(if (show) "Ocultar" else "Mostrar") }
+                        ExpressiveTextButton(onClick = { show = !show }) { Text(if (show) "Ocultar" else "Mostrar") }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )

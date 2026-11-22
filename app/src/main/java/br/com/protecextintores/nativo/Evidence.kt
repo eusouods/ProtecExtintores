@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +30,7 @@ internal fun EvidenceLinks(item: JSONObject) {
     var selected by remember { mutableStateOf<Pair<String, String>?>(null) }
     for (part in parts) {
         val url = images.optJSONObject(part)?.str("url").orEmpty()
-        if (url.isNotEmpty()) TextButton(onClick = { selected = part to url }) {
+        if (url.isNotEmpty()) ExpressiveTextButton(onClick = { selected = part to url }) {
             Text("Assistir vídeo · $part")
         }
     }
@@ -67,5 +66,5 @@ private fun EvidenceDialog(part: String, url: String, close: () -> Unit) {
                 )
             }
         }
-    }, confirmButton = { TextButton(onClick = close) { Text("Fechar") } })
+    }, confirmButton = { ExpressiveTextButton(onClick = close) { Text("Fechar") } })
 }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,8 +62,8 @@ internal fun AdminCatalog(vm: AppVm, state: JSONObject, area: CatalogArea) {
                 if (entry.str("kg").isNotBlank()) Text("${entry.str("kg")} ${entry.str("unit").ifBlank { "kg" }}")
                 Text(formatRegistrationMoney(Math.round(entry.optDouble("price", 0.0) * 100)))
                 Row {
-                    TextButton(enabled = !vm.busy, onClick = { editing = CatalogEdit(entry) }) { Text("Editar") }
-                    TextButton(enabled = !vm.busy, onClick = { remove = entry }) { Text("Remover") }
+                    ExpressiveTextButton(enabled = !vm.busy, onClick = { editing = CatalogEdit(entry) }) { Text("Editar") }
+                    ExpressiveTextButton(enabled = !vm.busy, onClick = { remove = entry }) { Text("Remover") }
                 }
             }
         }
@@ -91,8 +90,8 @@ internal fun AdminCatalog(vm: AppVm, state: JSONObject, area: CatalogArea) {
             title = { Text("Remover ${record.str("name")}?") },
             text = { Text("O item sairá do catálogo para novos registros.") },
             confirmButton = {
-                TextButton(enabled = !vm.busy, onClick = { vm.removeAdminRecord(area.group, record) { remove = null } }) { Text("Remover") }
-            }, dismissButton = { TextButton(onClick = { if (!vm.busy) remove = null }) { Text("Cancelar") } })
+                ExpressiveTextButton(enabled = !vm.busy, onClick = { vm.removeAdminRecord(area.group, record) { remove = null } }) { Text("Remover") }
+            }, dismissButton = { ExpressiveTextButton(onClick = { if (!vm.busy) remove = null }) { Text("Cancelar") } })
     }
 }
 
@@ -120,19 +119,19 @@ internal fun NativeFieldsDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = !busy, onClick = {
+            ExpressiveButton(enabled = !busy, onClick = saveFields@{
                 val result = JSONObject()
                 for (field in fields) {
                     val value = values[field.key].orEmpty().trim()
                     if (value.isBlank() && !field.optional) {
                         issue = "Preencha ${field.label.lowercase()}."
-                        return@TextButton
+                        return@saveFields
                     }
                     if (field.numeric) {
                         val number = value.replace(',', '.').toDoubleOrNull()
                         if (number == null || !number.isFinite() || number !in 0.0..1_000_000.0) {
                             issue = "Confira ${field.label.lowercase()}."
-                            return@TextButton
+                            return@saveFields
                         }
                         result.put(field.key, number)
                     } else result.put(field.key, value)
@@ -140,7 +139,7 @@ internal fun NativeFieldsDialog(
                 issue = submit(result)
             }) { Text("Salvar") }
         },
-        dismissButton = { TextButton(onClick = { if (!busy) close() }) { Text("Cancelar") } })
+        dismissButton = { ExpressiveTextButton(onClick = { if (!busy) close() }) { Text("Cancelar") } })
 }
 
 private fun validStandardCapacity(type: String, capacity: String): Boolean = when (type) {

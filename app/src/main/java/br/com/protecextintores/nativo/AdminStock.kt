@@ -14,14 +14,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -118,9 +116,9 @@ internal fun AdminStock(vm: AppVm, state: JSONObject, openPowderHistory: () -> U
                         Text(if (powder) "$cost por kg · Custo médio" else "$cost · Custo unitário")
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Button(enabled = !vm.busy, onClick = { wizard = StockStart(stockGroup(selected), selected.str("id")) }) { Text("Registrar entrada") }
-                        if (powder) TextButton(onClick = openPowderHistory) { Text("Movimentações") }
-                        else TextButton(enabled = !vm.busy, onClick = { editing = selected }) { Text("Editar item") }
+                        ExpressiveButton(enabled = !vm.busy, onClick = { wizard = StockStart(stockGroup(selected), selected.str("id")) }) { Text("Registrar entrada") }
+                        if (powder) ExpressiveTextButton(onClick = openPowderHistory) { Text("Movimentações") }
+                        else ExpressiveTextButton(enabled = !vm.busy, onClick = { editing = selected }) { Text("Editar item") }
                     }
                 }
             }
@@ -268,7 +266,7 @@ internal fun StockEntryDialog(vm: AppVm, state: JSONObject, start: StockStart, o
             issue?.let { Text(it, color = colors.error) }
         }
     }, confirmButton = {
-        Button(enabled = !vm.busy, onClick = {
+        ExpressiveButton(enabled = !vm.busy, onClick = {
             if (step == 3) submit() else {
                 issue = when {
                     step == 1 && creating && name.trim().isEmpty() -> "Informe o nome do novo item."
@@ -281,7 +279,7 @@ internal fun StockEntryDialog(vm: AppVm, state: JSONObject, start: StockStart, o
             }
         }) { Text(if (vm.busy) "Registrando…" else if (request != null) "Tentar novamente" else if (step == 3) "Confirmar entrada" else "Avançar") }
     }, dismissButton = {
-        TextButton(enabled = !vm.busy && request == null, onClick = {
+        ExpressiveTextButton(enabled = !vm.busy && request == null, onClick = {
             if (step == 0) close() else { step--; issue = null }
         }) { Text(if (step == 0) "Cancelar" else "Voltar") }
     })
@@ -299,7 +297,7 @@ private fun StockPicker(label: String, value: String, choices: List<Pair<String,
     Column {
         Text(label, style = MaterialTheme.typography.labelLarge)
         Box {
-            TextButton(enabled = enabled, onClick = { expanded = true }) { Text(choices.firstOrNull { it.first == value }?.second ?: "Selecione") }
+            ExpressiveTextButton(enabled = enabled, onClick = { expanded = true }) { Text(choices.firstOrNull { it.first == value }?.second ?: "Selecione") }
             DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
                 choices.forEach { (key, title) -> DropdownMenuItem(text = { Text(title) }, onClick = { expanded = false; change(key) }) }
             }
