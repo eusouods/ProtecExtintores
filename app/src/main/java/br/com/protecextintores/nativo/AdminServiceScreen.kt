@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +52,6 @@ internal fun AdminServiceScreen(
     var confirm by remember { mutableStateOf(false) }
     var receipt by remember { mutableStateOf(false) }
     var linkContacts by remember { mutableStateOf(false) }
-    var reference by remember { mutableStateOf("") }
     androidx.activity.compose.BackHandler {
         if (!vm.busy) {
             if (edit != null) edit = null else close()
@@ -181,24 +179,7 @@ internal fun AdminServiceScreen(
         confirmButton = { ExpressiveTextButton(onClick = { confirm = false; vm.finalizeAdminService(order) {} }) { Text("Finalizar serviço") } },
         dismissButton = { ExpressiveTextButton(onClick = { confirm = false }) { Text("Voltar") } }
     )
-    if (receipt) ProtecDialog(
-        onDismissRequest = { receipt = false }, title = { Text("Registrar recebimento") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Confira o valor recebido antes de confirmar.")
-                OutlinedTextField(reference, { if (it.length <= 300) reference = it }, label = { Text("Referência do pagamento") })
-            }
-        },
-        confirmButton = {
-            ExpressiveTextButton(enabled = reference.trim().length >= 3, onClick = {
-                receipt = false
-                vm.adminAction("/api/admin/operations", JSONObject().put("action", "mark-paid")
-                    .put("serviceIds", JSONArray(listOf(svc.id))).put("reference", reference.trim()),
-                    "Recebimento registrado.") { reference = "" }
-            }) { Text("Confirmar recebimento") }
-        },
-        dismissButton = { ExpressiveTextButton(onClick = { receipt = false }) { Text("Cancelar") } }
-    )
+    if (receipt) RecordReceiptDialog(vm, svc, order.optJSONObject("finance")?.optLong("revenueCents") ?: 0L) { receipt = false }
 }
 
 @Composable
@@ -240,7 +221,7 @@ private fun ContactPicker(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 PanelSearch(query, { query = it }, "Buscar pelo nome")
-                LazyColumn(Modifier.heightIn(max = 255.dp)) {
+                LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
                     item {
                         ExpressiveTextButton(onClick = { choose(""); expanded = false }) { Text(blankLabel) }
                     }
@@ -250,7 +231,8 @@ private fun ContactPicker(
                 }
             }
         },
-        confirmButton = { ExpressiveTextButton(onClick = { expanded = false }) { Text("Voltar") } }
+        confirmButton = { ExpressiveTextButton(onClick = { expanded = false }) { Text("Voltar") } },
+        scrollBody = false
     )
 }
 

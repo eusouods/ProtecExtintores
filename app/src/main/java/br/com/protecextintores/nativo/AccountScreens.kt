@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -97,12 +96,12 @@ internal fun AdminAccess(state: JSONObject) {
         var person by remember(action) { mutableStateOf<JSONObject?>(null) }
         var picking by remember(action) { mutableStateOf(false) }
         if (picking) ProtecDialog(onDismissRequest = { picking = false }, title = { Text("Selecionar pessoa") }, text = {
-            LazyColumn(Modifier.heightIn(max = 330.dp)) {
+            LazyColumn(Modifier.fillMaxWidth()) {
                 items(people) { record ->
                     ExpressiveTextButton(onClick = { person = record; picking = false }) { Text(record.str("name")) }
                 }
             }
-        }, confirmButton = { ExpressiveTextButton(onClick = { picking = false }) { Text("Voltar") } })
+        }, confirmButton = { ExpressiveTextButton(onClick = { picking = false }) { Text("Voltar") } }, scrollBody = false)
         else ProtecDialog(onDismissRequest = { if (!processing) editing = null }, title = {
             Text(when (action.action) {
                 "create" -> "Criar acesso"

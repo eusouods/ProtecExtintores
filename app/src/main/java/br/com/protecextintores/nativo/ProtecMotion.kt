@@ -1,6 +1,6 @@
 package br.com.protecextintores.nativo
 
-import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
@@ -22,8 +22,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,12 +32,18 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -45,14 +52,13 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 
 internal val WebEaseOut = CubicBezierEasing(.22f, 1f, .36f, 1f)
 internal val WebEaseSpring = CubicBezierEasing(.3f, 1.35f, .5f, 1f)
@@ -61,9 +67,43 @@ internal val WebTeamPillEase = CubicBezierEasing(.2f, .8f, .25f, 1f)
 internal val WebEase = CubicBezierEasing(.25f, .1f, .25f, 1f)
 internal val WebCountEase = CubicBezierEasing(.333333f, 1f, .666667f, 1f)
 
-internal val LocalProtecDialogStack = staticCompositionLocalOf<SnapshotStateList<Any>?> { null }
-internal val LocalProtecDialogFeedback = staticCompositionLocalOf<@Composable () -> Unit> { {} }
+internal class ProtecSheetEntry(val render: @Composable (Boolean) -> Unit)
+
+internal val LocalProtecSheets = staticCompositionLocalOf<SnapshotStateList<ProtecSheetEntry>> {
+    error("ProtecSheet requires the app's sheet host")
+}
 internal val LocalTeamPanel = staticCompositionLocalOf { false }
+
+internal fun Modifier.hideCoveredContent(covered: Boolean): Modifier =
+    if (covered) clearAndSetSemantics {} else this
+
+internal data class SheetOption(val value: String, val label: String = value, val enabled: Boolean = true)
+
+@Composable
+internal fun ProtecOptions(label: String, options: List<SheetOption>, selected: String?, close: () -> Unit, choose: (String) -> Unit) {
+    var search by rememberSaveable { mutableStateOf("") }
+    ProtecDialog(
+        onDismissRequest = close,
+        title = { Text(label) },
+        text = {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                if (options.size > 12) PanelSearch(search, { search = it }, "Buscar")
+                val shown = options.filter { it.label.contains(search.trim(), ignoreCase = true) }
+                LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
+                    if (shown.isEmpty()) item { Text("Nenhuma opção encontrada.") }
+                    items(shown) { option ->
+                        ExpressiveTextButton(onClick = { choose(option.value); close() }, enabled = option.enabled,
+                            modifier = Modifier.fillMaxWidth()) {
+                            Text(option.label, fontWeight = if (option.value == selected) FontWeight.Bold else FontWeight.Normal)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { ExpressiveTextButton(onClick = close) { Text("Fechar") } },
+        scrollBody = false
+    )
+}
 
 @Composable
 internal fun WebRise(
@@ -101,23 +141,34 @@ internal fun ProtecDialog(
 ) {
     ProtecSheet(onDismissRequest = onDismissRequest) {
         val colors = MaterialTheme.colorScheme
-        Box(Modifier.fillMaxWidth().padding(16.dp)) {
-            ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold), title)
-        }
-        HorizontalDivider(color = colors.outline)
-        // Lists and other scrollable bodies need the sheet's finite height.
-        val scroll = if (scrollBody) Modifier.verticalScroll(rememberScrollState()) else Modifier
-        Column(Modifier.fillMaxWidth().weight(1f, fill = false).then(scroll).padding(16.dp)) {
-            ProvideTextStyle(MaterialTheme.typography.bodyMedium, text)
-        }
-        HorizontalDivider(color = colors.outline)
-        FlowRow(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            dismissButton?.invoke()
-            confirmButton()
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val compact = maxHeight < 280.dp
+            val showTitle = maxHeight >= 156.dp
+            val verticalPadding = if (compact) 6.dp else 16.dp
+            Column {
+                if (showTitle) {
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = verticalPadding)) {
+                        val style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge
+                        ProvideTextStyle(style.copy(fontWeight = FontWeight.ExtraBold), title)
+                    }
+                    HorizontalDivider(color = colors.outline)
+                }
+                // Lists and other scrollable bodies need the sheet's finite height.
+                val scroll = if (scrollBody) Modifier.verticalScroll(rememberScrollState()) else Modifier
+                Column(Modifier.fillMaxWidth().weight(1f, fill = false).then(scroll)
+                    .padding(horizontal = 16.dp, vertical = verticalPadding)) {
+                    ProvideTextStyle(MaterialTheme.typography.bodyMedium, text)
+                }
+                HorizontalDivider(color = colors.outline)
+                FlowRow(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = if (compact) 4.dp else 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    dismissButton?.invoke()
+                    confirmButton()
+                }
+            }
         }
     }
 }
@@ -128,58 +179,80 @@ internal fun ProtecSheet(
     navigation: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val overlays = LocalProtecDialogStack.current
-    val marker = remember { Any() }
-    DisposableEffect(overlays, marker) {
-        overlays?.add(marker)
-        onDispose { overlays?.remove(marker) }
-    }
-    val covered = overlays?.lastOrNull()?.let { it !== marker } == true
-    val coveredBlur by animateDpAsState(if (covered) 8.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque da janela anterior")
-    val colors = MaterialTheme.colorScheme
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-    ) {
-        val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND) }
-        val scrim = remember { Animatable(0f) }
-        val panel = remember { Animatable(0f) }
-        LaunchedEffect(scrim) { scrim.animateTo(1f, tween(200, easing = WebEase)) }
-        LaunchedEffect(panel, navigation) {
-            panel.animateTo(1f, tween(if (navigation) 260 else 340, easing = if (navigation) WebTeamEase else WebEaseOut))
-        }
-        Box(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxSize()
-                .graphicsLayer { alpha = scrim.value }
-                .background(colors.scrim.copy(alpha = .4f))
-                .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest)
-                .clearAndSetSemantics {})
-            BoxWithConstraints(
-                Modifier.fillMaxSize().safeDrawingPadding()
-                    .padding(if (navigation) PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp) else PaddingValues(0.dp))
-                    .clipToBounds(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                val maxSheetHeight = if (navigation) maxHeight * .85f else maxHeight
-                Surface(
-                    modifier = Modifier.widthIn(max = 650.dp).fillMaxWidth().heightIn(max = maxSheetHeight)
-                        .graphicsLayer {
-                            val value = panel.value
-                            alpha = if (navigation) .35f + .65f * value else value
-                            translationY = (if (navigation) 28.dp else 32.dp).toPx() * (1f - value)
-                        }
-                        .blur(coveredBlur)
-                        .pointerInput(Unit) { detectTapGestures {} },
-                    shape = if (navigation) RoundedCornerShape(17.dp) else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                    color = colors.surface,
-                    border = BorderStroke(1.dp, colors.outline)
-                ) {
-                    Column(content = content)
-                }
+    val host = LocalProtecSheets.current
+    val dismiss by rememberUpdatedState(onDismissRequest)
+    val sheetContent by rememberUpdatedState(content)
+    val navSheet by rememberUpdatedState(navigation)
+    val team by rememberUpdatedState(LocalTeamPanel.current)
+    val entry = remember {
+        ProtecSheetEntry { top ->
+            CompositionLocalProvider(LocalTeamPanel provides team) {
+                ProtecSheetLayer(top, navSheet, dismiss, sheetContent)
             }
-            if (overlays?.lastOrNull() === marker) {
-                Box(Modifier.fillMaxSize().safeDrawingPadding().clipToBounds()) { LocalProtecDialogFeedback.current() }
+        }
+    }
+    DisposableEffect(host, entry) {
+        host.add(entry)
+        onDispose { host.remove(entry) }
+    }
+}
+
+@Composable
+internal fun ProtecSheetHost(sheets: List<ProtecSheetEntry>) {
+    val top = sheets.lastOrNull()
+    val focus = LocalFocusManager.current
+    LaunchedEffect(top) { if (top != null) focus.clearFocus() }
+    sheets.forEach { entry -> key(entry) { entry.render(entry === top) } }
+}
+
+@Composable
+private fun ProtecSheetLayer(
+    top: Boolean,
+    navigation: Boolean,
+    onDismissRequest: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    BackHandler(enabled = top, onBack = onDismissRequest)
+    val coveredBlur by animateDpAsState(if (top) 0.dp else 8.dp, tween(200, easing = WebEase), label = "Desfoque da janela anterior")
+    val colors = MaterialTheme.colorScheme
+    val scrim = remember { Animatable(0f) }
+    val panel = remember { Animatable(0f) }
+    LaunchedEffect(scrim) { scrim.animateTo(1f, tween(200, easing = WebEase)) }
+    LaunchedEffect(panel, navigation) {
+        panel.animateTo(1f, tween(if (navigation) 260 else 340, easing = if (navigation) WebTeamEase else WebEaseOut))
+    }
+    // All sheets use the Activity's measured viewport with system and keyboard insets applied.
+    Box(Modifier.fillMaxSize().hideCoveredContent(!top)) {
+        Box(Modifier.fillMaxSize()
+            .graphicsLayer { alpha = scrim.value }
+            .background(colors.scrim.copy(alpha = .4f))
+            .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest)
+            .clearAndSetSemantics {})
+        BoxWithConstraints(
+            Modifier.fillMaxSize()
+                .padding(if (navigation) PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp) else PaddingValues(bottom = 8.dp))
+                .clipToBounds(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            val maxSheetHeight = maxHeight * when {
+                maxHeight < 360.dp -> 1f
+                navigation -> .82f
+                else -> .92f
+            }
+            Surface(
+                modifier = Modifier.widthIn(max = if (navigation) 590.dp else 650.dp).fillMaxWidth().heightIn(max = maxSheetHeight)
+                    .graphicsLayer {
+                        alpha = panel.value
+                        translationY = 32.dp.toPx() * (1f - panel.value)
+                    }
+                    .blur(coveredBlur)
+                    .semantics { isTraversalGroup = true }
+                    .pointerInput(Unit) { detectTapGestures {} },
+                shape = RoundedCornerShape(17.dp),
+                color = colors.surface,
+                border = BorderStroke(1.dp, colors.outline)
+            ) {
+                Column(content = content)
             }
         }
     }

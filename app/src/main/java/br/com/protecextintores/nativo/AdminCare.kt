@@ -158,15 +158,6 @@ private fun CareEditor(vm: AppVm, record: JSONObject, review: Boolean, close: ()
 @Composable
 private fun CareStatus(label: String, current: String, choices: Map<String, String>, enabled: Boolean, select: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    androidx.compose.foundation.layout.Box {
-        SoftButton("$label · ${choices[current] ?: current.ifBlank { "Selecionar" }}", enabled = enabled) { expanded = true }
-        androidx.compose.material3.DropdownMenu(expanded, { expanded = false }) {
-            for ((value, name) in choices) {
-                androidx.compose.material3.DropdownMenuItem(text = { Text(name) }, onClick = {
-                    select(value)
-                    expanded = false
-                })
-            }
-        }
-    }
+    SoftButton("$label · ${choices[current] ?: current.ifBlank { "Selecionar" }}", enabled = enabled) { expanded = true }
+    if (expanded) ProtecOptions(label, choices.map { SheetOption(it.key, it.value) }, current, close = { expanded = false }, choose = select)
 }

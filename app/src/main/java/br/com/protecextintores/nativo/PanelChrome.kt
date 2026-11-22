@@ -26,10 +26,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -133,7 +135,7 @@ internal fun PanelChrome(
     val pages = rememberSaveableStateHolder()
     val closeMore = { more = false }
     BackHandler(selected != 0 || more) { if (more) closeMore() else select(0) }
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             Column(Modifier.fillMaxSize()) {
                 PanelHeader(title ?: tabs.getOrNull(selected)?.title.orEmpty(), refresh, changeTheme, openAlerts)
@@ -161,28 +163,32 @@ private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> U
     val brand = MaterialTheme.colorScheme.protecBrand
     val ink = MaterialTheme.colorScheme.protecOnBrand
     Surface(color = brand, contentColor = ink) {
-      Column(Modifier.fillMaxWidth().padding(start = 17.dp, end = 17.dp, top = 10.dp, bottom = 16.dp)) {
+      Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 15.dp)) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 44.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically
         ) {
             Image(painterResource(R.drawable.company_logo), null, Modifier.size(27.dp).clip(RoundedCornerShape(6.dp)))
             Text("ProtecExtintores", Modifier.weight(1f), fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (alerts != null) HeaderPanelAction("Alertas", PanelIcon.Bell, ink, alerts)
-            else HeaderPanelAction("Atualizar painel", PanelIcon.Refresh, ink, refresh)
+            if (alerts != null) {
+                HeaderPanelAction("Atualizar painel", null, ink, refresh)
+                HeaderPanelAction("Alertas", PanelIcon.Bell, ink, alerts)
+            } else HeaderPanelAction("Atualizar painel", PanelIcon.Refresh, ink, refresh)
             HeaderPanelAction("Alternar tema", PanelIcon.Theme, ink, changeTheme)
         }
         Text(title, fontSize = 27.sp, lineHeight = 33.sp, fontWeight = FontWeight(680), letterSpacing = (-.8).sp,
-            modifier = Modifier.padding(top = 12.dp))
+            modifier = Modifier.padding(top = 9.dp))
       }
     }
 }
 
 @Composable
-private fun HeaderPanelAction(label: String, icon: PanelIcon, ink: Color, action: () -> Unit) {
-    ExpressiveIconButton(onClick = action, modifier = Modifier.semantics { contentDescription = label }, contentColor = ink) {
-        PanelGlyph(icon, ink, 19.dp)
+private fun HeaderPanelAction(label: String, icon: PanelIcon?, ink: Color, action: () -> Unit) {
+    ExpressiveIconButton(onClick = action, modifier = Modifier.semantics { contentDescription = label }, contentColor = ink,
+        outline = Color(0xFFA2C6ED).copy(alpha = .38f), round = icon == null) {
+        if (icon == null) Box(Modifier.size(6.dp).background(ink, CircleShape))
+        else PanelGlyph(icon, ink, 19.dp)
     }
 }
 
@@ -203,7 +209,7 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
             val source = remember { MutableInteractionSource() }
             Row(
                 Modifier.fillMaxWidth().heightIn(min = if (team) 57.dp else 63.dp)
-                    .clip(expressiveActionShape(source, resting = 18.dp))
+                    .pressLikeWeb(source).clip(expressiveActionShape(source))
                     .clickable(interactionSource = source, indication = ripple(), role = Role.Button) { close(); action.run() }
                     .padding(vertical = if (team) 7.dp else 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically
@@ -222,7 +228,7 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
 private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: Boolean, select: (Int) -> Unit, showMore: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val destinations = tabs + PanelTab("Mais", PanelIcon.Dots)
-    Surface(modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 9.dp),
+    Surface(modifier = Modifier.widthIn(max = 614.dp).fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 9.dp),
         shape = RoundedCornerShape(15.dp), color = colors.surface, shadowElevation = 4.dp,
         border = BorderStroke(1.dp, colors.outline)) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(4.dp)) {
@@ -232,7 +238,7 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: 
             val x by animateDpAsState(width * index + (width - pill) / 2,
                 tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Pílula")
             Box(Modifier.width(pill).height(48.dp).graphicsLayer { translationX = x.toPx() }
-                .background(colors.primaryContainer, RoundedCornerShape(24.dp)))
+                .background(colors.primaryContainer, RoundedCornerShape(10.dp)))
             Row(Modifier.fillMaxWidth().selectableGroup()) {
                 destinations.forEachIndexed { item, tab ->
                     val active = item == index
@@ -242,7 +248,7 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: 
                     val labelColor by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
                         tween(200, easing = WebEase), label = "Cor da aba")
                     Column(
-                        Modifier.weight(1f).heightIn(min = 48.dp).clip(expressiveActionShape(source)).selectable(
+                        Modifier.weight(1f).heightIn(min = 48.dp).pressLikeWeb(source).clip(expressiveActionShape(source)).selectable(
                             selected = active, role = Role.Tab, interactionSource = source, indication = ripple(),
                             onClick = { if (item == tabs.size) showMore() else select(item) }
                         ).padding(top = 6.dp, bottom = 4.dp),

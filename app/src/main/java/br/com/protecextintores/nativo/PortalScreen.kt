@@ -134,7 +134,7 @@ fun PortalScreen(vm: AppVm) {
                 4 -> RecordsPage(adminTabs[active].title, state.optJSONArray("orders").objects())
                 5 -> AdminCatalog(vm, state, CatalogArea.Products)
                 6 -> AdminDirectory(vm, state, employees = true)
-                7 -> AdminReceipts(state, { openOrder(it, finance = true) }) { owner = it }
+                7 -> AdminReceipts(vm, state, { openOrder(it, finance = true) }) { owner = it }
                 8 -> AdminStock(vm, state) { page = 14 }
                 9 -> AdminAgenda(state) { openOrder(it) }
                 10 -> AdminAlerts(state, { openOrder(it) }) { page = 8 }
@@ -326,13 +326,13 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
 }
 
 @Composable
-internal fun PanelList(spacing: Dp = 12.dp, content: LazyListScope.() -> Unit) {
+internal fun PanelList(spacing: Dp = 12.dp, horizontalPadding: Dp = 12.dp, content: LazyListScope.() -> Unit) {
     val team = LocalTeamPanel.current
     val openedAt = remember { SystemClock.uptimeMillis() }
     val appeared = remember { mutableSetOf<Any>() }
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 18.dp, bottom = 24.dp),
+        contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, top = 18.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(spacing)
     ) {
         if (team) content() else PanelEntryScope(this, appeared, openedAt).content()

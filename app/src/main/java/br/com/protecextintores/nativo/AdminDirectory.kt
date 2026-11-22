@@ -4,10 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -67,7 +64,7 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
         ProtecDialog(onDismissRequest = { if (!vm.busy) editing = null },
             title = { Text(if (current.original == null) "Novo cadastro" else "Editar cadastro") },
             text = {
-                Column(Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     for (field in fields) OutlinedTextField(values[field.key].orEmpty(),
                         { if (it.length <= field.limit) values = values + (field.key to it) },
                         label = { Text(field.label) }, modifier = Modifier.fillMaxWidth(), singleLine = true)

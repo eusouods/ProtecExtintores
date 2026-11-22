@@ -8,14 +8,9 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -222,7 +217,7 @@ internal fun StockEntryDialog(vm: AppVm, state: JSONObject, start: StockStart, o
     }
 
     ProtecDialog(onDismissRequest = { if (!vm.busy) close() }, title = { Text("Adicionar ao estoque") }, text = {
-        Column(Modifier.heightIn(max = 405.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 listOf("Categoria", "Item", "Quantidade", "Revisão").forEachIndexed { index, label ->
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -296,13 +291,11 @@ private fun StockPicker(label: String, value: String, choices: List<Pair<String,
     var expanded by remember { mutableStateOf(false) }
     Column {
         Text(label, style = MaterialTheme.typography.labelLarge)
-        Box {
-            ExpressiveTextButton(enabled = enabled, onClick = { expanded = true }) { Text(choices.firstOrNull { it.first == value }?.second ?: "Selecione") }
-            DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-                choices.forEach { (key, title) -> DropdownMenuItem(text = { Text(title) }, onClick = { expanded = false; change(key) }) }
-            }
+        ExpressiveOutlinedButton(enabled = enabled, onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(choices.firstOrNull { it.first == value }?.second ?: "Selecione")
         }
     }
+    if (expanded) ProtecOptions(label, choices.map { (id, title) -> SheetOption(id, title) }, value, close = { expanded = false }, choose = change)
 }
 
 @Composable

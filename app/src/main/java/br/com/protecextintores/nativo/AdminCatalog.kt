@@ -4,11 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,7 +23,8 @@ import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 
 internal data class CatalogField(val key: String, val label: String, val numeric: Boolean = false,
-                                 val optional: Boolean = false, val default: String = "")
+                                 val optional: Boolean = false, val default: String = "", val toggle: Boolean = false,
+                                 val maxLength: Int = if (numeric) 14 else 1500)
 
 internal enum class CatalogArea(val group: String, val title: String, val fields: List<CatalogField>) {
     Types("types", "Extintores", listOf(
@@ -107,11 +107,20 @@ internal fun NativeFieldsDialog(
     ProtecDialog(
         onDismissRequest = { if (!busy) close() }, title = { Text(title) },
         text = {
-            Column(Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (field in fields) {
                     val value = values[field.key].orEmpty()
+                    if (field.toggle) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(value == "true", enabled = !busy, onCheckedChange = { checked ->
+                                values = values + (field.key to checked.toString())
+                            })
+                            Text(field.label, Modifier.weight(1f))
+                        }
+                        continue
+                    }
                     OutlinedTextField(value, { updated ->
-                        if (updated.length <= if (field.numeric) 14 else 1500) values = values + (field.key to updated)
+                        if (updated.length <= field.maxLength) values = values + (field.key to updated)
                     }, modifier = Modifier.fillMaxWidth(), label = { Text(field.label) }, singleLine = field.key != "description",
                         enabled = !busy, keyboardOptions = KeyboardOptions(keyboardType = if (field.numeric) KeyboardType.Decimal else KeyboardType.Text))
                 }
@@ -123,6 +132,10 @@ internal fun NativeFieldsDialog(
                 val result = JSONObject()
                 for (field in fields) {
                     val value = values[field.key].orEmpty().trim()
+                    if (field.toggle) {
+                        result.put(field.key, value == "true")
+                        continue
+                    }
                     if (value.isBlank() && !field.optional) {
                         issue = "Preencha ${field.label.lowercase()}."
                         return@saveFields

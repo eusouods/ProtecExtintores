@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -37,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -59,7 +56,7 @@ import java.text.NumberFormat
 import java.util.Locale
 
 private val steps = listOf("Cliente", "Equipamentos", "Complementos", "Conferir")
-private data class Choice(val value: String, val label: String = value)
+private typealias Choice = SheetOption
 private data class RowToEdit(val group: String, val index: Int, val value: JSONObject)
 
 @Composable
@@ -196,7 +193,7 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, showLabels: Boolea
                 val circle by animateColorAsState(if (active) colors.primary else colors.surface,
                     tween(300, easing = WebEase), label = "Número da etapa")
                 Column(
-                    Modifier.weight(1f).heightIn(min = if (showLabels) 58.dp else 48.dp).clip(shape).background(background)
+                    Modifier.weight(1f).heightIn(min = if (showLabels) 58.dp else 48.dp).pressLikeWeb(source).clip(shape).background(background)
                         .selectable(active, source, ripple(), enabled, Role.Tab) { choose(index) }
                         .semantics { if (!showLabels) contentDescription = label }
                         .padding(horizontal = 3.dp, vertical = 6.dp),
@@ -407,26 +404,7 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
         }
     }
     if (open) {
-        var search by rememberSaveable { mutableStateOf("") }
-        val filtered = options.filter { it.label.contains(search.trim(), ignoreCase = true) }
-        ProtecDialog(
-            onDismissRequest = { open = false },
-            title = { Text(label) },
-            text = {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                    if (options.size > 12) PanelSearch(search, { search = it }, "Buscar")
-                    LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                        items(filtered) { option ->
-                            ExpressiveTextButton(onClick = { choose(option.value); open = false }, modifier = Modifier.fillMaxWidth()) {
-                                Text(option.label, fontWeight = if (option.value == selected) FontWeight.Bold else FontWeight.Normal)
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = { ExpressiveTextButton(onClick = { open = false }) { Text("Fechar") } },
-            scrollBody = false
-        )
+        ProtecOptions(label, options, selected, close = { open = false }, choose = choose)
     }
 }
 

@@ -28,8 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -278,25 +276,18 @@ private fun PartRowUi(ctx: WizardCtx, index: Int, row: PartRow) {
     var open by remember { mutableStateOf(false) }
     val max = maxOf(1, ctx.maxFor(row.part))
     CardBox(Modifier.padding(bottom = 10.dp)) {
-        Box {
-            val stockLabel = ctx.stockOf(row.part)?.let { " · estoque $it" } ?: ""
-            SoftButton(row.part + stockLabel, Modifier.fillMaxWidth()) { open = true }
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                ctx.unusedParts(index).forEach { part ->
-                    val stock = ctx.stockOf(part)
-                    val out = stock != null && stock < 1 && part != row.part
-                    DropdownMenuItem(
-                        text = {
-                            Text(part + (if (stock != null) " · estoque $stock" else "") + (if (out) " (sem estoque)" else ""))
-                        },
-                        enabled = !out,
-                        onClick = {
-                            open = false
-                            val limit = maxOf(1, ctx.maxFor(part))
-                            st.rows[index] = PartRow(part, minOf(row.qty, limit))
-                        }
-                    )
-                }
+        val stockLabel = ctx.stockOf(row.part)?.let { " · estoque $it" } ?: ""
+        SoftButton(row.part + stockLabel, Modifier.fillMaxWidth()) { open = true }
+        if (open) {
+            val choices = ctx.unusedParts(index).map { part ->
+                val stock = ctx.stockOf(part)
+                val out = stock != null && stock < 1 && part != row.part
+                val label = part + (if (stock != null) " · estoque $stock" else "") + (if (out) " (sem estoque)" else "")
+                SheetOption(part, label, enabled = !out)
+            }
+            ProtecOptions("Selecionar peça", choices, row.part, close = { open = false }) { part ->
+                val limit = maxOf(1, ctx.maxFor(part))
+                if (index in st.rows.indices) st.rows[index] = PartRow(part, minOf(row.qty, limit))
             }
         }
         Spacer(Modifier.height(8.dp))

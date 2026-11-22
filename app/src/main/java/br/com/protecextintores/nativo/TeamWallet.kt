@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -164,7 +161,7 @@ internal fun TeamWallet(refresh: Int, owner: WalletOwner? = null, onSettled: () 
         ProtecDialog(onDismissRequest = { pix = null },
             title = { Text("Pix do acerto") },
             text = {
-                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                Column(Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(formatRegistrationMoney(bill.optLong("amountCents")), style = MaterialTheme.typography.headlineSmall)
                     Text(bill.str("merchant") + " · " + bill.str("txid"))

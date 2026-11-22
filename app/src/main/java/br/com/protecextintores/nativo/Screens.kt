@@ -80,9 +80,10 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
         is Screen.Detail, is Screen.Wizard -> Screen.Home
         else -> screen
     }
-    val dialogs = remember { mutableStateListOf<Any>() }
+    val dialogs = remember { mutableStateListOf<ProtecSheetEntry>() }
+    val covered = dialogs.isNotEmpty()
     val workspace = rememberSaveableStateHolder()
-    val blur by animateDpAsState(if (dialogs.isNotEmpty()) 8.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque")
+    val blur by animateDpAsState(if (covered) 8.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque")
     val message = vm.message
     LaunchedEffect(message) {
         if (message != null) {
@@ -90,16 +91,10 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
             vm.message = null
         }
     }
-    val feedback: @Composable () -> Unit = {
-        MessageBar(vm)
-        BusyOverlay(vm.busy, vm.busyText)
-    }
-    val insets = if (screen is Screen.Registration) {
-        WindowInsets.safeDrawing.union(WindowInsets.mandatorySystemGestures.only(WindowInsetsSides.Bottom))
-    } else WindowInsets.safeDrawing
+    val insets = WindowInsets.safeDrawing.union(WindowInsets.mandatorySystemGestures.only(WindowInsetsSides.Bottom))
     Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(insets).clipToBounds()) {
-        CompositionLocalProvider(LocalProtecDialogStack provides dialogs, LocalProtecDialogFeedback provides feedback) {
-            Box(Modifier.fillMaxSize().blur(blur)) {
+        CompositionLocalProvider(LocalProtecSheets provides dialogs) {
+            Box(Modifier.fillMaxSize().hideCoveredContent(covered).blur(blur)) {
                 key(base) {
                     when (base) {
                         Screen.Login -> LoginScreen(vm)
@@ -124,8 +119,10 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
                     else -> Unit
                 }
             }
+            ProtecSheetHost(dialogs.toList())
         }
-        if (dialogs.isEmpty()) feedback()
+        MessageBar(vm)
+        BusyOverlay(vm.busy, vm.busyText)
     }
 }
 
