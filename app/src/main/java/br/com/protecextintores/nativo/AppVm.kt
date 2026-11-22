@@ -9,12 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
@@ -224,6 +226,12 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 registrationAccount = catalog.account
                 registrationError = ""
                 registrationCatalog = catalog
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (token == Store.token && screen == registration) {
+                    registrationError = "Não foi possível carregar o catálogo. Tente novamente."
+                }
             } finally {
                 busy = false
             }
@@ -285,7 +293,12 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                 registrationError = issue
                 return
             }
-            val payload = catalog.payload(draft, admin)
+            val payload = try {
+                catalog.payload(draft, admin)
+            } catch (_: JSONException) {
+                registrationError = "Não foi possível preparar a ordem. Revise os dados preenchidos."
+                return
+            }
             operation = JSONObject()
                 .put("accountKey", account)
                 .put("dataEpoch", catalog.epoch)
@@ -331,8 +344,8 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                     if (registration.parent == Screen.Home) {
                         employeePage = 1
                         tab = 0
-                        if (service == null) refresh(silent = true) else applyUpdate(response.json)
                         screen = Screen.Home
+                        if (service == null || runCatching { applyUpdate(response.json) }.isFailure) refresh(silent = true)
                     } else {
                         screen = Screen.Portal
                         refreshPortal(silent = true)
@@ -344,6 +357,16 @@ class AppVm(app: Application) : AndroidViewModel(app) {
                     if (response.json.optBoolean("dataReset")) registrationCatalog = null
                 } else {
                     registrationError = "Confirmação pendente. Toque em Verificar envio para repetir a mesma operação sem duplicar a ordem."
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (token == Store.token && screen == registration) {
+                    registrationError = if (registrationDraft.has("pendingOperation")) {
+                        "Não foi possível confirmar o envio. Use Verificar envio para repetir a mesma operação."
+                    } else {
+                        "Não foi possível enviar a ordem. Seu rascunho continua aberto."
+                    }
                 }
             } finally {
                 busy = false

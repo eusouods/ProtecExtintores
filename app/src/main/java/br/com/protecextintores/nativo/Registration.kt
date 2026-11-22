@@ -28,10 +28,7 @@ internal class RegistrationCatalog(val context: JSONObject) {
     val account = context.str("accountKey")
     val epoch = context.str("dataEpoch").ifBlank { "initial" }
 
-    fun options(key: String): List<String> {
-        val values = data.optJSONArray(key) ?: return emptyList()
-        return (0 until values.length()).map { values.getString(it) }
-    }
+    fun options(key: String): List<String> = data.optJSONArray(key).strings()
 
     fun validate(draft: JSONObject, step: Int): String? {
         if (step == 0 || step == 3) {

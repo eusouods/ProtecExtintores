@@ -16,12 +16,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -43,6 +42,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
@@ -96,7 +96,8 @@ internal fun ProtecDialog(
     confirmButton: @Composable () -> Unit,
     title: @Composable () -> Unit,
     text: @Composable () -> Unit,
-    dismissButton: (@Composable () -> Unit)? = null
+    dismissButton: (@Composable () -> Unit)? = null,
+    scrollBody: Boolean = true
 ) {
     ProtecSheet(onDismissRequest = onDismissRequest) {
         val colors = MaterialTheme.colorScheme
@@ -104,14 +105,16 @@ internal fun ProtecDialog(
             ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold), title)
         }
         HorizontalDivider(color = colors.outline)
-        Box(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(16.dp)) {
+        // Lists and other scrollable bodies need the sheet's finite height.
+        val scroll = if (scrollBody) Modifier.verticalScroll(rememberScrollState()) else Modifier
+        Column(Modifier.fillMaxWidth().weight(1f, fill = false).then(scroll).padding(16.dp)) {
             ProvideTextStyle(MaterialTheme.typography.bodyMedium, text)
         }
         HorizontalDivider(color = colors.outline)
-        Row(
+        FlowRow(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             dismissButton?.invoke()
             confirmButton()
@@ -153,8 +156,9 @@ internal fun ProtecSheet(
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onDismissRequest)
                 .clearAndSetSemantics {})
             BoxWithConstraints(
-                Modifier.fillMaxSize().safeDrawingPadding().imePadding()
-                    .padding(if (navigation) PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp) else PaddingValues(0.dp)),
+                Modifier.fillMaxSize().safeDrawingPadding()
+                    .padding(if (navigation) PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp) else PaddingValues(0.dp))
+                    .clipToBounds(),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 val maxSheetHeight = if (navigation) maxHeight * .85f else maxHeight
@@ -175,7 +179,7 @@ internal fun ProtecSheet(
                 }
             }
             if (overlays?.lastOrNull() === marker) {
-                Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) { LocalProtecDialogFeedback.current() }
+                Box(Modifier.fillMaxSize().safeDrawingPadding().clipToBounds()) { LocalProtecDialogFeedback.current() }
             }
         }
     }

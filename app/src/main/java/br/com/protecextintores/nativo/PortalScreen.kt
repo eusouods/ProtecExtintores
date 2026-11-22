@@ -432,7 +432,8 @@ private fun RecordCard(item: JSONObject, openRecord: ((JSONObject) -> Unit)? = n
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { open = false }) { Text("Fechar") } }
+        confirmButton = { TextButton(onClick = { open = false }) { Text("Fechar") } },
+        scrollBody = false
     )
 }
 

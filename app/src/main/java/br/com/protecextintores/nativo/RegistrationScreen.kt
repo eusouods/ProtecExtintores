@@ -13,6 +13,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,13 +24,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,11 +44,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.json.JSONArray
@@ -68,7 +73,7 @@ internal fun RegistrationScreen(vm: AppVm) {
     var edit by remember { mutableStateOf<RowToEdit?>(null) }
     if (catalog == null) {
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader("Registrar manutenção / serviço") { vm.back() }
+            ScreenHeader("Registrar serviço") { vm.back() }
             PanelList {
                 item {
                     Text(vm.registrationError.ifEmpty { "Carregando opções do sistema…" })
@@ -78,9 +83,9 @@ internal fun RegistrationScreen(vm: AppVm) {
         }
         return
     }
-    Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Registrar manutenção / serviço") { vm.back() }
-        if (pending) {
+    if (pending) {
+        Column(Modifier.fillMaxSize()) {
+            ScreenHeader("Registrar serviço") { vm.back() }
             PanelList {
                 item {
                     PanelIntro("", "Verificar envio", "A ordem está guardada neste aparelho. Verifique o envio antes de registrar outra.")
@@ -88,63 +93,16 @@ internal fun RegistrationScreen(vm: AppVm) {
                 if (vm.registrationError.isNotEmpty()) item { EmptyRecord(vm.registrationError) }
                 item { PrimaryButton("Verificar envio", enabled = !vm.busy) { vm.submitRegistration() } }
             }
-            return
         }
-        RegistrationSteps(step, !vm.busy, vm::registrationStep)
-        val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
-        AnimatedContent(
-            targetState = step,
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            transitionSpec = {
-                val direction = if (targetState > initialState) 1 else -1
-                (slideInHorizontally(tween(300, easing = WebEaseOut)) { direction * distance } +
-                    fadeIn(tween(300, easing = WebEaseOut))) togetherWith ExitTransition.None
-            },
-            label = "Etapas do registro"
-        ) { page ->
-            PanelList {
-                when (page) {
-                    0 -> item { RegistrationContact(vm, catalog, draft) }
-                    1, 2 -> {
-                        val groups = if (page == 1) registrationGroups.take(2) else registrationGroups.drop(2)
-                        for (group in groups) {
-                            if (group == "hydrantHoses" && catalog.complements.none { it.str("id") == "hydrant-hose-test" } &&
-                                draft.optJSONArray(group).objects().isEmpty()) continue
-                            item {
-                                RegistrationRows(group, draft.optJSONArray(group).objects(), catalog,
-                                    open = { index, value -> edit = RowToEdit(group, index, value) },
-                                    remove = { index ->
-                                        vm.editRegistration {
-                                            put(group, JSONArray(optJSONArray(group).objects().filterIndexed { i, _ -> i != index }))
-                                        }
-                                    })
-                            }
-                        }
-                    }
-                    else -> item { RegistrationReview(vm, catalog, draft) }
-                }
-            }
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-        Column(Modifier.fillMaxWidth().padding(13.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            if (vm.registrationError.isNotEmpty()) {
-                Text(vm.registrationError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            } else if (vm.registrationSaved) {
-                Text("Rascunho salvo neste aparelho", style = MaterialTheme.typography.bodySmall)
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (step > 0) OutlinedButton(onClick = { vm.registrationStep(step - 1) }) { Text("Voltar") }
-                PrimaryButton(if (step == 3) "Registrar ordem" else "Avançar", modifier = Modifier.weight(1f), enabled = !vm.busy) {
-                    if (step == 3) vm.submitRegistration() else vm.registrationStep(step + 1)
-                }
-            }
-        }
+        return
     }
+    RegistrationForm(vm, catalog, draft, step, open = { edit = it })
     edit?.let { row ->
         RegistrationRowEditor(catalog, row, dismiss = { edit = null }) { value ->
             vm.editRegistration {
                 val rows = optJSONArray(row.group).objects().toMutableList()
-                if (row.index == rows.size) rows.add(value) else rows[row.index] = value
+                if (row.index in rows.indices) rows[row.index] = value
+                else if (row.index == rows.size) rows.add(value)
                 put(row.group, JSONArray(rows))
             }
             edit = null
@@ -153,10 +111,82 @@ internal fun RegistrationScreen(vm: AppVm) {
 }
 
 @Composable
-private fun RegistrationSteps(current: Int, enabled: Boolean, choose: (Int) -> Unit) {
+private fun RegistrationForm(vm: AppVm, catalog: RegistrationCatalog, draft: JSONObject, step: Int, open: (RowToEdit) -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val compact = maxWidth < 360.dp || LocalDensity.current.fontScale >= 1.25f
+        val short = maxHeight < 360.dp
+        val showHeader = maxHeight >= 260.dp
+        val distance = with(LocalDensity.current) { 28.dp.roundToPx() }
+        Column(Modifier.fillMaxSize()) {
+            if (showHeader) ScreenHeader("Registrar serviço") { vm.back() }
+            if (!short) RegistrationSteps(step, !vm.busy, compact, vm::registrationStep)
+            AnimatedContent(
+                targetState = step,
+                modifier = Modifier.fillMaxWidth().weight(1f).clipToBounds(),
+                transitionSpec = {
+                    val direction = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(tween(300, easing = WebEaseOut)) { direction * distance } +
+                        fadeIn(tween(300, easing = WebEaseOut))) togetherWith ExitTransition.None
+                },
+                label = "Etapas do registro"
+            ) { page ->
+                PanelList {
+                    if (short && vm.registrationError.isNotEmpty()) item { RegistrationError(vm.registrationError) }
+                    when (page) {
+                        0 -> item { RegistrationContact(vm, catalog, draft) }
+                        1, 2 -> {
+                            val groups = if (page == 1) registrationGroups.take(2) else registrationGroups.drop(2)
+                            for (group in groups) {
+                                if (group == "hydrantHoses" && catalog.complements.none { it.str("id") == "hydrant-hose-test" } &&
+                                    draft.optJSONArray(group).objects().isEmpty()) continue
+                                item {
+                                    RegistrationRows(group, draft.optJSONArray(group).objects(), catalog,
+                                        open = { index, value -> open(RowToEdit(group, index, value)) },
+                                        remove = { index ->
+                                            vm.editRegistration {
+                                                put(group, JSONArray(optJSONArray(group).objects().filterIndexed { i, _ -> i != index }))
+                                            }
+                                        })
+                                }
+                            }
+                        }
+                        else -> item { RegistrationReview(vm, catalog, draft) }
+                    }
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+            Column(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = if (short) 4.dp else 13.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (!short) {
+                    if (vm.registrationError.isNotEmpty()) RegistrationError(vm.registrationError)
+                    else if (vm.registrationSaved) Text("Rascunho salvo neste aparelho", style = MaterialTheme.typography.bodySmall)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (step > 0) OutlinedButton(onClick = { vm.registrationStep(step - 1) }, enabled = !vm.busy,
+                        modifier = if (compact) Modifier.weight(.38f) else Modifier,
+                        contentPadding = PaddingValues(horizontal = if (compact) 8.dp else 24.dp, vertical = 8.dp)) { Text("Voltar") }
+                    val primaryWeight = if (compact && step > 0) .62f else 1f
+                    PrimaryButton(if (step == 3) "Registrar ordem" else "Avançar", modifier = Modifier.weight(primaryWeight), enabled = !vm.busy) {
+                        if (step == 3) vm.submitRegistration() else vm.registrationStep(step + 1)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RegistrationError(message: String) {
+    Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+}
+
+@Composable
+private fun RegistrationSteps(current: Int, enabled: Boolean, compact: Boolean, choose: (Int) -> Unit) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(10.dp)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        if (compact) Text("Etapa ${current + 1} de ${steps.size} · ${steps[current]}",
+            Modifier.padding(bottom = 6.dp), style = MaterialTheme.typography.labelMedium)
         Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             steps.forEachIndexed { index, label ->
                 val active = index == current
@@ -166,8 +196,9 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, choose: (Int) -> U
                 val circle by animateColorAsState(if (active) colors.primary else colors.surface,
                     tween(300, easing = WebEase), label = "Número da etapa")
                 Column(
-                    Modifier.weight(1f).heightIn(min = 58.dp).webPress(source).clip(shape).background(background)
+                    Modifier.weight(1f).heightIn(min = if (compact) 44.dp else 58.dp).webPress(source).clip(shape).background(background)
                         .selectable(active, source, null, enabled, Role.Tab) { choose(index) }
+                        .semantics { if (compact) contentDescription = label }
                         .padding(horizontal = 3.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically)
@@ -178,7 +209,7 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, choose: (Int) -> U
                         Text((index + 1).toString(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
                             color = if (active) colors.onPrimary else colors.onSurface)
                     }
-                    Text(label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
+                    if (!compact) Text(label, fontSize = 11.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
                         color = if (active) colors.onSurface else colors.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold, maxLines = 2)
                 }
@@ -264,7 +295,7 @@ private fun RegistrationRows(group: String, rows: List<JSONObject>, catalog: Reg
             val line = catalog.quote(single).firstOrNull()
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             Text("${line?.count ?: 1} × ${line?.label.orEmpty()}", style = MaterialTheme.typography.bodyMedium)
-            Row {
+            FlowRow {
                 TextButton(onClick = { open(index, row) }) { Text("Editar") }
                 TextButton(onClick = { remove(index) }) { Text("Remover") }
             }
@@ -292,7 +323,7 @@ private fun RegistrationRowEditor(catalog: RegistrationCatalog, edit: RowToEdit,
         onDismissRequest = dismiss,
         title = { Text(registrationLabel(group)) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 when (group) {
                     "items", "soldExtinguishers" -> {
                         if (group == "soldExtinguishers") {
@@ -372,7 +403,7 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium)
         OutlinedButton(onClick = { open = true }, enabled = options.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-            Text(value)
+            Text(value, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
     }
     if (open) {
@@ -382,9 +413,9 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
             onDismissRequest = { open = false },
             title = { Text(label) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     if (options.size > 12) PanelSearch(search, { search = it }, "Buscar")
-                    LazyColumn(Modifier.heightIn(max = 310.dp)) {
+                    LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false)) {
                         items(filtered) { option ->
                             TextButton(onClick = { choose(option.value); open = false }, modifier = Modifier.fillMaxWidth()) {
                                 Text(option.label, fontWeight = if (option.value == selected) FontWeight.Bold else FontWeight.Normal)
@@ -393,7 +424,8 @@ private fun Pick(label: String, selected: String?, options: List<Choice>, choose
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { open = false }) { Text("Fechar") } }
+            confirmButton = { TextButton(onClick = { open = false }) { Text("Fechar") } },
+            scrollBody = false
         )
     }
 }
