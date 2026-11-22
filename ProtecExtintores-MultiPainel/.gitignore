@@ -1,0 +1,21 @@
+api-cloudflare/node_modules/
+api-cloudflare/.wrangler/
+api-cloudflare/.dev.vars
+api-cloudflare/.env
+android-app/.gradle/
+android-app/app/build/
+android-app/build/
+android-app/local.properties
+android-app/*.jks
+android-app/*.keystore
+.DS_Store
+*.protecbackup
+
+# Android
+.gradle/
+build/
+**/build/
+local.properties
+*.p12
+*.jks
+*.keystore
