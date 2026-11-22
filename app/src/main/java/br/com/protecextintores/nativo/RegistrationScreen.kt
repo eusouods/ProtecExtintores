@@ -25,12 +25,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -187,14 +187,15 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, showLabels: Boolea
             steps.forEachIndexed { index, label ->
                 val active = index == current
                 val source = remember { MutableInteractionSource() }
-                val shape = expressiveActionShape(source)
+                val shape = RoundedCornerShape(10.dp)
                 val background by animateColorAsState(if (active) colors.surfaceVariant else colors.surface,
                     tween(300, easing = WebEase), label = "Etapa selecionada")
                 val circle by animateColorAsState(if (active) colors.primary else colors.surface,
                     tween(300, easing = WebEase), label = "Número da etapa")
                 Column(
                     Modifier.weight(1f).heightIn(min = if (showLabels) 58.dp else 48.dp).pressLikeWeb(source).clip(shape).background(background)
-                        .selectable(active, source, ripple(), enabled, Role.Tab) { choose(index) }
+                        .webActionFocus(source)
+                        .selectable(active, source, null, enabled, Role.Tab) { choose(index) }
                         .semantics { if (!showLabels) contentDescription = label }
                         .padding(horizontal = 3.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,

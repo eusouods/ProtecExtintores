@@ -217,6 +217,9 @@ private fun ProtecSheetLayer(
     val colors = MaterialTheme.colorScheme
     val scrim = remember { Animatable(0f) }
     val panel = remember { Animatable(0f) }
+    val teamNavigation = navigation && LocalTeamPanel.current
+    val startAlpha = if (teamNavigation) .35f else 0f
+    val distance = if (teamNavigation) 28.dp else 32.dp
     LaunchedEffect(scrim) { scrim.animateTo(1f, tween(200, easing = WebEase)) }
     LaunchedEffect(panel, navigation) {
         panel.animateTo(1f, tween(if (navigation) 260 else 340, easing = if (navigation) WebTeamEase else WebEaseOut))
@@ -242,8 +245,8 @@ private fun ProtecSheetLayer(
             Surface(
                 modifier = Modifier.widthIn(max = if (navigation) 590.dp else 650.dp).fillMaxWidth().heightIn(max = maxSheetHeight)
                     .graphicsLayer {
-                        alpha = panel.value
-                        translationY = 32.dp.toPx() * (1f - panel.value)
+                        alpha = startAlpha + (1f - startAlpha) * panel.value
+                        translationY = distance.toPx() * (1f - panel.value)
                     }
                     .blur(coveredBlur)
                     .semantics { isTraversalGroup = true }

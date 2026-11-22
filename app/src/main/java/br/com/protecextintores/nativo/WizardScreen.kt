@@ -195,10 +195,10 @@ private fun ChoiceButton(text: String, selected: Boolean, modifier: Modifier, on
     Surface(
         onClick = onClick,
         interactionSource = source,
-        shape = expressiveActionShape(source, resting = if (selected) 16.dp else 26.dp),
+        shape = RoundedCornerShape(12.dp),
         color = background,
         border = BorderStroke(1.5.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
-        modifier = modifier.heightIn(min = 60.dp)
+        modifier = modifier.heightIn(min = 60.dp).pressLikeWeb(source)
     ) {
         Box(modifier = Modifier.fillMaxWidth().padding(vertical = 18.dp), contentAlignment = Alignment.Center) {
             Text(text, color = foreground, fontWeight = FontWeight.Bold, fontSize = 18.sp)

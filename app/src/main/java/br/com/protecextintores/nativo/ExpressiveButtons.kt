@@ -1,11 +1,11 @@
 package br.com.protecextintores.nativo
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
@@ -22,28 +22,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun expressiveActionShape(source: MutableInteractionSource, resting: Dp = 10.dp): Shape {
-    val pressed by source.collectIsPressedAsState()
-    val corner by animateDpAsState(
-        if (pressed) (resting - 3.dp).coerceAtLeast(6.dp) else resting,
-        tween(if (pressed) 80 else 200, easing = WebEase),
-        label = "Forma do botão"
-    )
-    return RoundedCornerShape(corner)
+internal fun Modifier.webActionFocus(source: MutableInteractionSource): Modifier {
+    val focused by source.collectIsFocusedAsState()
+    return if (focused) border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp)) else this
 }
 
 @Composable
-internal fun Modifier.pressLikeWeb(source: MutableInteractionSource): Modifier {
+internal fun Modifier.pressLikeWeb(source: MutableInteractionSource, pressedScale: Float = .96f): Modifier {
     val pressed by source.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) .96f else 1f, tween(if (pressed) 80 else 200, easing = WebEase),
+    val scale by animateFloatAsState(if (pressed) pressedScale else 1f, tween(if (pressed) 80 else 200, easing = WebEase),
         label = "Toque do botão")
-    return graphicsLayer { scaleX = scale; scaleY = scale }
+    return graphicsLayer {
+        scaleX = scale
+        scaleY = scale
+    }
 }
 
 private enum class ActionStyle { Filled, Tonal, Outlined, Text }
@@ -75,7 +71,7 @@ private fun ExpressiveAction(
         modifier = modifier.heightIn(min = 44.dp).pressLikeWeb(source),
         enabled = enabled,
         interactionSource = source,
-        shape = expressiveActionShape(source),
+        shape = RoundedCornerShape(10.dp),
         colors = colors,
         border = border,
         elevation = null,
@@ -120,7 +116,7 @@ internal fun ExpressiveIconButton(
     content: @Composable () -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
-    val shape = expressiveActionShape(source, resting = if (round) 24.dp else 10.dp)
+    val shape = RoundedCornerShape(if (round) 24.dp else 10.dp)
     val colors = if (outline == null) IconButtonDefaults.filledTonalIconButtonColors(contentColor = contentColor)
     else IconButtonDefaults.filledTonalIconButtonColors(containerColor = Color.Transparent, contentColor = contentColor)
     FilledTonalIconButton(

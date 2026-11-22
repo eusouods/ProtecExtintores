@@ -21,26 +21,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +49,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -60,7 +60,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -69,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.PathParser
@@ -149,11 +149,13 @@ internal fun PanelChrome(
                 }
             }
         }
-        PanelDock(tabs, dockSection, more, team, { closeMore(); selectDock(it) }) { more = !more }
+        PanelDock(tabs, dockSection, team, selectDock) { more = true }
     }
     if (more) {
-        ProtecSheet(onDismissRequest = closeMore, navigation = true) {
-            PanelMore(actions, closeMore, team = true)
+        CompositionLocalProvider(LocalTeamPanel provides team) {
+            ProtecSheet(onDismissRequest = closeMore, navigation = true) {
+                PanelMore(actions, closeMore, team)
+            }
         }
     }
 }
@@ -195,26 +197,37 @@ private fun HeaderPanelAction(label: String, icon: PanelIcon?, ink: Color, actio
 @Composable
 private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boolean) {
     val colors = MaterialTheme.colorScheme
+    val closeSource = remember { MutableInteractionSource() }
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-        .padding(horizontal = 20.dp).padding(top = if (team) 16.dp else 24.dp, bottom = 18.dp)) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Mais", Modifier.weight(1f), fontSize = if (team) 23.sp else 26.sp, fontWeight = FontWeight.ExtraBold,
+        .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 15.dp)) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Mais", Modifier.weight(1f), fontSize = if (team) 23.sp else 21.sp, fontWeight = FontWeight.Bold,
                 letterSpacing = (-.7).sp)
-            if (team) ExpressiveIconButton(onClick = close, modifier = Modifier.semantics { contentDescription = "Fechar menu" }) {
-                PanelGlyph(PanelIcon.Close)
+            Box(
+                Modifier.size(44.dp).pressLikeWeb(closeSource).webActionFocus(closeSource)
+                    .clickable(closeSource, indication = null, role = Role.Button, onClick = close)
+                    .semantics { contentDescription = "Fechar menu" },
+                contentAlignment = Alignment.Center
+            ) {
+                PanelGlyph(PanelIcon.Close, color = colors.onSurface, iconSize = 21.dp)
             }
         }
         for (action in actions) {
-            HorizontalDivider(color = colors.outline)
             val source = remember { MutableInteractionSource() }
+            HorizontalDivider(color = colors.outline)
             Row(
-                Modifier.fillMaxWidth().heightIn(min = if (team) 57.dp else 63.dp)
-                    .pressLikeWeb(source).clip(expressiveActionShape(source))
-                    .clickable(interactionSource = source, indication = ripple(), role = Role.Button) { close(); action.run() }
+                Modifier.fillMaxWidth().heightIn(min = if (team) 57.dp else 64.dp)
+                    .pressLikeWeb(source).webActionFocus(source)
+                    .clickable(interactionSource = source, indication = null, role = Role.Button) {
+                        close()
+                        action.run()
+                    }
                     .padding(vertical = if (team) 7.dp else 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(13.dp), verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(if (team) 13.dp else 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.size(if (team) 38.dp else 42.dp).background(colors.surfaceVariant, RoundedCornerShape(12.dp)),
+                val iconBackground = if (team) colors.surfaceVariant else colors.primaryContainer
+                Box(Modifier.size(if (team) 38.dp else 42.dp).background(iconBackground, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center) { PanelGlyph(action.icon, colors.onSurface, 20.dp) }
                 Text(action.label, Modifier.weight(1f), fontSize = if (team) 14.sp else 16.sp,
                     fontWeight = if (team) FontWeight.Bold else FontWeight.SemiBold)
@@ -225,41 +238,47 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
 }
 
 @Composable
-private fun PanelDock(tabs: List<PanelTab>, selected: Int, more: Boolean, team: Boolean, select: (Int) -> Unit, showMore: () -> Unit) {
+private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select: (Int) -> Unit, showMore: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val destinations = tabs + PanelTab("Mais", PanelIcon.Dots)
+    val tabGap = 2.dp
+    val trackPadding = 4.dp
     Surface(modifier = Modifier.widthIn(max = 614.dp).fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 9.dp),
         shape = RoundedCornerShape(15.dp), color = colors.surface, shadowElevation = 4.dp,
         border = BorderStroke(1.dp, colors.outline)) {
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(4.dp)) {
-            val width = maxWidth / destinations.size
-            val pill = (width - 3.dp).coerceAtLeast(0.dp)
-            val index = if (more || selected !in tabs.indices) tabs.size else selected
-            val x by animateDpAsState(width * index + (width - pill) / 2,
-                tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Pílula")
-            Box(Modifier.width(pill).height(48.dp).graphicsLayer { translationX = x.toPx() }
-                .background(colors.primaryContainer, RoundedCornerShape(10.dp)))
-            Row(Modifier.fillMaxWidth().selectableGroup()) {
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(trackPadding).clipToBounds()) {
+            val slot = (maxWidth - tabGap * (destinations.size - 1)).coerceAtLeast(0.dp) / destinations.size
+            // Abrir o menu Mais mantém o destaque na tela atual.
+            val index = if (selected in tabs.indices) selected else tabs.size
+            val offset by animateDpAsState((slot + tabGap) * index,
+                tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Destaque da aba")
+            Canvas(Modifier.matchParentSize()) {
+                val width = slot.toPx()
+                val x = if (layoutDirection == LayoutDirection.Rtl) size.width - width - offset.toPx() else offset.toPx()
+                drawRoundRect(colors.primaryContainer, Offset(x, 0f), Size(width, size.height), CornerRadius(10.dp.toPx()))
+            }
+            Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(tabGap)) {
                 destinations.forEachIndexed { item, tab ->
                     val active = item == index
                     val source = remember { MutableInteractionSource() }
-                    val iconColor by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
+                    val labelColor = if (active) colors.primary else colors.onSurfaceVariant
+                    val iconColor by animateColorAsState(labelColor,
                         tween(250, easing = WebEase), label = "Cor do ícone")
-                    val labelColor by animateColorAsState(if (active) colors.primary else colors.onSurfaceVariant,
-                        tween(200, easing = WebEase), label = "Cor da aba")
                     Column(
-                        Modifier.weight(1f).heightIn(min = 48.dp).pressLikeWeb(source).clip(expressiveActionShape(source)).selectable(
-                            selected = active, role = Role.Tab, interactionSource = source, indication = ripple(),
-                            onClick = { if (item == tabs.size) showMore() else select(item) }
-                        ).padding(top = 6.dp, bottom = 4.dp),
+                        Modifier.weight(1f).heightIn(min = 48.dp)
+                            .pressLikeWeb(source, pressedScale = if (team) .94f else .96f)
+                            .webActionFocus(source)
+                            .selectable(
+                                selected = active, role = Role.Tab, interactionSource = source, indication = null,
+                                onClick = { if (item == tabs.size) showMore() else select(item) }
+                            )
+                            .padding(vertical = 5.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)
                     ) {
-                        Box(Modifier.height(20.dp), contentAlignment = Alignment.Center) {
-                            PanelGlyph(tab.icon, iconColor, 19.dp)
-                        }
+                        PanelGlyph(tab.icon, iconColor, 19.dp)
                         Text(tab.label, fontSize = 11.sp, lineHeight = 12.sp, letterSpacing = (-.11).sp,
-                            fontWeight = if (active) FontWeight.ExtraBold else FontWeight.SemiBold,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                             color = labelColor)
                     }
@@ -309,13 +328,14 @@ internal fun WebSectionTabs(options: List<Pair<Int, String>>, selected: Int, cho
 internal fun WebFilterChip(selected: Boolean, onClick: () -> Unit, enabled: Boolean = true, label: @Composable () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val source = remember { MutableInteractionSource() }
-    val shape = expressiveActionShape(source, resting = if (selected) 16.dp else 24.dp)
+    val shape = RoundedCornerShape(10.dp)
     val background by animateColorAsState(if (selected) colors.secondaryContainer else colors.surface,
         tween(170, easing = WebEase), label = "Fundo da seção")
     Box(
-        Modifier.heightIn(min = 48.dp).clip(shape).background(background)
+        Modifier.heightIn(min = 48.dp).pressLikeWeb(source).clip(shape).background(background)
             .border(1.dp, if (selected) Color.Transparent else colors.outline, shape)
-            .selectable(selected, source, ripple(), enabled, Role.Tab, onClick)
+            .webActionFocus(source)
+            .selectable(selected, source, null, enabled, Role.Tab, onClick)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -394,9 +414,9 @@ internal fun PanelShortcut(title: String, subtitle: String, icon: PanelIcon, cli
     val colors = MaterialTheme.colorScheme
     val source = remember { MutableInteractionSource() }
     Surface(
-        onClick = click, shape = expressiveActionShape(source, resting = 20.dp), color = colors.surfaceVariant,
+        onClick = click, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant,
         border = BorderStroke(1.dp, colors.outline), interactionSource = source,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 65.dp)
+        modifier = Modifier.fillMaxWidth().heightIn(min = 65.dp).pressLikeWeb(source)
     ) {
         Row(Modifier.padding(13.dp), horizontalArrangement = Arrangement.spacedBy(9.dp),
             verticalAlignment = Alignment.CenterVertically) {
