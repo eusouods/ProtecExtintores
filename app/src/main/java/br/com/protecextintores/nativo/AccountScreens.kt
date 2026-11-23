@@ -4,11 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -19,6 +16,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -28,25 +26,67 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-private data class AccessEdit(val action: String, val account: JSONObject? = null)
+private enum class AccessAction { Create, Reset, Remove }
+private data class AccessEdit(
+    val action: AccessAction,
+    val account: JSONObject? = null,
+    val personId: String? = null
+)
+private val sellerContactFields = listOf(
+    CatalogField("name", "Nome do vendedor", maxLength = 100)
+)
+private val teamUsernamePattern = Regex("[A-Za-z0-9._-]{3,30}")
 
 @Composable
-internal fun AdminAccess(state: JSONObject) {
-    var seller by remember { mutableStateOf(false) }
+internal fun AdminAccess(
+    vm: AppVm,
+    state: JSONObject,
+    startWithSellers: Boolean = false,
+    sellerToOpen: String? = null,
+    consumeSeller: () -> Unit = {}
+) {
+    var seller by rememberSaveable(startWithSellers) { mutableStateOf(startWithSellers) }
     val role = if (seller) "seller" else "employee"
     val segment = if (seller) "sellers" else "users"
     val endpoint = "/api/admin/$segment"
     val token = Store.token
     val scope = rememberCoroutineScope()
-    val people = state.optJSONArray(if (seller) "sellers" else "employees").objects().filter { it.optBoolean("active", true) }
+    val group = if (seller) "sellers" else "employees"
+    val personField = role + "Id"
+    var justCreatedSeller by remember(token) { mutableStateOf<JSONObject?>(null) }
+    val people = (state.optJSONArray(group).objects() + listOfNotNull(justCreatedSeller.takeIf { seller }))
+        .distinctBy { it.str("id") }
+        .filter { it.optBoolean("active", true) && it.str("id").isNotBlank() }
+        .sortedBy { it.str("name").lowercase() }
     var response by remember(role, token) { mutableStateOf<Api.ApiResult?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var issue by remember { mutableStateOf("") }
     var processing by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<AccessEdit?>(null) }
-    LaunchedEffect(endpoint, reload, token) { response = Api.teamSection(token, endpoint) }
+    var creatingSeller by rememberSaveable { mutableStateOf(false) }
+    var highlightedSeller by rememberSaveable { mutableStateOf<String?>(null) }
+    val accounts = response?.json?.optJSONArray("items").objects()
+    val linkedIds = accounts.map { it.str(personField) }.toSet()
+    val available = people.filterNot { it.str("id") in linkedIds }
 
-    fun send(run: suspend () -> Api.ApiResult) {
+    LaunchedEffect(endpoint, reload, token) {
+        response = Api.teamSection(token, endpoint)
+    }
+    LaunchedEffect(sellerToOpen, seller, response) {
+        if (sellerToOpen == null || !seller || response?.ok != true) return@LaunchedEffect
+        issue = ""
+        when {
+            sellerToOpen in linkedIds -> {
+                highlightedSeller = sellerToOpen
+                issue = "Este vendedor já possui acesso. Confira a conta abaixo."
+            }
+            available.any { it.str("id") == sellerToOpen } -> editing = AccessEdit(AccessAction.Create, personId = sellerToOpen)
+            else -> issue = "O vendedor não está disponível. Atualize o painel e tente novamente."
+        }
+        consumeSeller()
+    }
+
+    fun send(success: String, run: suspend () -> Api.ApiResult) {
         if (processing) return
         processing = true
         issue = ""
@@ -57,86 +97,111 @@ internal fun AdminAccess(state: JSONObject) {
                 if (result.ok && result.json.length() > 0) {
                     editing = null
                     reload++
+                    vm.message = success
                 } else issue = result.error.ifBlank { "A alteração não foi confirmada." }
             } finally { processing = false }
         }
     }
     PanelList {
-        item { PanelIntro("", "Acessos da equipe") }
-        item {
+        item { PanelIntro("", if (startWithSellers) "Acessos de vendedores" else "Acessos da equipe") }
+        if (!startWithSellers) item {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 WebFilterChip(!seller, { if (!processing) { seller = false; issue = "" } }, label = { Text("Funcionários") })
                 WebFilterChip(seller, { if (!processing) { seller = true; issue = "" } }, label = { Text("Vendedores") })
             }
         }
-        if (issue.isNotBlank()) item { EmptyRecord(issue) }
-        item { PrimaryButton("Criar acesso", enabled = people.isNotEmpty() && !processing) { editing = AccessEdit("create") } }
+        if (issue.isNotBlank() && editing == null) item { EmptyRecord(issue) }
         val list = response
         if (list == null) item { Text("Carregando acessos…") }
         else if (!list.ok) item {
             Text(list.error.ifBlank { "Acessos indisponíveis." })
             ExpressiveTextButton(onClick = { reload++ }) { Text("Tentar novamente") }
         } else {
-            val accounts = list.json.optJSONArray("items").objects()
+            if (available.isNotEmpty()) item {
+                PrimaryButton(if (seller) "Criar acesso de vendedor" else "Criar acesso de funcionário", enabled = !processing && !vm.busy) {
+                    issue = ""
+                    editing = AccessEdit(AccessAction.Create, personId = available.singleOrNull()?.str("id"))
+                }
+            }
+            if (seller) item {
+                if (people.isEmpty()) Text("Cadastre um vendedor para criar o acesso.")
+                else if (available.isEmpty()) Text("Todos os vendedores ativos já têm acesso.")
+                SoftButton("Cadastrar vendedor", enabled = !processing && !vm.busy) { creatingSeller = true }
+            } else if (available.isEmpty()) item {
+                Text(if (people.isEmpty()) "Cadastre um funcionário para criar o acesso." else "Todos os funcionários ativos já têm acesso.")
+            }
             if (accounts.isEmpty()) item { EmptyRecord("Nenhum acesso cadastrado.") }
-            items(accounts) { account ->
+            items(accounts.sortedByDescending { seller && it.str("sellerId") == highlightedSeller }) { account ->
                 CardBox {
                     Text(account.str(role + "Name"), fontWeight = FontWeight.Bold)
                     Text(account.str("username"))
-                    ExpressiveTextButton(enabled = !processing, onClick = { editing = AccessEdit("reset", account) }) { Text("Redefinir senha") }
-                    ExpressiveTextButton(enabled = !processing, onClick = { editing = AccessEdit("remove", account) }) { Text("Revogar acesso") }
+                    ExpressiveTextButton(enabled = !processing, onClick = { issue = "";editing = AccessEdit(AccessAction.Reset, account) }) { Text("Redefinir senha") }
+                    ExpressiveTextButton(enabled = !processing, onClick = { issue = "";editing = AccessEdit(AccessAction.Remove, account) }) { Text("Revogar acesso") }
                 }
             }
+        }
+    }
+    if (creatingSeller) NativeFieldsDialog("Cadastrar vendedor", sellerContactFields, busy = vm.busy, close = { creatingSeller = false }) {
+        val name = it.str("name")
+        if (name.length < 2) "Informe o nome do vendedor."
+        else {
+            vm.saveContact("sellers", null, JSONObject().put("name", name)) { id ->
+                creatingSeller = false
+                justCreatedSeller = JSONObject().put("id", id).put("name", name)
+                editing = AccessEdit(AccessAction.Create, personId = id)
+            }
+            null
         }
     }
     editing?.let { action ->
         val account = action.account
         var username by remember(action) { mutableStateOf("") }
         var password by remember(action) { mutableStateOf("") }
-        var person by remember(action) { mutableStateOf<JSONObject?>(null) }
+        var personId by remember(action) { mutableStateOf(action.personId) }
+        val person = available.firstOrNull { it.str("id") == personId }
         var picking by remember(action) { mutableStateOf(false) }
-        if (picking) ProtecDialog(onDismissRequest = { picking = false }, title = { Text("Selecionar pessoa") }, text = {
-            LazyColumn(Modifier.fillMaxWidth()) {
-                items(people) { record ->
-                    ExpressiveTextButton(onClick = { person = record; picking = false }) { Text(record.str("name")) }
-                }
-            }
-        }, confirmButton = { ExpressiveTextButton(onClick = { picking = false }) { Text("Voltar") } }, scrollBody = false)
-        else ProtecDialog(onDismissRequest = { if (!processing) editing = null }, title = {
+        val selectLabel = if (seller) "Selecionar vendedor" else "Selecionar funcionário"
+        ProtecDialog(onDismissRequest = { if (!processing) editing = null }, title = {
             Text(when (action.action) {
-                "create" -> "Criar acesso"
-                "reset" -> "Redefinir senha"
-                else -> "Revogar acesso"
+                AccessAction.Create -> if (seller) "Criar acesso de vendedor" else "Criar acesso de funcionário"
+                AccessAction.Reset -> "Redefinir senha"
+                AccessAction.Remove -> "Revogar acesso"
             })
         }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                if (action.action == "create") {
-                    ExpressiveTextButton(onClick = { picking = true }) { Text(person?.str("name") ?: "Selecionar pessoa") }
-                    OutlinedTextField(username, { if (it.length <= 30) username = it }, label = { Text("Nome de usuário") }, singleLine = true)
+                if (action.action == AccessAction.Create) {
+                    SoftButton(person?.str("name") ?: selectLabel, enabled = !processing && available.isNotEmpty()) { picking = true }
+                    OutlinedTextField(username, { if (it.length <= 30) username = it }, modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nome de usuário") }, enabled = !processing, singleLine = true)
+                    Text("Use de 3 a 30 letras, números, pontos, hífens ou sublinhados.", style = MaterialTheme.typography.bodySmall)
                     SecretField("Senha (mínimo 5 caracteres)", password) { password = it }
                 } else {
                     Text(account?.str("username").orEmpty(), fontWeight = FontWeight.Bold)
-                    if (action.action == "reset") SecretField("Nova senha (mínimo 8 caracteres)", password) { password = it }
+                    if (action.action == AccessAction.Reset) SecretField("Nova senha (mínimo 8 caracteres)", password) { password = it }
                     else Text("A conta perderá acesso e as sessões ativas serão encerradas.")
                 }
                 if (issue.isNotBlank()) Text(issue, color = MaterialTheme.colorScheme.error)
             }
         }, confirmButton = {
             val enabled = when (action.action) {
-                "create" -> person != null && username.trim().matches(Regex("[A-Za-z0-9._-]{3,30}")) && password.length >= 5
-                "reset" -> password.length >= 8
-                else -> account != null
+                AccessAction.Create -> person != null && username.trim().matches(teamUsernamePattern) && password.length >= 5
+                AccessAction.Reset -> password.length >= 8
+                AccessAction.Remove -> account != null
             }
             ExpressiveTextButton(enabled = enabled && !processing, onClick = {
                 when (action.action) {
-                    "create" -> send { Api.postSection(token, endpoint, JSONObject().put("username", username.trim())
-                        .put("password", password).put(role + "Id", person?.str("id"))) }
-                    "reset" -> send { Api.postSection(token, "/api/admin/team-password", JSONObject().put("role", role)
+                    AccessAction.Create -> send(if (seller) "Acesso de vendedor criado." else "Acesso de funcionário criado.") {
+                        Api.postSection(token, endpoint, JSONObject().put("username", username.trim())
+                            .put("password", password).put(personField, person?.str("id")))
+                    }
+                    AccessAction.Reset -> send("Senha redefinida.") { Api.postSection(token, "/api/admin/team-password", JSONObject().put("role", role)
                         .put("accountId", account?.str("id")).put("password", password)) }
-                    else -> send { Api.revokeTeamAccess(token, endpoint, account?.str("id").orEmpty()) }
+                    AccessAction.Remove -> send("Acesso revogado.") { Api.revokeTeamAccess(token, endpoint, account?.str("id").orEmpty()) }
                 }
-            }) { Text(if (action.action == "remove") "Revogar acesso" else "Salvar") }
+            }) { Text(if (processing) "Salvando…" else if (action.action == AccessAction.Remove) "Revogar acesso" else "Salvar") }
         }, dismissButton = { ExpressiveTextButton(onClick = { if (!processing) editing = null }) { Text("Cancelar") } })
+        if (picking) ProtecOptions(selectLabel, available.map { SheetOption(it.str("id"), it.str("name")) },
+            personId, close = { picking = false }) { personId = it }
     }
 }
 

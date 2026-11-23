@@ -68,9 +68,11 @@ private val adminTabs = listOf(
     PanelTab("Garantias e avaliações", PanelIcon.List),
     PanelTab("Preços sugeridos", PanelIcon.Chart),
     PanelTab("Envios da equipe", PanelIcon.List),
-    PanelTab("Configurações", PanelIcon.Gear)
+    PanelTab("Configurações", PanelIcon.Gear),
+    PanelTab("Acessos de vendedores", PanelIcon.People)
 )
 private const val ADMIN_SETTINGS_PAGE = 18
+private const val ADMIN_SELLER_ACCESS_PAGE = 19
 private val adminKeys = mapOf(1 to "services", 2 to "types", 3 to "clients", 4 to "orders", 5 to "products", 6 to "employees")
 private val adminDockPages = listOf(0, 1, 7, ADMIN_SETTINGS_PAGE)
 private val sellerMore = listOf(
@@ -98,6 +100,11 @@ fun PortalScreen(vm: AppVm) {
     val tabs = if (admin) adminDockPages.map { if (it == ADMIN_SETTINGS_PAGE) adminTabs[it].copy(label = "Ajustes") else adminTabs[it] } else sellerTabs
     var page by rememberSaveable(role) { mutableIntStateOf(0) }
     var searchAdmin by rememberSaveable(role) { mutableStateOf(false) }
+    var sellerAccessId by rememberSaveable(role) { mutableStateOf<String?>(null) }
+    fun openSellerAccess(id: String? = null) {
+        sellerAccessId = id
+        page = ADMIN_SELLER_ACCESS_PAGE
+    }
     var refreshKey by remember { mutableIntStateOf(0) }
     var owner by remember { mutableStateOf<WalletOwner?>(null) }
     var serviceId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -116,6 +123,7 @@ fun PortalScreen(vm: AppVm) {
         if (admin) {
             add(PanelAction("Extintores", PanelIcon.Flame) { page = 2 })
             add(PanelAction("Clientes e vendedores", PanelIcon.People) { page = 3 })
+            add(PanelAction("Acessos de vendedores", PanelIcon.People) { openSellerAccess() })
             adminGroups.forEach { group ->
                 add(PanelAction(group.label, group.icon) { page = group.sections.first().first })
             }
@@ -129,7 +137,7 @@ fun PortalScreen(vm: AppVm) {
     }
     val title = when {
         !admin -> sellerMore.getOrNull(page - 4)?.title
-        page == 0 || page == 1 || page == ADMIN_SETTINGS_PAGE -> ""
+        page == 0 || page == 1 || page == 13 || page == ADMIN_SETTINGS_PAGE || page == ADMIN_SELLER_ACCESS_PAGE -> ""
         else -> adminTabs.getOrNull(page)?.title
     }
     val sections = if (!admin || page == 7) emptyList() else if (maintenanceSections.any { it.first == page }) maintenanceSections
@@ -152,7 +160,7 @@ fun PortalScreen(vm: AppVm) {
                 1 -> RecordsPage(adminTabs[active].title, state.optJSONArray("services").objects(),
                     filterStatus = true, register = vm::startRegistration, openRecord = { openOrder(it.str("id")) }, compactOrders = true)
                 2 -> AdminCatalog(vm, state, CatalogArea.Types)
-                3 -> AdminDirectory(vm, state, employees = false)
+                3 -> AdminDirectory(vm, state, employees = false, openSellerAccess = ::openSellerAccess)
                 4 -> RecordsPage(adminTabs[active].title, state.optJSONArray("orders").objects())
                 5 -> AdminCatalog(vm, state, CatalogArea.Products)
                 6 -> AdminDirectory(vm, state, employees = true)
@@ -162,13 +170,15 @@ fun PortalScreen(vm: AppVm) {
                 10 -> AdminAlerts(state, { openOrder(it) }) { page = 8 }
                 11 -> AdminReports(vm, state)
                 12 -> AdminTeamHistory(state) { openOrder(it) }
-                13 -> AdminAccess(state)
+                13 -> AdminAccess(vm, state)
                 14 -> AdminPowder(vm, state)
                 15 -> AdminCare(vm)
                 16 -> AdminPrices(vm, state)
                 17 -> AdminTransfers(vm, state) { openOrder(it) }
                 ADMIN_SETTINGS_PAGE -> AdminSettings(vm, state, openTypes = { page = 2 },
                     openPrices = { page = 16 }, openAccess = { page = 13 })
+                ADMIN_SELLER_ACCESS_PAGE -> AdminAccess(vm, state, startWithSellers = true,
+                    sellerToOpen = sellerAccessId, consumeSeller = { sellerAccessId = null })
             }
         } else {
             when (active) {

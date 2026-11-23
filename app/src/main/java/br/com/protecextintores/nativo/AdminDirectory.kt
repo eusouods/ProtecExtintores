@@ -23,7 +23,7 @@ private data class ContactField(val key: String, val label: String, val limit: I
 private data class ContactEdit(val original: JSONObject?)
 
 @Composable
-internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
+internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean, openSellerAccess: ((String) -> Unit)? = null) {
     var group by rememberSaveable(employees) { mutableStateOf(if (employees) "employees" else "clients") }
     var query by rememberSaveable(group) { mutableStateOf("") }
     var editing by remember { mutableStateOf<ContactEdit?>(null) }
@@ -49,6 +49,11 @@ internal fun AdminDirectory(vm: AppVm, state: JSONObject, employees: Boolean) {
                 Text(contact.str("name"), fontWeight = FontWeight.ExtraBold)
                 listOf("role", "phone", "email", "document").map(contact::str).filter(String::isNotBlank).forEach { Text(it) }
                 ExpressiveTextButton(onClick = { editing = ContactEdit(contact) }, enabled = !vm.busy) { Text("Editar cadastro") }
+                if (group == "sellers" && openSellerAccess != null && contact.optBoolean("active", true)) {
+                    ExpressiveTextButton(onClick = { openSellerAccess(contact.str("id")) }, enabled = !vm.busy) {
+                        Text("Gerenciar acesso")
+                    }
+                }
             }
         }
     }

@@ -472,12 +472,12 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         .put("createdAt", Instant.now().toString())
         .put("kind", kind)
 
-    internal fun saveContact(group: String, original: JSONObject?, fields: JSONObject, done: () -> Unit) {
+    internal fun saveContact(group: String, original: JSONObject?, fields: JSONObject, done: (String) -> Unit) {
         if (group !in listOf("clients", "sellers", "employees")) return
         saveAdminRecord(group, original, fields, done)
     }
 
-    internal fun saveAdminRecord(group: String, original: JSONObject?, fields: JSONObject, done: () -> Unit) {
+    internal fun saveAdminRecord(group: String, original: JSONObject?, fields: JSONObject, done: (String) -> Unit) {
         val state = portalState?.optJSONObject("state") ?: return
         if (group !in listOf("clients", "sellers", "employees", "inventory", "types", "products")) return
         if (group == "inventory" && (!original?.str("powderAgent").isNullOrEmpty() || fields.has("powderAgent"))) return
@@ -489,7 +489,7 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         val changes = JSONArray(listOf(JSONObject().put("path", JSONArray(listOf(group, id)))
             .put("before", before).put("after", JSONObject().put("exists", true).put("value", next))))
         adminAction("/api/offline/admin/sync", adminEnvelope(state, "admin-state").put("changes", changes),
-            if (original == null) "Cadastro criado." else "Cadastro atualizado.", done)
+            if (original == null) "Cadastro criado." else "Cadastro atualizado.") { done(id) }
     }
 
     internal fun removeAdminRecord(group: String, original: JSONObject, done: () -> Unit) {

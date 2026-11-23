@@ -142,7 +142,7 @@ internal fun ProtecDialog(
     dismissButton: (@Composable () -> Unit)? = null,
     scrollBody: Boolean = true
 ) {
-    ProtecSheet(onDismissRequest = onDismissRequest) {
+    ProtecSheet(onDismissRequest = onDismissRequest, centered = true) {
         val colors = MaterialTheme.colorScheme
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val compact = maxHeight < 280.dp
@@ -181,6 +181,7 @@ internal fun ProtecSheet(
     onDismissRequest: () -> Unit,
     navigation: Boolean = false,
     registration: Boolean = false,
+    centered: Boolean = false,
     visible: Boolean = true,
     onExit: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
@@ -190,13 +191,14 @@ internal fun ProtecSheet(
     val sheetContent by rememberUpdatedState(content)
     val navSheet by rememberUpdatedState(navigation)
     val registrationSheet by rememberUpdatedState(registration)
+    val centerSheet by rememberUpdatedState(centered)
     val shown by rememberUpdatedState(visible)
     val exit by rememberUpdatedState(onExit)
     val team by rememberUpdatedState(LocalTeamPanel.current)
     val entry = remember {
         ProtecSheetEntry { top ->
             CompositionLocalProvider(LocalTeamPanel provides team) {
-                ProtecSheetLayer(top, navSheet, registrationSheet, shown, dismiss, exit, sheetContent)
+                ProtecSheetLayer(top, navSheet, registrationSheet, centerSheet, shown, dismiss, exit, sheetContent)
             }
         }
     }
@@ -219,6 +221,7 @@ private fun ProtecSheetLayer(
     top: Boolean,
     navigation: Boolean,
     registration: Boolean,
+    centered: Boolean,
     visible: Boolean,
     onDismissRequest: () -> Unit,
     onExit: () -> Unit,
@@ -252,22 +255,32 @@ private fun ProtecSheetLayer(
                 .padding(when {
                     navigation -> PaddingValues(start = 12.dp, end = 12.dp, bottom = 9.dp)
                     registration -> PaddingValues()
+                    centered -> PaddingValues(16.dp)
                     else -> PaddingValues(bottom = 8.dp)
                 })
                 .clipToBounds(),
-            contentAlignment = Alignment.BottomCenter
+            contentAlignment = if (centered) Alignment.Center else Alignment.BottomCenter
         ) {
             val maxSheetHeight = when {
                 registration -> (maxHeight * .56f).coerceIn(minOf(400.dp, maxHeight), minOf(520.dp, maxHeight))
+                centered -> minOf(maxHeight, 660.dp)
                 maxHeight < 360.dp -> maxHeight
                 navigation -> maxHeight * .82f
                 else -> maxHeight * .92f
             }
             Surface(
-                modifier = Modifier.widthIn(max = if (navigation) 590.dp else 650.dp).fillMaxWidth().heightIn(max = maxSheetHeight)
+                modifier = Modifier.widthIn(max = when {
+                    navigation -> 590.dp
+                    centered -> 560.dp
+                    else -> 650.dp
+                }).fillMaxWidth().heightIn(max = maxSheetHeight)
                     .graphicsLayer {
                         alpha = if (navigation) 1f else panel.value
-                        val distance = if (navigation) size.height + 9.dp.toPx() else 32.dp.toPx()
+                        val distance = when {
+                            navigation -> size.height + 9.dp.toPx()
+                            centered -> 12.dp.toPx()
+                            else -> 32.dp.toPx()
+                        }
                         translationY = distance * (1f - panel.value)
                     }
                     .blur(coveredBlur)

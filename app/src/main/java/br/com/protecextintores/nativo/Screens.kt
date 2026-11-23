@@ -61,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -68,6 +69,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.delay
 
@@ -122,7 +125,9 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
 private fun MessageBar(vm: AppVm) {
     val text = vm.message
     val distance = with(LocalDensity.current) { 14.dp.roundToPx() }
-    Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomCenter) {
+    var previousText by remember { mutableStateOf("") }
+    LaunchedEffect(text) { if (text != null) previousText = text }
+    Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
             visible = text != null,
             enter = fadeIn(tween(300, easing = WebEaseOut)) + slideInVertically(tween(300, easing = WebEaseOut)) { distance },
@@ -131,12 +136,14 @@ private fun MessageBar(vm: AppVm) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.fillMaxWidth().clickable { vm.message = null }
+                modifier = Modifier.widthIn(max = 440.dp).fillMaxWidth()
+                    .clickable { vm.message = null }.semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 Text(
-                    text ?: "",
+                    text ?: previousText,
                     color = MaterialTheme.colorScheme.surface,
                     style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
                 )
             }

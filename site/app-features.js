@@ -208,7 +208,7 @@
     const host=document.getElementById('content');
     if(window.inventoryPage)return window.inventoryPage(host);
     host.textContent='Carregando estoque…';
-    import('./inventory-ui.mjs?v=protec-interface-68').then(()=>{if(page==='inventory')window.inventoryPage(host);}).catch(()=>{
+    import('./inventory-ui.mjs?v=protec-interface-69').then(()=>{if(page==='inventory')window.inventoryPage(host);}).catch(()=>{
       if(page==='inventory')host.textContent='O estoque não pôde ser carregado. Abra a seção novamente.';
     });
   };
@@ -1794,7 +1794,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=protec-interface-68';
+  style.href = './professional-updates.css?v=protec-interface-69';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');
