@@ -669,4 +669,126 @@
     html:root body.admin-open #adminTabbar[aria-label] { background: var(--ui-panel) !important; }
     html:root body .modal-back { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
   }
+
+  html:root body:has(#dashboard:not(.hidden)) {
+    --admin-glass-base: light-dark(#eaf0fa, #101929);
+    --admin-glass-card: light-dark(#f9fcff, #1b2941);
+    --admin-glass-line: light-dark(#c0d0e6, #465878);
+    --admin-glass-highlight: light-dark(rgb(255 255 255 / .88), rgb(204 225 255 / .31));
+    --admin-glass-shadow: light-dark(rgb(30 57 103 / .23), rgb(0 0 0 / .42));
+    --admin-glass-rim: color-mix(in srgb, var(--admin-glass-line) 65%, var(--admin-glass-highlight));
+    --admin-glass-surface: color-mix(in srgb, var(--admin-glass-card) 76%, transparent);
+    --admin-glass-chrome: color-mix(in srgb, var(--admin-glass-card) 86%, transparent);
+    --admin-glass-dialog: linear-gradient(145deg, color-mix(in srgb, var(--admin-glass-highlight) 24%, transparent), transparent 52%),
+      color-mix(in srgb, var(--admin-glass-card) 89%, transparent);
+    --admin-glass-control: light-dark(#154fab, #2454a0);
+    --admin-glass-sheen: inset 0 1px 1px var(--admin-glass-highlight);
+    --admin-glass-filter: blur(16px) saturate(1.12);
+    --admin-glass-overlay: light-dark(rgb(37 60 94 / .24), rgb(7 13 24 / .52));
+  }
+  html:root body #dashboard:not(.hidden) {
+    background: radial-gradient(ellipse at 9% 4%, light-dark(#b8cffb, #263f73), transparent 55%) left top / 100% min(100%, 100svh) no-repeat,
+      radial-gradient(ellipse at 93% 19%, light-dark(#d6d6fa, #2e2d57), transparent 48%) left top / 100% min(100%, 100svh) no-repeat,
+      radial-gradient(ellipse at 70% 95%, light-dark(#bee7e5, #193f4e), transparent 60%) left top / 100% min(100%, 100svh) no-repeat,
+      var(--admin-glass-base) !important;
+    border-color: var(--admin-glass-rim);
+  }
+  html:root body #dashboard :is(.protec-summary-card,.protec-overview-surface,.ops-panel,.admin-team-shortcuts,.mobile-receipts-list,.mobile-receipts-summary),
+  html:root body #dashboard #content > :is(.panel,.protec-settings-list),
+  html:root body #dashboard #content :is(.stat,.config-grid > .config-card) {
+    background: var(--admin-glass-surface) !important;
+    border: 1px solid var(--admin-glass-rim) !important;
+    border-radius: 18px !important;
+    box-shadow: var(--admin-glass-sheen) !important;
+    -webkit-backdrop-filter: var(--admin-glass-filter);
+    backdrop-filter: var(--admin-glass-filter);
+  }
+  html:root body #dashboard #content .protec-settings-list details > .config-card {
+    background: transparent !important;
+    border: 0 !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  html:root body #dashboard :is(.protec-overview-link,.protec-search-toggle,.admin-top .theme-toggle),
+  html:root body #dashboard #content :is(.btn.btn-soft,.page-title .icon-btn,.admin-team-shortcut-links button) {
+    background: var(--admin-glass-chrome) !important;
+    border: 1px solid var(--admin-glass-rim) !important;
+    border-radius: 14px !important;
+    box-shadow: var(--admin-glass-sheen), 0 4px 10px -8px var(--admin-glass-shadow);
+    -webkit-backdrop-filter: var(--admin-glass-filter);
+    backdrop-filter: var(--admin-glass-filter);
+  }
+  html:root body #dashboard .protec-overview-link { padding-inline: 12px; }
+  html:root body #dashboard #content :is(button.btn,a.btn):not(.btn-soft,.btn-dark,.btn-outline-light) {
+    border-radius: 14px !important;
+    background: linear-gradient(155deg, color-mix(in srgb,var(--admin-glass-control) 85%,var(--admin-glass-highlight)),
+      var(--admin-glass-control) 75%) !important;
+    color: white !important;
+    box-shadow: var(--admin-glass-sheen);
+  }
+  html:root body #dashboard .protec-summary-card:hover { border-color: var(--ui-accent) !important; }
+  html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal-back {
+    background: var(--admin-glass-overlay) !important;
+  }
+  html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal-back:not(:has(.maintenance-registration-form)) {
+    -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
+    backdrop-filter: blur(18px) saturate(1.1) !important;
+  }
+  html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal,
+  html:root body.admin-open #adminMore[open] {
+    background: var(--admin-glass-dialog) !important;
+    border: 1px solid var(--admin-glass-rim) !important;
+    box-shadow: var(--admin-glass-sheen), 0 23px 58px -12px var(--admin-glass-shadow) !important;
+  }
+  html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal :is(.modal-head,.modal-actions) {
+    background: var(--admin-glass-chrome) !important;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  html:root body:has(#dashboard:not(.hidden)) #toast:not(.hidden) {
+    background: var(--admin-glass-chrome) !important;
+    border-color: var(--admin-glass-rim) !important;
+    -webkit-backdrop-filter: var(--admin-glass-filter);
+    backdrop-filter: var(--admin-glass-filter);
+  }
+  @media (width > 650px) {
+    html:root body:has(#dashboard:not(.hidden)) { overflow-x: clip !important; overflow-y: visible !important; }
+    html:root body #dashboard:not(.hidden) > .sidebar {
+      background: var(--admin-glass-surface) !important;
+      border: 1px solid var(--admin-glass-rim) !important;
+      box-shadow: var(--admin-glass-sheen), 0 8px 20px -12px var(--admin-glass-shadow) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(1.18) !important;
+      backdrop-filter: blur(20px) saturate(1.18) !important;
+      overflow: hidden !important;
+    }
+    html:root body #dashboard > .sidebar > :is(.brand,.sidebar-bottom) { flex-shrink: 0; }
+    html:root body #dashboard > .sidebar > #adminNav {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none !important;
+      overflow-y: auto !important;
+    }
+  }
+  @media (max-width: 650px) {
+    html:root body.admin-open #dashboard .protec-overview .ops-hero h1 { font-size: clamp(28px, 8vw, 34px) !important; }
+    html:root body.admin-open #adminTabbar[aria-label] {
+      background: var(--admin-glass-chrome) !important;
+      border: 1px solid var(--admin-glass-rim) !important;
+      box-shadow: var(--admin-glass-sheen), 0 8px 17px -12px var(--admin-glass-shadow);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    html:root body:has(#dashboard:not(.hidden)) {
+      --admin-glass-surface: var(--admin-glass-card);
+      --admin-glass-chrome: var(--admin-glass-card);
+      --admin-glass-dialog: var(--admin-glass-card);
+      --admin-glass-filter: none;
+    }
+    html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal-back:not(:has(.maintenance-registration-form)),
+    html:root body #dashboard:not(.hidden) > .sidebar,
+    html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal :is(.modal-head,.modal-actions) {
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+  }
 }
