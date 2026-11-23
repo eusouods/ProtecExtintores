@@ -687,9 +687,9 @@
     --admin-glass-overlay: light-dark(rgb(37 60 94 / .24), rgb(7 13 24 / .52));
   }
   html:root body #dashboard:not(.hidden) {
-    background: radial-gradient(ellipse at 9% 4%, light-dark(#b8cffb, #263f73), transparent 55%) left top / 100% min(100%, 100svh) no-repeat,
-      radial-gradient(ellipse at 93% 19%, light-dark(#d6d6fa, #2e2d57), transparent 48%) left top / 100% min(100%, 100svh) no-repeat,
-      radial-gradient(ellipse at 70% 95%, light-dark(#bee7e5, #193f4e), transparent 60%) left top / 100% min(100%, 100svh) no-repeat,
+    background: radial-gradient(ellipse 71% 75svh at 9% 4svh, light-dark(#b8cffb, #263f73), transparent),
+      radial-gradient(ellipse 63% 55svh at 93% 19svh, light-dark(#d6d6fa, #2e2d57), transparent),
+      radial-gradient(ellipse 61% 72svh at 70% 95svh, light-dark(#bee7e5, #193f4e), transparent),
       var(--admin-glass-base) !important;
     border-color: var(--admin-glass-rim);
   }
@@ -753,6 +753,7 @@
   }
   @media (width > 650px) {
     html:root body:has(#dashboard:not(.hidden)) { overflow-x: clip !important; overflow-y: visible !important; }
+    html:root body #dashboard .admin-top { position: static !important; }
     html:root body #dashboard:not(.hidden) > .sidebar {
       background: var(--admin-glass-surface) !important;
       border: 1px solid var(--admin-glass-rim) !important;
