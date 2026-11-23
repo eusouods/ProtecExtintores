@@ -1,6 +1,6 @@
-import {recordPowder,setPainting,requestOwnership,powderCapacity} from './workshop-rules.mjs?v=protec-interface-70';
+import {recordPowder,setPainting,requestOwnership,powderCapacity} from './workshop-rules.mjs?v=protec-interface-71';
 // Shared, deterministic rules. The server is authoritative for ownership and time.
-import {PART_NAMES, cancelled, completed, missingVideos,teamBase,normalizeRegistration,registrationQuote,estimateFinance,registrationContacts} from './service-rules.mjs?v=protec-interface-70';
+import {PART_NAMES, cancelled, completed, missingVideos,teamBase,normalizeRegistration,registrationQuote,estimateFinance,registrationContacts} from './service-rules.mjs?v=protec-interface-71';
 export const uuid = value => /^[a-zA-Z0-9_-]{8,80}$/.test(String(value || ''));
 export function fail(message, status = 400) { throw Object.assign(new Error(message), {status}); }
 const text = (value, max = 3000) => String(value ?? '').trim().slice(0, max);
