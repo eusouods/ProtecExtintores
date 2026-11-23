@@ -45,7 +45,6 @@ let sheet;
 let closeMore;
 let sidebar;
 let queued = false;
-let pageMotion;
 
 function setSections(main) {
   const sectionFor = element => {
@@ -95,11 +94,7 @@ function show(tab) {
   else window.closeNextMaintenancePage?.();
   sync();
   const section = root.querySelector(tab === 'agenda' ? '#teamNextMaintenancePage' : '.employee-main');
-  pageMotion?.cancel();
-  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    pageMotion=section?.animate([{ opacity: .72, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
-      { duration: 310, easing: 'cubic-bezier(.18,.8,.25,1)' });
-  }
+  window.protecMotion?.transition(section, { duration: 310 });
   window.scrollTo(0, 0);
 }
 

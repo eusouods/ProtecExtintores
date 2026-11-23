@@ -1,6 +1,6 @@
-import {openInventoryEntry} from './inventory-ui.mjs?v=protec-interface-73';
-import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=protec-interface-73';
-import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=protec-interface-73';
+import {openInventoryEntry} from './inventory-ui.mjs?v=protec-interface-74';
+import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=protec-interface-74';
+import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,powderEntryReversal} from './workshop-rules.mjs?v=protec-interface-74';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const when=v=>v?new Date(v).toLocaleString('pt-BR'):'—';
@@ -13,7 +13,6 @@ export function powderFields(s){
 }
 export function powderPayload(form,s){return Object.entries(powderCapacity(s)).filter(([,g])=>g>0).map(([agent])=>({agent,grams:Number(form.get('powder_'+agent+'_kg'))*1000}));}
 
-export function groupedEquipmentMarkup(s){return `<div class="workshop-equipment-summary">${equipmentGroups(s.items).map(g=>`<div><span>${esc(g.type)} · ${esc(g.kg?g.kg+' kg':'10 L')}</span><b>${g.items.length} unidade(s)</b></div>`).join('')||'<p>Sem extintores para manutenção.</p>'}</div>`;}
 export function bindWorkshopOrder(root,s){
  const admin=role()==='admin',canEdit=admin&&!s.closed&&!s.cancelledAt;
  if(canEdit){const actions=root.querySelector('.ops-detail-actions');if(s.items?.length)actions?.insertAdjacentHTML('beforeend','<button class="btn btn-soft btn-small" type="button" data-workshop-painting>Pinturas da ordem</button>');if(Object.values(powderCapacity(s)).some(Boolean))actions?.insertAdjacentHTML('beforeend','<button class="btn btn-soft btn-small" type="button" data-workshop-powder>Consumo de pó</button>');}

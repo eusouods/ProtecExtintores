@@ -1,6 +1,6 @@
-/* Centro operacional: agenda, alertas, relatórios e resumos de equipe. */
+/* Centro operacional: alertas, relatórios e resumos de equipe. */
 (() => {
-  const specialPages = new Set(['calendar', 'alerts', 'reports']);
+  const specialPages = new Set(['alerts', 'reports', 'service-clients']);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const serviceItems = service => Array.isArray(service?.items) ? service.items : [];
@@ -8,13 +8,7 @@
   const isCancelled = service => Boolean(service?.cancelledAt || normalize(service?.status) === 'cancelado');
   const awaitingReview = service => !isClosed(service) && !isCancelled(service) && Boolean(service?.employeeCompletedAt || (serviceItems(service).length && serviceItems(service).every(item => normalize(item.status) === 'concluido')));
   const dateFromMonth = value => /^20\d{2}-(0[1-9]|1[0-2])$/.test(String(value || '')) ? new Date(`${value}-01T12:00:00`) : null;
-  const formatDate = value => value ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR') : 'A definir';
-  const formatMonth = value => {
-    const date = dateFromMonth(value);
-    return date ? date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : 'Sem previsão';
-  };
   const services = () => db.services || [];
-  const moneyValue = value => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   function addOperationsNavigation() {
     const operationNav = document.querySelector('.side-nav button[data-page="services"]')?.parentElement;
@@ -42,10 +36,11 @@
     });
   }
 
-  function setCurrentPage(page, label) {
-    window.page = page;
+  function setCurrentPage(target, label) {
+    page = target;
+    window.page = target;
     document.querySelectorAll('.side-nav button[data-page],#mobileAdminNav button[data-page]').forEach(button => {
-      const active = button.dataset.page === page;
+      const active = button.dataset.page === target;
       button.classList.toggle('active', active);
       button.toggleAttribute('aria-current', active);
     });
@@ -53,65 +48,13 @@
     if (crumb) crumb.textContent = label;
   }
 
-  function agendaPage(host) {
-    const now = new Date(); now.setHours(0, 0, 0, 0);
-    const entries = services().filter(service => !isCancelled(service)).flatMap(service => {
-      const result = [];
-      if (service.date) result.push({ when: new Date(`${service.date}T12:00:00`), service, kind: 'Atendimento', label: service.serviceType || 'Manutenção' });
-      const next = dateFromMonth(service.nextMaintenanceMonth);
-      if (next) result.push({ when: next, service, kind: 'Próxima manutenção', label: 'Validade programada' });
-      return result;
-    }).filter(item => !Number.isNaN(item.when.getTime())).sort((a, b) => a.when - b.when);
-    const upcoming = entries.filter(item => item.when >= now).slice(0, 20);
-    const grouped = new Map();
-    upcoming.forEach(item => {
-      const key = item.when.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      if (!grouped.has(key)) grouped.set(key, []);
-      grouped.get(key).push(item);
-    });
-    host.innerHTML = `<div class="page-title"><div><div class="eyebrow">Planejamento operacional</div><h1>Agenda de manutenções</h1><p>Visualize atendimentos registrados e as próximas manutenções programadas.</p></div><button class="btn btn-small" type="button" onclick="openService()">＋ Registrar serviço</button></div><section class="ops-summary"><article><small>Próximos eventos</small><b>${upcoming.length}</b><span>atendimentos e validades</span></article><article><small>Em revisão</small><b>${services().filter(awaitingReview).length}</b><span>aguardando conferência</span></article><article><small>Sem previsão</small><b>${services().filter(service => !service.nextMaintenanceMonth && !isClosed(service)).length}</b><span>precisam de data</span></article></section><section class="ops-calendar">${grouped.size ? [...grouped.entries()].map(([month, items]) => `<article class="ops-month"><h2>${escapeHtml(month)}</h2>${items.map(item => `<button class="ops-event" type="button" onclick="go('services')"><time>${item.when.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</time><span><b>${escapeHtml(item.service.code || 'Serviço')}</b><small>${escapeHtml(item.service.clientName || 'Cliente não informado')} · ${escapeHtml(item.kind)}</small></span><em>${escapeHtml(item.label)}</em></button>`).join('')}</article>`).join('') : '<div class="panel empty">Nenhum evento futuro cadastrado. Defina a data do serviço e a próxima manutenção para montar a agenda.</div>'}</section>`;
-  }
-
-  function alertsPage(host) {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const limit = new Date(today); limit.setDate(limit.getDate() + 60);
-    const validity = services().filter(service => !isCancelled(service) && dateFromMonth(service.nextMaintenanceMonth)).map(service => ({ service, when: dateFromMonth(service.nextMaintenanceMonth) }));
-    const expired = validity.filter(item => item.when < new Date(today.getFullYear(), today.getMonth(), 1));
-    const dueSoon = validity.filter(item => item.when >= new Date(today.getFullYear(), today.getMonth(), 1) && item.when <= limit);
-    const review = services().filter(awaitingReview);
-    const stock = (db.inventory || []).filter(item => Number(item.qty || 0) <= Number(item.minQty || 0));
-    const block = (title, text, rows, action, actionLabel) => `<section class="panel ops-alert-card"><header><div><h2>${title}</h2><p>${text}</p></div><span class="ops-count">${rows.length}</span></header>${rows.length ? `<div class="ops-alert-list">${rows.map(row => `<div>${row}</div>`).join('')}</div><button class="btn btn-soft btn-small" type="button" onclick="go('${action}')">${actionLabel}</button>` : '<p class="ops-ok">Nenhuma pendência encontrada.</p>'}</section>`;
-    host.innerHTML = `<div class="page-title"><div><div class="eyebrow">Acompanhamento inteligente</div><h1>Alertas operacionais</h1><p>Priorize o que exige ação da administração sem depender de planilhas externas.</p></div><button class="btn btn-small" type="button" onclick="go('services')">Abrir manutenções</button></div><div class="ops-alert-grid">${block('Aguardando revisão', 'Serviços concluídos pela equipe e prontos para conferência.', review.map(service => `<b>${escapeHtml(service.code || 'Serviço')}</b><span>${escapeHtml(service.clientName || 'Cliente não informado')} · ${serviceItems(service).length} extintor(es)</span>`), 'services', 'Revisar serviços')}${block('Validades vencidas', 'Manutenções cujo mês programado já passou.', expired.map(item => `<b>${escapeHtml(item.service.code || 'Serviço')}</b><span>${escapeHtml(item.service.clientName || 'Cliente não informado')} · ${escapeHtml(formatMonth(item.service.nextMaintenanceMonth))}</span>`), 'services', 'Abrir serviços')}${block('Próximas em até 60 dias', 'Contate o cliente e organize a agenda com antecedência.', dueSoon.map(item => `<b>${escapeHtml(item.service.code || 'Serviço')}</b><span>${escapeHtml(item.service.clientName || 'Cliente não informado')} · ${escapeHtml(formatMonth(item.service.nextMaintenanceMonth))}</span>`), 'next-maintenance', 'Ver próximas manutenções')}${block('Estoque baixo', 'Itens com quantidade igual ou abaixo do mínimo definido.', stock.map(item => `<b>${escapeHtml(item.name)}</b><span>${Number(item.qty || 0)} ${escapeHtml(item.unit || 'un')} disponíveis · mínimo ${Number(item.minQty || 0)}</span>`), 'inventory', 'Abrir estoque')}</div>`;
-  }
-
-  function reportsPage(host) {
-    const all = services().filter(service => !isCancelled(service));
-    const closed = all.filter(isClosed);
-    const review = all.filter(awaitingReview);
-    const open = all.filter(service => !isClosed(service) && !awaitingReview(service));
-    const totals = closed.reduce((sum, service) => sum + Number(service.price || 0), 0);
-    const byPerson = (key, fallback) => {
-      const map = new Map();
-      all.forEach(service => { const name = service[key] || fallback; if (!map.has(name)) map.set(name, []); map.get(name).push(service); });
-      return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
-    };
-    const rows = ([name, list]) => `<tr><td><strong>${escapeHtml(name)}</strong></td><td>${list.length}</td><td>${list.filter(isClosed).length}</td><td>${list.filter(awaitingReview).length}</td><td>${moneyValue(list.reduce((sum, service) => sum + Number(service.price || 0), 0))}</td></tr>`;
-    host.innerHTML = `<div class="page-title"><div><div class="eyebrow">Visão gerencial</div><h1>Relatórios operacionais</h1><p>Indicadores do histórico de manutenções e da atuação da equipe.</p></div><button class="btn btn-small" type="button" onclick="downloadOperationalReport()">↓ Exportar CSV</button></div><section class="ops-summary ops-summary-wide"><article><small>Serviços registrados</small><b>${all.length}</b><span>histórico total</span></article><article><small>Finalizados</small><b>${closed.length}</b><span>com comprovante liberado</span></article><article><small>Em andamento</small><b>${open.length}</b><span>aguardando execução</span></article><article><small>Aguardando revisão</small><b>${review.length}</b><span>pendências administrativas</span></article><article><small>Valor finalizado</small><b>${moneyValue(totals)}</b><span>soma dos serviços fechados</span></article></section><section class="ops-report-grid"><article class="panel table-wrap"><header class="panel-head"><div><h2>Por funcionário</h2><p>Volume registrado, fechamentos e pendências.</p></div></header><table><thead><tr><th>Funcionário</th><th>Serviços</th><th>Finalizados</th><th>Revisão</th><th>Valor</th></tr></thead><tbody>${byPerson('employeeName', 'Sem responsável').map(rows).join('') || '<tr><td colspan="5">Nenhum dado disponível.</td></tr>'}</tbody></table></article><article class="panel table-wrap"><header class="panel-head"><div><h2>Por vendedor</h2><p>Origem comercial dos serviços.</p></div></header><table><thead><tr><th>Vendedor</th><th>Serviços</th><th>Finalizados</th><th>Revisão</th><th>Valor</th></tr></thead><tbody>${byPerson('sellerName', 'Administração').map(rows).join('') || '<tr><td colspan="5">Nenhum dado disponível.</td></tr>'}</tbody></table></article></section>`;
-  }
-
-  window.downloadOperationalReport = function() {
-    const head = ['Código', 'Cliente', 'Serviço', 'Data', 'Próxima manutenção', 'Funcionário', 'Vendedor', 'Status', 'Valor'];
-    const rows = services().map(service => [service.code, service.clientName, service.serviceType, service.date, service.nextMaintenanceMonth, service.employeeName, service.sellerName, service.closed ? 'Finalizado' : awaitingReview(service) ? 'Aguardando revisão' : service.status, Number(service.price || 0).toFixed(2)]);
-    const csv = [head, ...rows].map(row => row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(';')).join('\n');
-    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); link.download = `relatorio-protecextintores-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(link.href); toast('Relatório CSV preparado para download.');
-  };
-
   function renderSpecial(target) {
-    const host = document.getElementById('content'); if (!host) return;
+    const host = document.getElementById('content');
+    if (!host || localStorage.getItem('protecextintores_role') !== 'admin' || document.getElementById('dashboard').classList.contains('hidden')) return;
     addOperationsNavigation();
-    if (target === 'calendar') { setCurrentPage(target, 'Agenda'); agendaPage(host); }
-    if (target === 'alerts') { setCurrentPage(target, 'Alertas'); alertsPage(host); }
-    if (target === 'reports') { setCurrentPage(target, 'Relatórios'); reportsPage(host); }
+    if (target === 'alerts') { setCurrentPage(target, 'Alertas'); window.protecOperationalViews.alerts(host); }
+    if (target === 'reports') { setCurrentPage(target, 'Relatórios'); window.protecOperationalViews.reports(host); }
+    if (target === 'service-clients') { setCurrentPage(target, 'Serviços por cliente'); window.protecClientView.directory(host); }
   }
 
   const nativeGo = window.go;
@@ -193,7 +136,7 @@
   };
   const G = [
     {id:'overview',label:'Painel',icon:'grid',pages:[['overview','Painel']]},
-    {id:'services',label:'Manutenções',icon:'wrench',pages:[['services','Histórico'],['next-maintenance','Próximas manutenções']]},
+    {id:'services',label:'Manutenções',icon:'wrench',pages:[['services','Histórico'],['service-clients','Por cliente'],['next-maintenance','Próximas manutenções']]},
     {id:'extinguishers',label:'Extintores',icon:'flame',pages:[['extinguishers','Extintores']]},
     {id:'clients',label:'Clientes e vendedores',short:'Clientes',icon:'users',pages:[['clients','Clientes e vendedores']]},
     {id:'stock',label:'Estoque e preços',icon:'box',pages:[['inventory','Estoque'],['parts','Peças e preços'],['workshop','Pó e envios']]},
@@ -220,7 +163,8 @@
     const header=document.querySelector('#dashboard .admin-top');
     if(header&&!header.querySelector('.mobile-panel-brand')){
       const brand=document.createElement('span');brand.className='mobile-panel-brand';
-      brand.innerHTML=`<span class="protec-panel-mark">${svg('flame')}</span><span>ProtecExtintores</span>`;
+      brand.innerHTML=`<span class="brand-mark" aria-hidden="true">${window.protecBrand.image(31)}</span><span id="mobilePanelBrandName"></span>`;
+      brand.lastElementChild.textContent=db.settings.company||'ProtecExtintores';
       header.prepend(brand);
       const alert=document.createElement('button');alert.type='button';alert.className='mobile-panel-alert';alert.dataset.go='alerts';
       alert.setAttribute('aria-label','Alertas');alert.innerHTML=svg('bell');header.querySelector('.admin-top-right')?.prepend(alert);
@@ -242,8 +186,6 @@
       const nav = document.createElement('nav');
       nav.id = 'adminNav'; nav.setAttribute('aria-label', 'Menu do painel');
       nav.innerHTML = PRIMARY.map(item=>entry(item)).join('') + moreButton('admin-nav-item');
-      const brandMark=sidebar.querySelector('.brand-mark');
-      if(brandMark)brandMark.insertAdjacentHTML('beforeend',`<span class="protec-panel-mark">${svg('flame')}</span>`);
       (sidebar.querySelector('.brand') || sidebar.firstElementChild)?.insertAdjacentElement('afterend', nav);
     }
     if (!document.getElementById('adminTabbar')) {
@@ -280,26 +222,16 @@
     const box = document.createElement('div');
     box.id = 'adminSearch'; box.hidden = true;
     document.querySelector('.protec-search-toggle')?.setAttribute('aria-expanded','false');
-    box.innerHTML = `<label class="admin-search-field">${svg('search')}<input type="search" placeholder="Buscar cliente, ordem ou funcionário" aria-label="Buscar cliente, ordem ou funcionário" autocomplete="off"></label><div class="admin-search-results" hidden></div>`;
+    box.innerHTML = `<label class="admin-search-field">${svg('search')}<input type="search" placeholder="Buscar cliente, ordem ou nº de série" aria-label="Buscar cliente, ordem, série ou responsável" autocomplete="off"></label><div class="admin-search-results" hidden></div>`;
     c.prepend(box);
     const input = box.querySelector('input'), out = box.querySelector('.admin-search-results');
-    input.addEventListener('keydown',event=>{
+    box.addEventListener('keydown',event=>{
       if(event.key!=='Escape')return;
       box.hidden=true;
       const button=document.querySelector('.protec-search-toggle');
       button?.setAttribute('aria-expanded','false');button?.focus();
     });
-    input.addEventListener('input', () => {
-      const q = norm(input.value.trim());
-      if (q.length < 2) { out.hidden = true; out.innerHTML = ''; return; }
-      const data = typeof db !== 'undefined' ? db : {};
-      const services = (data.services || []).filter(s => norm([s.clientName, s.code, s.employeeName, s.sellerName].join(' ')).includes(q)).slice(0, 6)
-        .map(s => `<button type="button" data-search-service="${esc(s.id)}"><b>${esc(s.clientName || 'Cliente não informado')}</b><small>${esc(s.code || 'Ordem')} · ${esc(s.employeeName || 'Aguardando aceite')}</small></button>`);
-      const clients = (data.clients || []).filter(x => norm([x.name, x.phone, x.email].join(' ')).includes(q)).slice(0, 4)
-        .map(x => `<button type="button" data-go="clients"><b>${esc(x.name)}</b><small>Cliente</small></button>`);
-      const rows = services.concat(clients);
-      out.innerHTML = rows.join('') || '<p>Nada encontrado.</p>'; out.hidden = false;
-    });
+    window.protecClientView.bindSearch(input, out);
   }
 
   /* Configurações: como o funcionário avança as etapas do serviço */
@@ -407,11 +339,12 @@
     if(document.body.dataset.mobileAdminPage!==cur)document.body.dataset.mobileAdminPage=cur;
     if (cur !== last) {
       last = cur;
+      window.protecPanelHistory?.(cur);
       document.querySelectorAll('[data-nav-group]').forEach(b => {
         const on = b.dataset.navGroup === group?.id;
         b.classList.toggle('active', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current');
       });
-      const destination = cur==='next-maintenance'?'services':cur;
+      const destination = ['next-maintenance','service-clients'].includes(cur)?'services':cur;
       const mainDestination=PRIMARY.some(([id])=>id===destination);
       document.querySelectorAll('#adminNav button,#adminTabbar button').forEach(button=>{
         const active=button.dataset.adminDestination===destination||(!mainDestination&&button.hasAttribute('data-nav-more'));
@@ -441,23 +374,30 @@
       if(sheet.open)closeMore();else{sheet.hidden=false;sheet.showModal();t.setAttribute('aria-expanded','true');}
       return;
     }
-    if (t.dataset.searchService) { const id = t.dataset.searchService; if (typeof serviceOrder === 'function') serviceOrder(id); }
   });
-  setInterval(sync, 300); sync();
+  let frame;
+  const scheduleSync = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; sync(); }); };
+  const observer = new MutationObserver(records => {
+    if (records.some(record => record.target.id === 'dashboard' || [...record.addedNodes].some(node => node.nodeType === Node.ELEMENT_NODE))) scheduleSync();
+  });
+  observer.observe(document.getElementById('dashboard'), { attributes: true, attributeFilter: ['class'] });
+  observer.observe(document.getElementById('content'), { childList: true, subtree: true });
+  window.addEventListener('resize', scheduleSync, { passive: true });
+  sync();
 })();
 
-/* Movimento: troca de tela, revelar ao rolar, contadores, pílula da barra inferior e toque nos botões. */
+/* Movimento: troca de tela, revelar ao rolar, marcador da barra inferior e toque nos botões. */
 (() => {
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.__protecMotion = {reduce};
   /* 1) painel: animar a troca de tela */
   const wrapGo = () => {
     if (typeof window.go !== 'function' || window.go.__mv) return;
     const base = window.go;
     const fn = function () {
-      const c = document.getElementById('content');
-      if (c && !reduce) { c.dataset.enter = '1'; clearTimeout(fn.__t); fn.__t = setTimeout(() => { delete c.dataset.enter; }, 900); }
-      return base.apply(this, arguments);
+      const before = window.page;
+      const result = base.apply(this, arguments);
+      if (before !== window.page) window.protecMotion.transition(document.getElementById('content'));
+      return result;
     };
     fn.__mv = true; window.go = fn;
   };
@@ -493,25 +433,6 @@
     if (getComputedStyle(b).position === 'static') b.style.position = 'relative';
     b.style.overflow = 'hidden'; b.append(sp); setTimeout(() => sp.remove(), 650);
   }, {passive: true});
-  /* 5) números do painel contando até o valor */
-  const brl = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'});
-  window.__protecCountUp = function () {
-    if (reduce) return true;
-    const els = [...document.querySelectorAll('#content .ops-metric strong')].filter(el => !el.dataset.cu);
-    if (!els.length) return false;
-    els.forEach(el => {
-      el.dataset.cu = '1';
-      const txt = el.textContent.trim(); let target, fmt;
-      if (/^\d+$/.test(txt)) { target = +txt; fmt = v => String(Math.round(v)); }
-      else if (/^R\$\s?[\d.]+,\d{2}$/.test(txt)) { target = parseFloat(txt.replace(/[^\d,]/g, '').replace(',', '.')); fmt = v => brl.format(v).replace(/\u00a0/g, ' '); }
-      else return;
-      if (!target) return;
-      const t0 = performance.now(), d = 800; el.textContent = fmt(0);
-      const step = t => { const p = Math.min(1, (t - t0) / d), k = 1 - Math.pow(1 - p, 3); el.textContent = p < 1 ? fmt(target * k) : txt; if (p < 1) requestAnimationFrame(step); };
-      requestAnimationFrame(step);
-    });
-    return true;
-  };
   /* 6) pílula que desliza na barra inferior */
   window.__protecPill = function () {
     const bar = document.getElementById('adminTabbar'), pill = bar && bar.querySelector('.admin-tab-pill');

@@ -32,6 +32,7 @@ jobs:
           node scripts/release-offline.mjs
           node scripts/test-service-rules.mjs
           node scripts/test-offline-rules.mjs
+          node scripts/test-site-navigation.mjs
           node scripts/verify-theme.mjs
           node scripts/verify-site.mjs
       - name: Definir nome do artefato

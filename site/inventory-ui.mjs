@@ -1,4 +1,4 @@
-import { applyAdminChanges } from './offline-rules.mjs?v=protec-interface-73';
+import { applyAdminChanges } from './offline-rules.mjs?v=protec-interface-74';
 
 const labels = { parts: 'Peças', extinguishers: 'Extintores', powder: 'Pó' };
 const agents = ['ABC', 'BC'];
@@ -28,6 +28,11 @@ function withInventoryRow(state, updated) {
 }
 
 function inventoryPage(host) {
+  if (window.protecInventorySelection) {
+    selectedId = window.protecInventorySelection;
+    filter = 'all';
+    delete window.protecInventorySelection;
+  }
   const items = rows().filter(row => filter === 'all' || category(row) === filter);
   const selected = items.find(row => row.id === selectedId) || items[0];
   selectedId = selected?.id || '';
@@ -90,6 +95,7 @@ export function openInventoryEntry({ group = 'parts', itemId = '', agent = '', a
   let review;
   let pending;
   let saving = false;
+  let previousStep = 0;
   window.openModal('Adicionar ao estoque', `<ol class="stock-steps" aria-label="Etapas">${stages.map(stage => `<li>${stage}</li>`).join('')}</ol><div data-stock-step></div><p class="stock-error" role="alert" hidden></p>`, () => false, 'Avançar');
   const form = document.getElementById('editForm');
   const body = form.querySelector('[data-stock-step]');
@@ -137,6 +143,9 @@ export function openInventoryEntry({ group = 'parts', itemId = '', agent = '', a
       const { title, old, received, unit } = review;
       body.innerHTML = `<h3>${esc(title)}</h3><dl class="stock-review"><div><dt>Saldo atual</dt><dd>${esc(quantityText(old, unit))}</dd></div><div><dt>Entrada</dt><dd>+${esc(quantityText(received, unit))}</dd></div><div><dt>Saldo previsto</dt><dd>${esc(quantityText(old + received, unit))}</dd></div></dl>`;
     }
+    const direction = Math.sign(step - previousStep);
+    if (direction) window.protecMotion?.transition(body, { axis: 'X', direction, duration: 255 });
+    previousStep = step;
     (body.querySelector('select,input') || next).focus();
   }
 

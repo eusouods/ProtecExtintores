@@ -2,6 +2,15 @@
 (() => {
   'use strict';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+  window.openPublicTracking = code => {
+    window.closeModal();
+    window.showPublicPage('tracking');
+    const input = document.getElementById('trackCode');
+    if (!input) return;
+    input.value = String(code || '');
+    if (input.value.trim()) return window.trackPublic(new Event('submit', { cancelable: true }));
+    input.focus();
+  };
   const submitOrder = async order => {
     if (!API_ENABLED) return true;
     try {
@@ -30,7 +39,9 @@
   window.openCart = checkout;
   window.showOrderConfirmation = order => {
     const payment = order.paymentQr ? `<div class="checkout-pix"><b>Pix liberado para pagamento</b><img class="customer-order-qr" src="${esc(order.paymentQr)}" alt="QR Code Pix do pedido ${esc(order.code)}"><p>Escaneie o QR Code no aplicativo do seu banco.</p><label for="checkoutPixPayload">Pix copia e cola</label><textarea readonly id="checkoutPixPayload" rows="3">${esc(order.pixPayload || '')}</textarea><button type="button" class="btn btn-soft" onclick="copyCheckoutPix()">Copiar Pix</button><p class="helper">Total: ${money(order.total)}.</p></div>` : `<div class="tracking-card"><b>Pagamento Pix</b><p>Total: ${money(order.total)}</p><p class="helper">O QR Pix não ficou disponível. Fale com a equipe antes de pagar.</p></div>`;
-    document.getElementById('modalRoot').innerHTML = `<div class="modal-back"><div class="modal checkout-confirmation"><div class="eyebrow">Pedido recebido</div><h2>Obrigado, ${esc(order.name)}.</h2><p>Seu pedido <b>${esc(order.code)}</b> foi registrado. Guarde este código para acompanhar a compra.</p>${payment}<div class="modal-actions"><button class="btn" onclick="closeModal();document.getElementById('trackCode').value='${esc(order.code)}';document.getElementById('acompanhar').scrollIntoView({behavior:'smooth'})">Acompanhar pedido</button><button class="btn btn-soft" onclick="closeModal()">Fechar</button></div></div></div>`;
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `<div class="modal-back"><div class="modal checkout-confirmation"><div class="eyebrow">Pedido recebido</div><h2>Obrigado, ${esc(order.name)}.</h2><p>Seu pedido <b>${esc(order.code)}</b> foi registrado. Guarde este código para acompanhar a compra.</p>${payment}<div class="modal-actions"><button class="btn" type="button" data-track-confirmation>Acompanhar pedido</button><button class="btn btn-soft" onclick="closeModal()">Fechar</button></div></div></div>`;
+    root.querySelector('[data-track-confirmation]').onclick = () => window.openPublicTracking(order.code);
   };
   const previousAccount = window.openCustomerAccount;
   window.openCustomerAccount = async function (...args) {
