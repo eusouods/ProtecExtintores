@@ -11,6 +11,8 @@
     --protec-frame-pad: 12px;
     --protec-rail-width: 192px;
     --protec-workspace-gap: 12px;
+    --protec-menu-enter: 460ms cubic-bezier(.24,.88,.26,1);
+    --protec-menu-exit: 300ms cubic-bezier(.4,0,.75,.25);
     --protec-frame-bg: radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--ui-selected) 70%, transparent), transparent 60%)
       left top / 100% min(100%, 100svh) no-repeat, var(--ui-bg);
   }
@@ -376,6 +378,43 @@
   .protec-overview-details small { color: var(--ui-muted); }
   .protec-overview-extras { padding-bottom: 13px; }
   #adminMore::backdrop { background: rgb(var(--ui-scrim-rgb) / .35); backdrop-filter: var(--ui-glass-filter); }
+  @keyframes protec-more-enter {
+    from { transform: var(--protec-sheet-offscreen); }
+    to { transform: none; }
+  }
+  @keyframes protec-more-exit {
+    from { transform: var(--protec-sheet-exit-from, none); }
+    to { transform: var(--protec-sheet-offscreen); }
+  }
+  @keyframes protec-backdrop-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes protec-backdrop-exit {
+    from { opacity: var(--protec-backdrop-exit-from, 1); }
+    to { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html:root body :is(#adminMore,#teamMobileMore) {
+      --protec-sheet-offscreen: translateY(22px) scale(.98);
+    }
+    html:root body :is(#adminMore,#teamMobileMore)[open] {
+      animation: protec-more-enter var(--protec-menu-enter) both !important;
+    }
+    html:root body :is(#adminMore,#teamMobileMore)[open][data-sheet-closing] {
+      animation: protec-more-exit var(--protec-menu-exit) both !important;
+    }
+    html:root body :is(#adminMore,#teamMobileMore)[open]::backdrop {
+      animation: protec-backdrop-enter var(--protec-menu-enter) both !important;
+    }
+    html:root body :is(#adminMore,#teamMobileMore)[open][data-sheet-closing]::backdrop {
+      animation: protec-backdrop-exit var(--protec-menu-exit) both !important;
+    }
+    html:root body :is(.admin-tab-pill,.team-mobile-pill) {
+      transition: transform 400ms cubic-bezier(.2,.8,.25,1), width 400ms cubic-bezier(.2,.8,.25,1),
+        height 400ms cubic-bezier(.2,.8,.25,1), opacity 180ms ease-out !important;
+    }
+  }
   html:root body #dashboard :is(.protec-services-compact,.protec-settings-list,.mobile-receipts) { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
   html:root body[data-mobile-admin-page="services"] #dashboard #content > .page-title h1,
   html:root body[data-mobile-admin-page="finance"] #dashboard #content > .page-title h1,
@@ -586,6 +625,9 @@
     html:root body.admin-open #adminMore[open],
     html:root body #employeePortal[data-team-mobile-role] .team-mobile-more[open] {
       border-radius: var(--ui-nav-radius) !important;
+    }
+    html:root body :is(#adminMore,#teamMobileMore) {
+      --protec-sheet-offscreen: translateY(calc(100% + 12px + env(safe-area-inset-bottom, 0px)));
     }
   }
 

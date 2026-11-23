@@ -59,11 +59,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 internal val WebEaseOut = CubicBezierEasing(.22f, 1f, .36f, 1f)
-internal val WebEaseSpring = CubicBezierEasing(.3f, 1.35f, .5f, 1f)
-internal val WebTeamEase = CubicBezierEasing(.2f, .75f, .2f, 1f)
 internal val WebTeamPillEase = CubicBezierEasing(.2f, .8f, .25f, 1f)
+private val MoreEnterEase = CubicBezierEasing(.24f, .88f, .26f, 1f)
+private val MoreExitEase = CubicBezierEasing(.4f, 0f, .75f, .25f)
+internal val PanelPageEase = CubicBezierEasing(.18f, .8f, .25f, 1f)
 internal val WebEase = CubicBezierEasing(.25f, .1f, .25f, 1f)
 internal val WebCountEase = CubicBezierEasing(.333333f, 1f, .666667f, 1f)
 
@@ -178,6 +181,8 @@ internal fun ProtecSheet(
     onDismissRequest: () -> Unit,
     navigation: Boolean = false,
     registration: Boolean = false,
+    visible: Boolean = true,
+    onExit: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     val host = LocalProtecSheets.current
@@ -185,11 +190,13 @@ internal fun ProtecSheet(
     val sheetContent by rememberUpdatedState(content)
     val navSheet by rememberUpdatedState(navigation)
     val registrationSheet by rememberUpdatedState(registration)
+    val shown by rememberUpdatedState(visible)
+    val exit by rememberUpdatedState(onExit)
     val team by rememberUpdatedState(LocalTeamPanel.current)
     val entry = remember {
         ProtecSheetEntry { top ->
             CompositionLocalProvider(LocalTeamPanel provides team) {
-                ProtecSheetLayer(top, navSheet, registrationSheet, dismiss, sheetContent)
+                ProtecSheetLayer(top, navSheet, registrationSheet, shown, dismiss, exit, sheetContent)
             }
         }
     }
@@ -212,7 +219,9 @@ private fun ProtecSheetLayer(
     top: Boolean,
     navigation: Boolean,
     registration: Boolean,
+    visible: Boolean,
     onDismissRequest: () -> Unit,
+    onExit: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
     BackHandler(enabled = top, onBack = onDismissRequest)
@@ -220,12 +229,16 @@ private fun ProtecSheetLayer(
     val colors = MaterialTheme.colorScheme
     val scrim = remember { Animatable(0f) }
     val panel = remember { Animatable(0f) }
-    val teamNavigation = navigation && LocalTeamPanel.current
-    val startAlpha = if (teamNavigation) .35f else 0f
-    val distance = if (teamNavigation) 28.dp else 32.dp
-    LaunchedEffect(scrim) { scrim.animateTo(1f, tween(200, easing = WebEase)) }
-    LaunchedEffect(panel, navigation) {
-        panel.animateTo(1f, tween(if (navigation) 260 else 340, easing = if (navigation) WebTeamEase else WebEaseOut))
+    val exit by rememberUpdatedState(onExit)
+    LaunchedEffect(visible, navigation) {
+        val target = if (visible) 1f else 0f
+        val easing = if (!navigation) WebEaseOut else if (visible) MoreEnterEase else MoreExitEase
+        val duration = if (!navigation) 340 else if (visible) 460 else 300
+        coroutineScope {
+            launch { scrim.animateTo(target, tween(if (navigation) duration else 200, easing = if (navigation) easing else WebEase)) }
+            panel.animateTo(target, tween(duration, easing = easing))
+        }
+        if (!visible) exit()
     }
     // All sheets use the Activity's measured viewport with system and keyboard insets applied.
     Box(Modifier.fillMaxSize().hideCoveredContent(!top)) {
@@ -253,8 +266,9 @@ private fun ProtecSheetLayer(
             Surface(
                 modifier = Modifier.widthIn(max = if (navigation) 590.dp else 650.dp).fillMaxWidth().heightIn(max = maxSheetHeight)
                     .graphicsLayer {
-                        alpha = startAlpha + (1f - startAlpha) * panel.value
-                        translationY = distance.toPx() * (1f - panel.value)
+                        alpha = if (navigation) 1f else panel.value
+                        val distance = if (navigation) size.height + 9.dp.toPx() else 32.dp.toPx()
+                        translationY = distance * (1f - panel.value)
                     }
                     .blur(coveredBlur)
                     .semantics { isTraversalGroup = true }

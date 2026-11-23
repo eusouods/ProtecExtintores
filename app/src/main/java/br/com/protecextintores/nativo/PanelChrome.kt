@@ -145,9 +145,11 @@ internal fun PanelChrome(
     content: @Composable (Int) -> Unit
 ) {
     var more by remember { mutableStateOf(false) }
+    var moreMounted by remember { mutableStateOf(false) }
+    var afterMore by remember { mutableStateOf<(() -> Unit)?>(null) }
     val pages = rememberSaveableStateHolder()
     val closeMore = { more = false }
-    BackHandler(selected != 0 || more) { if (more) closeMore() else select(0) }
+    BackHandler(selected != 0 || moreMounted) { if (moreMounted) closeMore() else select(0) }
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             Column(Modifier.fillMaxSize()) {
@@ -158,18 +160,33 @@ internal fun PanelChrome(
                     Modifier.padding(start = 12.dp, end = 12.dp, top = 14.dp))
                 pages.SaveableStateProvider(selected) {
                     CompositionLocalProvider(LocalTeamPanel provides team) {
-                        if (team) WebRise(230, 9.dp, startAlpha = .55f, easing = WebTeamEase) { content(selected) }
+                        if (team) WebRise(310, 14.dp, startAlpha = .72f, easing = PanelPageEase) { content(selected) }
                         else content(selected)
                     }
                 }
             }
         }
-        PanelDock(tabs, dockSection, team, selectDock) { more = true }
+        PanelDock(tabs, dockSection, team, selectDock) {
+            if (!moreMounted) {
+                moreMounted = true
+                more = true
+            }
+        }
     }
-    if (more) {
+    if (moreMounted) {
         CompositionLocalProvider(LocalTeamPanel provides team) {
-            ProtecSheet(onDismissRequest = closeMore, navigation = true) {
-                PanelMore(actions, closeMore, team)
+            ProtecSheet(onDismissRequest = closeMore, navigation = true, visible = more, onExit = {
+                moreMounted = false
+                val action = afterMore
+                afterMore = null
+                action?.invoke()
+            }) {
+                PanelMore(actions, closeMore, team) { action ->
+                    if (more) {
+                        afterMore = action.run
+                        closeMore()
+                    }
+                }
             }
         }
     }
@@ -235,7 +252,7 @@ private fun HeaderPanelAction(label: String, icon: PanelIcon?, ink: Color, actio
 }
 
 @Composable
-private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boolean) {
+private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boolean, choose: (PanelAction) -> Unit) {
     val colors = MaterialTheme.colorScheme
     val closeSource = remember { MutableInteractionSource() }
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
@@ -258,10 +275,7 @@ private fun PanelMore(actions: List<PanelAction>, close: () -> Unit, team: Boole
             Row(
                 Modifier.fillMaxWidth().heightIn(min = if (team) 57.dp else 64.dp)
                     .pressLikeWeb(source).webActionFocus(source)
-                    .clickable(interactionSource = source, indication = null, role = Role.Button) {
-                        close()
-                        action.run()
-                    }
+                    .clickable(interactionSource = source, indication = null, role = Role.Button) { choose(action) }
                     .padding(vertical = if (team) 7.dp else 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(if (team) 13.dp else 14.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -302,9 +316,9 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
             val index = if (selected in tabs.indices) selected else tabs.size
             val start = widths.take(index).fold(0.dp) { accumulated, width -> accumulated + width }
             val offset by animateDpAsState(start + tabGap * index,
-                tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Destaque da aba")
+                tween(400, easing = WebTeamPillEase), label = "Destaque da aba")
             val pillWidth by animateDpAsState(widths[index],
-                tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Largura do destaque")
+                tween(400, easing = WebTeamPillEase), label = "Largura do destaque")
             Canvas(Modifier.matchParentSize()) {
                 val width = pillWidth.toPx()
                 val x = if (layoutDirection == LayoutDirection.Rtl) size.width - width - offset.toPx() else offset.toPx()

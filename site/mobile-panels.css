@@ -132,7 +132,6 @@
     border: 1px solid var(--mobile-line); border-radius: 17px;
     color: var(--mobile-ink); background: var(--mobile-paper) !important;
     box-shadow: 0 12px 36px var(--mobile-shadow);
-    animation: mvSheet .26s cubic-bezier(.2,.75,.2,1) both;
   }
   html:root body.admin-open #adminMore > header { display: flex; justify-content: space-between; align-items: center; }
   html:root body.admin-open #adminMore > header h2 { margin: 0 !important; font-size: 1.3rem !important; }

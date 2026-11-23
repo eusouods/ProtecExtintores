@@ -42,8 +42,10 @@ let account = '';
 let current = 'overview';
 let bar;
 let sheet;
+let closeMore;
 let sidebar;
 let queued = false;
+let pageMotion;
 
 function setSections(main) {
   const sectionFor = element => {
@@ -79,6 +81,7 @@ function updatePill() {
 
 function show(tab) {
   if (tab === 'more') {
+    if (sheet.open) return;
     const theme = root.querySelector('.theme-toggle');
     sheet.querySelector('[data-option="theme"]').hidden = !theme;
     sheet.querySelector('[data-option="register"]').hidden = !root.querySelector('[data-team-register]');
@@ -92,9 +95,10 @@ function show(tab) {
   else window.closeNextMaintenancePage?.();
   sync();
   const section = root.querySelector(tab === 'agenda' ? '#teamNextMaintenancePage' : '.employee-main');
+  pageMotion?.cancel();
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    section?.animate([{ opacity: .55, transform: 'translateY(9px)' }, { opacity: 1, transform: 'none' }],
-      { duration: 230, easing: 'cubic-bezier(.2,.75,.2,1)' });
+    pageMotion=section?.animate([{ opacity: .72, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 310, easing: 'cubic-bezier(.18,.8,.25,1)' });
   }
   window.scrollTo(0, 0);
 }
@@ -133,16 +137,11 @@ function mount(role) {
   sheet.innerHTML = '<header><h2 id="teamMobileMoreTitle">Mais</h2><form method="dialog"><button type="submit" autofocus aria-label="Fechar">×</button></form></header>' +
     options.map(([action, label, mark]) => `<button type="button" data-option="${action}"><span>${icon(mark)}</span>${label}</button>`).join('');
   sheet.addEventListener('close', () => bar.querySelector('[data-destination="more"]')?.setAttribute('aria-expanded', 'false'));
+  closeMore = window.bindProtecMenuMotion(sheet);
   sheet.addEventListener('click', event => {
-    if (event.target === sheet) {
-      const rect = sheet.getBoundingClientRect();
-      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) sheet.close();
-      return;
-    }
     const action = event.target.closest('[data-option]')?.dataset.option;
     if (!action) return;
-    sheet.close();
-    runAction(action, role);
+    closeMore(() => runAction(action, role));
   });
   root.append(sheet);
 

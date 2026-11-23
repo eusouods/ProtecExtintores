@@ -215,6 +215,7 @@
   const entry = ([id,icon,label,short],mobile=false) => `<button type="button" class="${mobile?'admin-tab':'admin-nav-item'}" data-admin-destination="${id}" data-go="${id}">${svg(icon)}<span>${mobile&&short?short:label}</span></button>`;
   const moreButton = (cls) => `<button type="button" class="${cls}" data-nav-more aria-haspopup="dialog" aria-controls="adminMore" aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
 
+  let closeMore;
   function mount() {
     const header=document.querySelector('#dashboard .admin-top');
     if(header&&!header.querySelector('.mobile-panel-brand')){
@@ -257,14 +258,9 @@
         : `<button type="button" class="admin-more-row" data-nav-group="${id}" data-go="${gmap[id].pages[0][0]}"><span class="ic">${svg(gmap[id].icon)}</span><b>${gmap[id].label}</b><span class="ch">${svg('chev')}</span></button>`).join('');
       document.body.appendChild(sheet);
       sheet.addEventListener('close',()=>{sheet.hidden=true;document.querySelectorAll('[data-nav-more]').forEach(button=>button.setAttribute('aria-expanded','false'));last=null;sync();});
-      sheet.addEventListener('click',event=>{
-        if(event.target!==sheet)return;
-        const bounds=sheet.getBoundingClientRect();
-        if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)sheet.close();
-      });
+      closeMore = window.bindProtecMenuMotion(sheet);
     }
   }
-  const closeMore = () => { const sheet = document.getElementById('adminMore'); if (sheet?.open) sheet.close(); };
 
   function tabs(group, current) {
     let el = document.getElementById('pageTabs');
@@ -406,7 +402,7 @@
     mount();
     const dash = document.getElementById('dashboard'), open = Boolean(dash && !dash.classList.contains('hidden'));
     document.body.classList.toggle('admin-open', open);
-    if (!open) { last=null; closeMore(); delete document.body.dataset.mobileAdminPage; return; }
+    if (!open) { last=null;document.getElementById('adminMore')?.close();delete document.body.dataset.mobileAdminPage;return; }
     const cur = window.page || 'overview', group = byPage[cur];
     if(document.body.dataset.mobileAdminPage!==cur)document.body.dataset.mobileAdminPage=cur;
     if (cur !== last) {
@@ -435,8 +431,11 @@
 
   document.addEventListener('click', event => {
     const t = event.target.closest('button, a'); if (!t) return;
-    if (t.dataset.go) { closeMore(); if (typeof go === 'function') go(t.dataset.go); setTimeout(sync, 60); return; }
-    if (t.dataset.navLogout !== undefined) { closeMore(); if (typeof logout === 'function') logout(); return; }
+    if (t.dataset.go) {
+      closeMore(() => { if (typeof go === 'function') go(t.dataset.go);setTimeout(sync,60); });
+      return;
+    }
+    if (t.dataset.navLogout !== undefined) { closeMore(() => { if (typeof logout === 'function') logout(); });return; }
     if (t.dataset.navMore !== undefined) {
       const sheet=document.getElementById('adminMore');
       if(sheet.open)closeMore();else{sheet.hidden=false;sheet.showModal();t.setAttribute('aria-expanded','true');}
@@ -444,7 +443,6 @@
     }
     if (t.dataset.searchService) { const id = t.dataset.searchService; if (typeof serviceOrder === 'function') serviceOrder(id); }
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMore(); });
   setInterval(sync, 300); sync();
 })();
 
