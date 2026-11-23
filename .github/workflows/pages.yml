@@ -5,18 +5,17 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
   group: github-pages
   cancel-in-progress: true
 jobs:
-  publish:
+  prepare:
+    name: Preparar site
     env:
       PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      artifact_name: ${{ steps.artifact-name.outputs.name }}
+      artifact_id: ${{ steps.upload.outputs.artifact_id }}
     runs-on: ubuntu-latest
     steps:
       - name: Baixar arquivos do repositório
@@ -35,15 +34,60 @@ jobs:
           node scripts/test-offline-rules.mjs
           node scripts/verify-theme.mjs
           node scripts/verify-site.mjs
+      - name: Definir nome do artefato
+        id: artifact-name
+        run: printf 'name=%s\n' "$PAGES_ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+      - name: Preparar arquivos do site
+        id: upload
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: ./site
+
+  publish:
+    name: Publicar site
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
-      - name: Preparar arquivos do site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          name: ${{ env.PAGES_ARTIFACT_NAME }}
-          path: ./site
+      - name: Confirmar disponibilidade do artefato
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.prepare.outputs.artifact_id }}
+          ARTIFACT_NAME: ${{ needs.prepare.outputs.artifact_name }}
+        run: |
+          if [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ || -z "$ARTIFACT_NAME" ]]; then
+            echo "::error::O job Preparar site não retornou o ID e o nome do artefato."
+            exit 1
+          fi
+          expected="$ARTIFACT_NAME|$GITHUB_RUN_ID|false"
+          for attempt in {1..12}; do
+            if details=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" \
+              --jq '.name + "|" + (.workflow_run.id | tostring) + "|" + (.expired | tostring)'); then
+              if [[ "$details" == "$expected" ]]; then
+                echo "Artefato confirmado: $ARTIFACT_NAME (ID $ARTIFACT_ID)"
+                exit 0
+              fi
+              echo "::error::O artefato está expirado ou não corresponde a esta execução."
+              exit 1
+            fi
+            echo "Aguardando disponibilidade do artefato ($attempt/12)."
+            if [[ "$attempt" -lt 12 ]]; then sleep 5; fi
+          done
+          echo "::error::O GitHub Actions ainda não disponibilizou o artefato $ARTIFACT_NAME."
+          exit 1
       - name: Publicar site
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
-          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
+          artifact_name: ${{ needs.prepare.outputs.artifact_name }}
