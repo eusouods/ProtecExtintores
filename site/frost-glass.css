@@ -1,0 +1,34 @@
+/* Frost Glass leve, no estilo Apple: só translucidez e desfoque. Nenhuma cor do tema é alterada. */
+:root{--fg-blur:blur(16px) saturate(165%);--fg-edge:rgb(255 255 255 / .55);--fg-line:rgb(255 255 255 / .38);--fg-shadow:0 12px 36px rgb(10 20 40 / .16)}
+:root[data-theme="dark"]{--fg-edge:rgb(255 255 255 / .16);--fg-line:rgb(255 255 255 / .12);--fg-shadow:0 14px 40px rgb(0 0 0 / .45)}
+
+/* Pop-ups: o fundo só escurece (sem blur) para o vidro do cartão desfocar a página de verdade */
+html:root:not(#fg1):not(#fg2) body .modal-back{background:rgb(var(--ui-scrim-rgb) / .26)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html:root:not(#fg1):not(#fg2) body .modal-back>.modal,html:root:not(#fg1):not(#fg2) body #modalRoot .modal{background:color-mix(in srgb,var(--ui-panel) 66%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important;border:1px solid var(--fg-line)!important;box-shadow:var(--fg-shadow),inset 0 1px 0 var(--fg-edge)!important}
+html:root:not(#fg1):not(#fg2) body .modal :is(.modal-head,.modal-actions,.modal-foot){background:transparent!important;border-color:var(--fg-line)!important}
+
+/* Barras de baixo (admin e funcionário/vendedor) */
+html:root:not(#fg1):not(#fg2) body.admin-open #adminTabbar,html:root:not(#fg1):not(#fg2) body #employeePortal[data-team-mobile-role] .team-mobile-bar{background:color-mix(in srgb,var(--ui-panel) 58%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important;border-color:var(--fg-line)!important;box-shadow:var(--fg-shadow),inset 0 1px 0 var(--fg-edge)!important}
+
+/* Folhas "Mais" */
+html:root:not(#fg1):not(#fg2) body.admin-open #adminMore:not([hidden]){background:color-mix(in srgb,var(--ui-bg) 72%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important}
+html:root:not(#fg1):not(#fg2) body #employeePortal .team-mobile-more[open]{background:color-mix(in srgb,var(--ui-panel) 66%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important;border-color:var(--fg-line)!important;box-shadow:var(--fg-shadow),inset 0 1px 0 var(--fg-edge)!important}
+
+/* Menu suspenso, aviso, botão de tema e barra do topo da loja */
+html:root:not(#fg1):not(#fg2) body #employeePortal .ops-team-menu{background:color-mix(in srgb,var(--ui-panel) 68%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important;border-color:var(--fg-line)!important;box-shadow:var(--fg-shadow),inset 0 1px 0 var(--fg-edge)!important}
+html:root:not(#fg1):not(#fg2) body .toast{background:color-mix(in srgb,var(--ui-action) 86%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important}
+html:root:not(#fg1):not(#fg2) body .theme-toggle{background:color-mix(in srgb,var(--ui-panel) 70%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important;border-color:var(--fg-line)!important}
+html:root:not(#fg1):not(#fg2) body #store .topbar{background:color-mix(in srgb,var(--ui-panel) 66%,transparent)!important;-webkit-backdrop-filter:var(--fg-blur)!important;backdrop-filter:var(--fg-blur)!important}
+
+/* Sem suporte a blur ou com "reduzir transparência": volta a superfícies sólidas */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+html:root:not(#fg1):not(#fg2) body .modal-back>.modal,html:root:not(#fg1):not(#fg2) body #modalRoot .modal,html:root:not(#fg1):not(#fg2) body #employeePortal .team-mobile-more[open],html:root:not(#fg1):not(#fg2) body #employeePortal .ops-team-menu{background:var(--ui-panel)!important}
+html:root:not(#fg1):not(#fg2) body.admin-open #adminTabbar,html:root:not(#fg1):not(#fg2) body #employeePortal[data-team-mobile-role] .team-mobile-bar{background:color-mix(in srgb,var(--ui-panel) 96%,transparent)!important}
+html:root:not(#fg1):not(#fg2) body.admin-open #adminMore:not([hidden]){background:var(--ui-bg)!important}
+}
+@media (prefers-reduced-transparency:reduce){
+html:root:not(#fg1):not(#fg2) body .modal-back>.modal,html:root:not(#fg1):not(#fg2) body #modalRoot .modal,html:root:not(#fg1):not(#fg2) body #employeePortal .team-mobile-more[open],html:root:not(#fg1):not(#fg2) body #employeePortal .ops-team-menu,html:root:not(#fg1):not(#fg2) body .theme-toggle,html:root:not(#fg1):not(#fg2) body #store .topbar{background:var(--ui-panel)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html:root:not(#fg1):not(#fg2) body.admin-open #adminTabbar,html:root:not(#fg1):not(#fg2) body #employeePortal[data-team-mobile-role] .team-mobile-bar{background:var(--ui-panel)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html:root:not(#fg1):not(#fg2) body.admin-open #adminMore:not([hidden]){background:var(--ui-bg)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html:root:not(#fg1):not(#fg2) body .toast{background:var(--ui-action)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+}
