@@ -522,6 +522,36 @@ class AppVm(app: Application) : AndroidViewModel(app) {
         adminAction("/api/offline/admin/sync", payload, "Entrada registrada.", done, failed)
     }
 
+    internal fun saveAdminSettings(originalState: JSONObject, fields: JSONObject, done: () -> Unit) {
+        if (busy || portalRole != "admin" || Store.token.isEmpty()) return
+        val original = originalState.optJSONObject("settings") ?: JSONObject()
+        val allowed = setOf("company", "logo", "logoIdentity", "pixKey", "pixCity", "stages", "stageFlow", "shopEnabled",
+            "servicesEnabled", "registrationComplements")
+        val changes = JSONArray()
+        for (key in fields.keys()) {
+            if (key !in allowed) return
+            val value = fields.opt(key) ?: JSONObject.NULL
+            if (original.has(key) && original.opt(key).toString() == value.toString()) continue
+            val before = JSONObject().put("exists", original.has(key))
+            if (original.has(key)) before.put("value", original.get(key))
+            changes.put(JSONObject().put("path", JSONArray(listOf("settings", key)))
+                .put("before", before).put("after", JSONObject().put("exists", true).put("value", value)))
+        }
+        if (changes.length() == 0) {
+            done()
+            return
+        }
+        val operation = adminEnvelope(originalState, "admin-state").put("changes", changes)
+        if (fields.has("stageFlow") && !fields.has("stages")) {
+            val guard = JSONObject().put("group", "settings").put("keys", JSONArray(listOf("stages")))
+                .put("value", JSONObject().put("stages", original.opt("stages") ?: JSONObject.NULL))
+            operation.put("guards", JSONArray(listOf(guard)))
+        }
+        adminAction("/api/offline/admin/sync", operation, "Configurações atualizadas.", done) { code, _ ->
+            if (code == 409) message = "As configurações mudaram. Feche e reabra esta opção para conferir os dados atuais."
+        }
+    }
+
     internal fun adminAction(path: String, payload: JSONObject, success: String, done: () -> Unit) =
         adminAction(path, payload, success, done, null)
 

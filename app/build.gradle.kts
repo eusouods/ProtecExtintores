@@ -12,8 +12,8 @@ android {
         applicationId = "br.com.protecextintores.nativo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "2.7.5"
+        versionCode = 14
+        versionName = "2.7.6"
     }
 
     // A chave de distribuição é injetada pelo CI/Gradle; nunca a versione no Git.

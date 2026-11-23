@@ -19,12 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 
 internal data class CatalogField(val key: String, val label: String, val numeric: Boolean = false,
                                  val optional: Boolean = false, val default: String = "", val toggle: Boolean = false,
-                                 val maxLength: Int = if (numeric) 14 else 1500)
+                                 val maxLength: Int = if (numeric) 14 else 1500, val secret: Boolean = false,
+                                 val multiline: Boolean = key == "description")
 
 internal enum class CatalogArea(val group: String, val title: String, val fields: List<CatalogField>) {
     Types("types", "Extintores", listOf(
@@ -121,8 +124,13 @@ internal fun NativeFieldsDialog(
                     }
                     OutlinedTextField(value, { updated ->
                         if (updated.length <= field.maxLength) values = values + (field.key to updated)
-                    }, modifier = Modifier.fillMaxWidth(), label = { Text(field.label) }, singleLine = field.key != "description",
-                        enabled = !busy, keyboardOptions = KeyboardOptions(keyboardType = if (field.numeric) KeyboardType.Decimal else KeyboardType.Text))
+                    }, modifier = Modifier.fillMaxWidth(), label = { Text(field.label) }, singleLine = !field.multiline,
+                        enabled = !busy, visualTransformation = if (field.secret) PasswordVisualTransformation() else VisualTransformation.None,
+                        keyboardOptions = KeyboardOptions(keyboardType = when {
+                            field.secret -> KeyboardType.Password
+                            field.numeric -> KeyboardType.Decimal
+                            else -> KeyboardType.Text
+                        }))
                 }
                 issue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
@@ -131,7 +139,8 @@ internal fun NativeFieldsDialog(
             ExpressiveButton(enabled = !busy, onClick = saveFields@{
                 val result = JSONObject()
                 for (field in fields) {
-                    val value = values[field.key].orEmpty().trim()
+                    val input = values[field.key].orEmpty()
+                    val value = if (field.secret) input else input.trim()
                     if (field.toggle) {
                         result.put(field.key, value == "true")
                         continue

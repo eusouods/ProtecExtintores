@@ -57,8 +57,10 @@ private val adminTabs = listOf(
     PanelTab("Pó e movimentações", PanelIcon.List),
     PanelTab("Garantias e avaliações", PanelIcon.List),
     PanelTab("Preços sugeridos", PanelIcon.Chart),
-    PanelTab("Envios da equipe", PanelIcon.List)
+    PanelTab("Envios da equipe", PanelIcon.List),
+    PanelTab("Configurações", PanelIcon.Gear)
 )
+private const val ADMIN_SETTINGS_PAGE = 18
 private val adminKeys = mapOf(1 to "services", 2 to "types", 3 to "clients", 4 to "orders", 5 to "products", 6 to "employees")
 private val adminDockPages = listOf(0, 1, 7)
 private val sellerMore = listOf(
@@ -106,6 +108,7 @@ fun PortalScreen(vm: AppVm) {
             adminGroups.forEach { group ->
                 add(PanelAction(group.label, group.icon) { page = group.sections.first().first })
             }
+            add(PanelAction("Configurações", PanelIcon.Gear) { page = ADMIN_SETTINGS_PAGE })
             add(PanelAction("Atualizar painel", PanelIcon.Refresh, refresh))
         }
         if (!admin) sellerMore.forEachIndexed { index, tab ->
@@ -145,6 +148,8 @@ fun PortalScreen(vm: AppVm) {
                 15 -> AdminCare(vm)
                 16 -> AdminPrices(vm, state)
                 17 -> AdminTransfers(vm, state) { openOrder(it) }
+                ADMIN_SETTINGS_PAGE -> AdminSettings(vm, state, openTypes = { page = 2 },
+                    openPrices = { page = 16 }, openAccess = { page = 13 })
             }
         } else {
             when (active) {
