@@ -18,9 +18,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -166,7 +169,8 @@ internal fun PanelChrome(
 private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> Unit, alerts: (() -> Unit)?) {
     val brand = MaterialTheme.colorScheme.protecBrand
     val ink = MaterialTheme.colorScheme.protecOnBrand
-    Surface(color = brand, contentColor = ink) {
+    Surface(color = brand.copy(alpha = .88f), contentColor = ink,
+        shape = RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp)) {
       Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 15.dp)) {
         Row(
             Modifier.fillMaxWidth().heightIn(min = 44.dp),
@@ -181,7 +185,7 @@ private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> U
             } else HeaderPanelAction("Atualizar painel", PanelIcon.Refresh, ink, refresh)
             HeaderPanelAction("Alternar tema", PanelIcon.Theme, ink, changeTheme)
         }
-        Text(title, fontSize = 27.sp, lineHeight = 33.sp, fontWeight = FontWeight(680), letterSpacing = (-.8).sp,
+        Text(title, fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-.9).sp,
             modifier = Modifier.padding(top = 9.dp))
       }
     }
@@ -190,7 +194,7 @@ private fun PanelHeader(title: String, refresh: () -> Unit, changeTheme: () -> U
 @Composable
 private fun HeaderPanelAction(label: String, icon: PanelIcon?, ink: Color, action: () -> Unit) {
     ExpressiveIconButton(onClick = action, modifier = Modifier.semantics { contentDescription = label }, contentColor = ink,
-        outline = Color(0xFFA2C6ED).copy(alpha = .38f), round = icon == null) {
+        outline = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f)) {
         if (icon == null) Box(Modifier.size(6.dp).background(ink, CircleShape))
         else PanelGlyph(icon, ink, 19.dp)
     }
@@ -244,9 +248,9 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
     val colors = MaterialTheme.colorScheme
     val destinations = tabs + PanelTab("Mais", PanelIcon.Dots)
     val tabGap = 2.dp
-    val trackPadding = 4.dp
+    val trackPadding = 5.dp
     Surface(modifier = Modifier.widthIn(max = 614.dp).fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 9.dp),
-        shape = RoundedCornerShape(15.dp), color = colors.surface, shadowElevation = 4.dp,
+        shape = RoundedCornerShape(24.dp), color = colors.surface.copy(alpha = .94f), shadowElevation = 6.dp,
         border = BorderStroke(1.dp, colors.outline)) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(trackPadding).clipToBounds()) {
             val slot = (maxWidth - tabGap * (destinations.size - 1)).coerceAtLeast(0.dp) / destinations.size
@@ -257,7 +261,7 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
             Canvas(Modifier.matchParentSize()) {
                 val width = slot.toPx()
                 val x = if (layoutDirection == LayoutDirection.Rtl) size.width - width - offset.toPx() else offset.toPx()
-                drawRoundRect(colors.primaryContainer, Offset(x, 0f), Size(width, size.height), CornerRadius(10.dp.toPx()))
+                drawRoundRect(colors.primaryContainer, Offset(x, 0f), Size(width, size.height), CornerRadius(18.dp.toPx()))
             }
             Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(tabGap)) {
                 destinations.forEachIndexed { item, tab ->
@@ -267,7 +271,7 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
                     val iconColor by animateColorAsState(labelColor,
                         tween(250, easing = WebEase), label = "Cor do ícone")
                     Column(
-                        Modifier.weight(1f).heightIn(min = 48.dp)
+                        Modifier.weight(1f).heightIn(min = 50.dp)
                             .pressLikeWeb(source, pressedScale = if (team) .94f else .96f)
                             .webActionFocus(source)
                             .selectable(
@@ -360,31 +364,36 @@ internal fun PanelIntro(label: String, title: String, description: String = "", 
     }
 }
 
-internal data class PanelMetric(val label: String, val value: String, val detail: String = "")
+internal data class PanelMetric(val label: String, val value: String, val detail: String = "", val icon: PanelIcon = PanelIcon.Chart)
 
 @Composable
 internal fun PanelMetrics(metrics: List<PanelMetric>, animateValues: Boolean = false) {
     val colors = MaterialTheme.colorScheme
-    Surface(shape = RoundedCornerShape(14.dp), color = colors.surface, border = BorderStroke(1.dp, colors.outline)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            for ((row, pair) in metrics.chunked(2).withIndex()) {
-                Row(Modifier.fillMaxWidth()) {
-                    for ((column, metric) in pair.withIndex()) {
-                        val index = row * 2 + column
-                        Box(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            WebRise(550, 16.dp, minOf(index, 3) * 70, play = animateValues) {
-                                Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                                    Text(metric.label, fontSize = 12.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold)
-                                    MetricValue(metric.value, animateValues)
-                                    if (metric.detail.isNotEmpty()) Text(metric.detail, fontSize = 11.sp, lineHeight = 16.sp,
-                                        color = colors.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        for ((row, pair) in metrics.chunked(2).withIndex()) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for ((column, metric) in pair.withIndex()) {
+                    val index = row * 2 + column
+                    Surface(Modifier.weight(1f).fillMaxHeight(), shape = MaterialTheme.shapes.large,
+                        color = colors.surface, border = BorderStroke(1.dp, colors.outline)) {
+                        WebRise(500, 12.dp, minOf(index, 3) * 55, play = animateValues) {
+                            Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val (badge, ink) = when (metric.icon) {
+                                    PanelIcon.Shield -> colors.tertiaryContainer to colors.onTertiaryContainer
+                                    PanelIcon.Wallet -> colors.protecSuccessContainer to colors.protecSuccess
+                                    else -> colors.primaryContainer to colors.primary
                                 }
+                                Box(Modifier.size(33.dp).background(badge, RoundedCornerShape(11.dp)),
+                                    contentAlignment = Alignment.Center) { PanelGlyph(metric.icon, ink, 18.dp) }
+                                Text(metric.label, fontSize = 12.sp, lineHeight = 17.sp, color = colors.onSurfaceVariant)
+                                MetricValue(metric.value, animateValues)
+                                if (metric.detail.isNotEmpty()) Text(metric.detail, fontSize = 11.sp, lineHeight = 16.sp,
+                                    color = colors.onSurfaceVariant)
                             }
                         }
                     }
-                    if (pair.size == 1) Box(Modifier.weight(1f))
                 }
+                if (pair.size == 1) Box(Modifier.weight(1f))
             }
         }
     }
@@ -416,13 +425,14 @@ internal fun PanelShortcut(title: String, subtitle: String, icon: PanelIcon, cli
     val colors = MaterialTheme.colorScheme
     val source = remember { MutableInteractionSource() }
     Surface(
-        onClick = click, shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant,
+        onClick = click, shape = MaterialTheme.shapes.large, color = colors.surface,
         border = BorderStroke(1.dp, colors.outline), interactionSource = source,
         modifier = Modifier.fillMaxWidth().heightIn(min = 65.dp).pressLikeWeb(source)
     ) {
         Row(Modifier.padding(13.dp), horizontalArrangement = Arrangement.spacedBy(9.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            PanelGlyph(icon, colors.onSurface, 23.dp)
+            Box(Modifier.size(34.dp).background(colors.primaryContainer, RoundedCornerShape(11.dp)),
+                contentAlignment = Alignment.Center) { PanelGlyph(icon, colors.primary, 20.dp) }
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(title, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, lineHeight = 18.sp)
                 Text(subtitle, fontSize = 11.sp, lineHeight = 16.sp, color = colors.onSurfaceVariant)

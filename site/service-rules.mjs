@@ -1,4 +1,4 @@
-import {maintenanceSuggestion,saleSuggestion,partSuggestion,complementSuggestion,minimumRate,minimumSaleRate,workshopAdminOperation,powderCapacity} from './workshop-rules.mjs?v=protec-vivid-62';
+import {maintenanceSuggestion,saleSuggestion,partSuggestion,complementSuggestion,minimumRate,minimumSaleRate,workshopAdminOperation,powderCapacity} from './workshop-rules.mjs?v=protec-interface-65';
 export const SALE_CONDITIONS=[{value:'new',label:'Novo lacrado',hasRing:false},{value:'refurbished',label:'Seminovo revisado',hasRing:true}];
 export const PART_NAMES = ['Válvula M30','Válvula de CO₂','Sifão','Manômetro','Mangueira','Difusor','Outro'];
 export const REGISTRATION_SERVICES=['Manutenção','Inspeção','Recarga','Teste hidrostático','Instalação','Pintura','Substituição de peças','Teste de mangueira de hidrante','Fornecimento de extintores','Compra de extintores'];

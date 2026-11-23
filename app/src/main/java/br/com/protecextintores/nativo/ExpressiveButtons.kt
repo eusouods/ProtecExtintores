@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +57,7 @@ private fun ExpressiveAction(
     val source = remember { MutableInteractionSource() }
     val scheme = MaterialTheme.colorScheme
     val colors = when (style) {
-        ActionStyle.Filled -> ButtonDefaults.buttonColors()
+        ActionStyle.Filled -> ButtonDefaults.buttonColors(containerColor = scheme.protecAction, contentColor = scheme.protecOnAction)
         ActionStyle.Tonal -> ButtonDefaults.buttonColors(containerColor = scheme.surface, contentColor = scheme.onSurface)
         ActionStyle.Outlined -> ButtonDefaults.outlinedButtonColors()
         ActionStyle.Text -> ButtonDefaults.textButtonColors()
@@ -71,7 +72,7 @@ private fun ExpressiveAction(
         modifier = modifier.heightIn(min = 44.dp).pressLikeWeb(source),
         enabled = enabled,
         interactionSource = source,
-        shape = RoundedCornerShape(10.dp),
+        shape = CircleShape,
         colors = colors,
         border = border,
         elevation = null,
@@ -112,11 +113,10 @@ internal fun ExpressiveIconButton(
     enabled: Boolean = true,
     contentColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
     outline: Color? = null,
-    round: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(if (round) 24.dp else 10.dp)
+    val shape = CircleShape
     val colors = if (outline == null) IconButtonDefaults.filledTonalIconButtonColors(contentColor = contentColor)
     else IconButtonDefaults.filledTonalIconButtonColors(containerColor = Color.Transparent, contentColor = contentColor)
     FilledTonalIconButton(

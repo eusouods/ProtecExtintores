@@ -82,7 +82,7 @@ fun AppRoot(vm: AppVm, onRecord: (String) -> Unit, onPick: (String) -> Unit) {
     val dialogs = remember { mutableStateListOf<ProtecSheetEntry>() }
     val covered = dialogs.isNotEmpty()
     val workspace = rememberSaveableStateHolder()
-    val blur by animateDpAsState(if (covered) 8.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque")
+    val blur by animateDpAsState(if (covered) 14.dp else 0.dp, tween(200, easing = WebEase), label = "Desfoque")
     val message = vm.message
     LaunchedEffect(message) {
         if (message != null) {
@@ -257,10 +257,10 @@ private fun EmployeeOverview(vm: AppVm, profile: Profile) {
         item { PrimaryButton("＋ Registrar serviço", onClick = vm::startRegistration) }
         item {
             PanelMetrics(listOf(
-                PanelMetric("Em atendimento", profile.mine.count { !it.finished && !it.paused }.toString()),
-                PanelMetric("Para aceitar", profile.available.size.toString()),
-                PanelMetric("Pausados", profile.mine.count { it.paused }.toString()),
-                PanelMetric("No histórico", profile.mine.count { it.finished }.toString())
+                PanelMetric("Em atendimento", profile.mine.count { !it.finished && !it.paused }.toString(), icon = PanelIcon.Wrench),
+                PanelMetric("Para aceitar", profile.available.size.toString(), icon = PanelIcon.List),
+                PanelMetric("Pausados", profile.mine.count { it.paused }.toString(), icon = PanelIcon.Clock),
+                PanelMetric("No histórico", profile.mine.count { it.finished }.toString(), icon = PanelIcon.Chart)
             ))
         }
         if (current != null) item {

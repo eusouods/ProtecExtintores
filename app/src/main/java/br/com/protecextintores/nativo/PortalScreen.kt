@@ -225,11 +225,11 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
             item { PrimaryButton("+ Nova ordem de serviço", modifier = Modifier.padding(top = 5.dp, bottom = 20.dp), onClick = register) }
             item {
                 PanelMetrics(listOf(
-                    PanelMetric("Aguardando revisão", pending.toString(), "Execução enviada pela equipe"),
-                    PanelMetric("Em atendimento", services.count { !it.finished && !it.paused }.toString()),
-                    PanelMetric("Serviços pausados", services.count { it.paused }.toString()),
+                    PanelMetric("Aguardando revisão", pending.toString(), "Execução enviada pela equipe", PanelIcon.Shield),
+                    PanelMetric("Em atendimento", services.count { !it.finished && !it.paused }.toString(), icon = PanelIcon.Wrench),
+                    PanelMetric("Serviços pausados", services.count { it.paused }.toString(), icon = PanelIcon.Clock),
                     PanelMetric("A receber", currency(unpaid.sumOf { it.finance.optLong("revenueCents") } / 100.0),
-                        if (overdue == 1) "1 acerto vencido" else "$overdue acertos vencidos")
+                        if (overdue == 1) "1 acerto vencido" else "$overdue acertos vencidos", PanelIcon.Wallet)
                 ), animateValues = true)
             }
             item {
@@ -257,8 +257,8 @@ private fun SellerOverview(select: (Int) -> Unit, refresh: Int, register: () -> 
         item { PanelIntro("ÁREA COMERCIAL", "Suas ordens, em um só lugar.", "Acompanhe seus registros, a agenda e os acertos.") }
         item { PrimaryButton("＋ Registrar serviço", onClick = register) }
         if (orders.isNotEmpty()) item {
-            PanelMetrics(listOf(PanelMetric("Em acompanhamento", active.toString()),
-                PanelMetric("Finalizadas", orders.count { it.optBoolean("closed") }.toString())))
+            PanelMetrics(listOf(PanelMetric("Em acompanhamento", active.toString(), icon = PanelIcon.Wrench),
+                PanelMetric("Finalizadas", orders.count { it.optBoolean("closed") }.toString(), icon = PanelIcon.List)))
         }
         item { PanelShortcut("Ordens de serviço", "Consulte a situação de cada ordem", PanelIcon.Wrench) { select(1) } }
         item { PanelShortcut("Próximas manutenções", "Consulte o mês previsto para cada cliente", PanelIcon.Clock) { select(2) } }

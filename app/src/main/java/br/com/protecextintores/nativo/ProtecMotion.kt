@@ -216,7 +216,7 @@ private fun ProtecSheetLayer(
     content: @Composable ColumnScope.() -> Unit
 ) {
     BackHandler(enabled = top, onBack = onDismissRequest)
-    val coveredBlur by animateDpAsState(if (top) 0.dp else 8.dp, tween(200, easing = WebEase), label = "Desfoque da janela anterior")
+    val coveredBlur by animateDpAsState(if (top) 0.dp else 14.dp, tween(200, easing = WebEase), label = "Desfoque da janela anterior")
     val colors = MaterialTheme.colorScheme
     val scrim = remember { Animatable(0f) }
     val panel = remember { Animatable(0f) }
@@ -259,7 +259,7 @@ private fun ProtecSheetLayer(
                     .blur(coveredBlur)
                     .semantics { isTraversalGroup = true }
                     .pointerInput(Unit) { detectTapGestures {} },
-                shape = if (registration) RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp) else RoundedCornerShape(17.dp),
+                shape = if (registration) RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp) else RoundedCornerShape(24.dp),
                 color = colors.surface,
                 border = BorderStroke(1.dp, colors.outline)
             ) {

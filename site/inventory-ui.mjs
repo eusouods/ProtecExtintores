@@ -1,4 +1,4 @@
-import { applyAdminChanges } from './offline-rules.mjs?v=protec-vivid-62';
+import { applyAdminChanges } from './offline-rules.mjs?v=protec-interface-65';
 
 const labels = { parts: 'Peças', extinguishers: 'Extintores', powder: 'Pó' };
 const agents = ['ABC', 'BC'];

@@ -50,7 +50,7 @@ fun SoftButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = t
 @Composable
 fun CardBox(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = modifier.fillMaxWidth()

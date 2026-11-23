@@ -233,7 +233,7 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, showLabels: Boolea
                 val shape = RoundedCornerShape(10.dp)
                 val background by animateColorAsState(if (active) colors.surfaceVariant else colors.surface,
                     tween(300, easing = WebEase), label = "Etapa selecionada")
-                val circle by animateColorAsState(if (active) colors.primary else colors.surface,
+                val circle by animateColorAsState(if (active) colors.protecAction else colors.surface,
                     tween(300, easing = WebEase), label = "Número da etapa")
                 Column(
                     Modifier.weight(1f).heightIn(min = if (showLabels) 58.dp else 48.dp).pressLikeWeb(source).clip(shape).background(background)
@@ -245,10 +245,10 @@ private fun RegistrationSteps(current: Int, enabled: Boolean, showLabels: Boolea
                     verticalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterVertically)
                 ) {
                     Box(Modifier.size(24.dp).background(circle, CircleShape)
-                        .border(1.dp, if (active) colors.primary else colors.outlineVariant, CircleShape),
+                        .border(1.dp, if (active) colors.protecAction else colors.outlineVariant, CircleShape),
                         contentAlignment = Alignment.Center) {
                         Text((index + 1).toString(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                            color = if (active) colors.onPrimary else colors.onSurface)
+                            color = if (active) colors.protecOnAction else colors.onSurface)
                     }
                     if (showLabels) Text(label, fontSize = 10.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
                         color = if (active) colors.onSurface else colors.onSurfaceVariant,

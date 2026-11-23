@@ -11,23 +11,23 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#101829",
-  "theme_color": "#1b2c47",
+  "background_color": "#121928",
+  "theme_color": "#1d293e",
   "icons": [
     {
-      "src": "icons/icon-192-dark.png?v=protec-vivid-62",
+      "src": "icons/icon-192-dark.png?v=protec-interface-65",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512-dark.png?v=protec-vivid-62",
+      "src": "icons/icon-512-dark.png?v=protec-interface-65",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-512-dark.png?v=protec-vivid-62",
+      "src": "icons/icon-maskable-512-dark.png?v=protec-interface-65",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

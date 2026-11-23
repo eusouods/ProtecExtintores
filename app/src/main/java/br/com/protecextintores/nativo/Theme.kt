@@ -19,38 +19,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF1657E8),
+    primary = Color(0xFF1655C7),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFEAF1FF),
-    onPrimaryContainer = Color(0xFF142640),
-    secondary = Color(0xFF1657E8),
+    primaryContainer = Color(0xFFD8E6FC),
+    onPrimaryContainer = Color(0xFF182137),
+    secondary = Color(0xFF1655C7),
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFEAF1FF),
-    onSecondaryContainer = Color(0xFF142640),
-    tertiary = Color(0xFF76510C),
+    secondaryContainer = Color(0xFFD8E6FC),
+    onSecondaryContainer = Color(0xFF182137),
+    tertiary = Color(0xFF82500D),
     onTertiary = Color(0xFFFFFFFF),
-    tertiaryContainer = Color(0xFFFFF4D9),
-    onTertiaryContainer = Color(0xFF76510C),
-    background = Color(0xFFF6F9FF),
-    onBackground = Color(0xFF142640),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF142640),
-    surfaceVariant = Color(0xFFF0F5FF),
-    onSurfaceVariant = Color(0xFF52637B),
-    outline = Color(0xFFE6EDF7),
-    outlineVariant = Color(0xFF7489A9),
-    surfaceTint = Color(0xFF1657E8),
-    surfaceDim = Color(0xFFF6F9FF),
-    surfaceBright = Color(0xFFFFFFFF),
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF6F9FF),
-    surfaceContainer = Color(0xFFF0F5FF),
-    surfaceContainerHigh = Color(0xFFEAF1FF),
-    surfaceContainerHighest = Color(0xFFDFEAFF),
-    inverseSurface = Color(0xFF17243C),
-    inverseOnSurface = Color(0xFFEDF3FF),
-    inversePrimary = Color(0xFFA1C5FF),
-    scrim = Color(0xFF152C56),
+    tertiaryContainer = Color(0xFFFFF0D5),
+    onTertiaryContainer = Color(0xFF82500D),
+    background = Color(0xFFF2F5FA),
+    onBackground = Color(0xFF182137),
+    surface = Color(0xFFFCFDFF),
+    onSurface = Color(0xFF182137),
+    surfaceVariant = Color(0xFFE8EEF8),
+    onSurfaceVariant = Color(0xFF536079),
+    outline = Color(0xFFDDE5F0),
+    outlineVariant = Color(0xFF72829D),
+    surfaceTint = Color(0xFF1655C7),
+    surfaceDim = Color(0xFFF2F5FA),
+    surfaceBright = Color(0xFFFCFDFF),
+    surfaceContainerLowest = Color(0xFFFCFDFF),
+    surfaceContainerLow = Color(0xFFF2F5FA),
+    surfaceContainer = Color(0xFFE8EEF8),
+    surfaceContainerHigh = Color(0xFFD8E6FC),
+    surfaceContainerHighest = Color(0xFFE2EBFA),
+    inverseSurface = Color(0xFF1A2538),
+    inverseOnSurface = Color(0xFFEFF3FC),
+    inversePrimary = Color(0xFFA4C7FF),
+    scrim = Color(0xFF1C2E4B),
     error = Color(0xFFB3261E),
     onError = Color(0xFFFFFFFF),
     errorContainer = Color(0xFFFFE7E4),
@@ -58,38 +58,38 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFA1C5FF),
-    onPrimary = Color(0xFF10254C),
-    primaryContainer = Color(0xFF233654),
-    onPrimaryContainer = Color(0xFFEDF3FF),
-    secondary = Color(0xFFA1C5FF),
-    onSecondary = Color(0xFF10254C),
-    secondaryContainer = Color(0xFF233654),
-    onSecondaryContainer = Color(0xFFEDF3FF),
-    tertiary = Color(0xFFFFDC91),
+    primary = Color(0xFFA4C7FF),
+    onPrimary = Color(0xFF102541),
+    primaryContainer = Color(0xFF2D4468),
+    onPrimaryContainer = Color(0xFFEFF3FC),
+    secondary = Color(0xFFA4C7FF),
+    onSecondary = Color(0xFF102541),
+    secondaryContainer = Color(0xFF2D4468),
+    onSecondaryContainer = Color(0xFFEFF3FC),
+    tertiary = Color(0xFFFFD38A),
     onTertiary = Color(0xFF44351A),
-    tertiaryContainer = Color(0xFF44351A),
-    onTertiaryContainer = Color(0xFFFFDC91),
-    background = Color(0xFF101829),
-    onBackground = Color(0xFFEDF3FF),
-    surface = Color(0xFF17243C),
-    onSurface = Color(0xFFEDF3FF),
-    surfaceVariant = Color(0xFF233654),
-    onSurfaceVariant = Color(0xFFA7B7CC),
-    outline = Color(0xFF304263),
-    outlineVariant = Color(0xFF6A83A5),
-    surfaceTint = Color(0xFFA1C5FF),
-    surfaceDim = Color(0xFF101829),
-    surfaceBright = Color(0xFF2A426B),
-    surfaceContainerLowest = Color(0xFF101829),
-    surfaceContainerLow = Color(0xFF17243C),
-    surfaceContainer = Color(0xFF233654),
-    surfaceContainerHigh = Color(0xFF233654),
-    surfaceContainerHighest = Color(0xFF2A426B),
-    inverseSurface = Color(0xFFFFFFFF),
-    inverseOnSurface = Color(0xFF142640),
-    inversePrimary = Color(0xFF1657E8),
-    scrim = Color(0xFF091021),
+    tertiaryContainer = Color(0xFF42321E),
+    onTertiaryContainer = Color(0xFFFFD38A),
+    background = Color(0xFF121928),
+    onBackground = Color(0xFFEFF3FC),
+    surface = Color(0xFF1A2538),
+    onSurface = Color(0xFFEFF3FC),
+    surfaceVariant = Color(0xFF22304A),
+    onSurfaceVariant = Color(0xFFA7B1C7),
+    outline = Color(0xFF32415A),
+    outlineVariant = Color(0xFF7187A9),
+    surfaceTint = Color(0xFFA4C7FF),
+    surfaceDim = Color(0xFF121928),
+    surfaceBright = Color(0xFF324B71),
+    surfaceContainerLowest = Color(0xFF121928),
+    surfaceContainerLow = Color(0xFF1A2538),
+    surfaceContainer = Color(0xFF22304A),
+    surfaceContainerHigh = Color(0xFF2D4468),
+    surfaceContainerHighest = Color(0xFF324B71),
+    inverseSurface = Color(0xFFFCFDFF),
+    inverseOnSurface = Color(0xFF182137),
+    inversePrimary = Color(0xFF1655C7),
+    scrim = Color(0xFF090E17),
     error = Color(0xFFFF8A80),
     onError = Color(0xFF421B17),
     errorContainer = Color(0xFF5C2824),
@@ -97,9 +97,22 @@ private val DarkColors = darkColorScheme(
 )
 
 internal val ColorScheme.protecBrand: Color
-    get() = if (background.luminance() > .5f) Color(0xFFF0F5FF) else Color(0xFF1B2C47)
+    get() = if (background.luminance() > .5f) Color(0xFFE8EEF8) else Color(0xFF1D293E)
+
 internal val ColorScheme.protecOnBrand: Color
-    get() = if (background.luminance() > .5f) Color(0xFF142640) else Color(0xFFF4F8FF)
+    get() = if (background.luminance() > .5f) Color(0xFF182137) else Color(0xFFEFF3FC)
+
+internal val ColorScheme.protecAction: Color
+    get() = if (background.luminance() > .5f) Color(0xFF1762DF) else Color(0xFF2867DD)
+
+internal val ColorScheme.protecOnAction: Color
+    get() = if (background.luminance() > .5f) Color(0xFFFFFFFF) else Color(0xFFFFFFFF)
+
+internal val ColorScheme.protecSuccess: Color
+    get() = if (background.luminance() > .5f) Color(0xFF1B6A52) else Color(0xFF9AE1CA)
+
+internal val ColorScheme.protecSuccessContainer: Color
+    get() = if (background.luminance() > .5f) Color(0xFFDBF3EA) else Color(0xFF204437)
 
 @OptIn(ExperimentalTextApi::class)
 private val Inter = FontFamily(
@@ -136,8 +149,8 @@ fun ProtecTheme(mode: String, content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (dark) DarkColors else LightColors,
         typography = ProtecTypography,
-        shapes = Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(10.dp),
-            medium = RoundedCornerShape(14.dp), large = RoundedCornerShape(16.dp)),
+        shapes = Shapes(extraSmall = RoundedCornerShape(12.dp), small = RoundedCornerShape(14.dp),
+            medium = RoundedCornerShape(16.dp), large = RoundedCornerShape(18.dp)),
         content = content
     )
 }

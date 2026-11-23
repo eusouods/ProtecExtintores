@@ -1,0 +1,202 @@
+@layer protecInterface {
+  :root {
+    --ui-button-radius: 999px;
+    --ui-card-radius: 18px;
+    --ui-nav-radius: 24px;
+    --ui-glass-filter: blur(18px) saturate(1.2);
+    --ui-nav-shadow: 0 7px 24px var(--ui-elevation);
+    --ui-nav-ink: var(--ui-accent);
+    --ui-nav-line: var(--ui-border);
+    --ui-nav-wash: color-mix(in srgb, var(--ui-selected) 48%, transparent);
+    --admin-sidebar-width: 264px;
+  }
+
+  html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(button.btn,a.btn,.btn-soft,.btn-primary,.btn-dark) {
+    border-radius: var(--ui-button-radius) !important;
+  }
+  html:root body :is(#dashboard,#employeePortal,#modalRoot) :is(.ops-panel,.ops-team-summary,.config-card,.mobile-receipts-summary) {
+    border-radius: var(--ui-card-radius) !important;
+  }
+  html:root body :is(#dashboard,#employeePortal,#modalRoot) :is(input:not([type=checkbox],[type=radio],[type=file]),select,textarea) {
+    border-radius: 12px;
+  }
+  html:root body :is(#dashboard,#employeePortal) :is(.admin-page-intro,.ops-hero,.workspace-heading) h1,
+  html:root body #store .hero h1 {
+    font-weight: 700;
+    letter-spacing: -.052em;
+    text-wrap: balance;
+  }
+  html:root body #dashboard .ops-hero h1,
+  html:root body #employeePortal .workspace-heading h1 {
+    font-size: clamp(28px, 3.7vw, 46px) !important;
+    line-height: 1.1;
+  }
+
+  html:root body #store .topbar,
+  html:root body #dashboard .admin-top,
+  html:root body #employeePortal[data-team-mobile-role] .employee-top {
+    background: color-mix(in srgb, var(--ui-panel) 87%, transparent) !important;
+    -webkit-backdrop-filter: var(--ui-glass-filter) !important;
+    backdrop-filter: var(--ui-glass-filter) !important;
+  }
+  html:root body :is(#dashboard .admin-top-right,#employeePortal .employee-top) :is(.theme-toggle,.sync-indicator,.mobile-panel-alert) {
+    border-radius: var(--ui-button-radius) !important;
+  }
+  html:root body #store :is(.product,.public-help-card,.fogo-service-card,.hero-card,.public-service-card),
+  html:root body #login :is(.login-card,.login-box) {
+    border-radius: var(--ui-card-radius) !important;
+  }
+  html:root body #store .hero {
+    background-image: linear-gradient(142deg, var(--ui-hero), var(--ui-hero-end)) !important;
+  }
+  html:root body :is(#dashboard .main,#employeePortal,#employeePortal .employee-main) {
+    background-image: radial-gradient(ellipse 640px 400px at 0 0, var(--ui-nav-wash), transparent) !important;
+  }
+
+  html:root body .modal-back {
+    -webkit-backdrop-filter: blur(14px) !important;
+    backdrop-filter: blur(14px) !important;
+  }
+  html:root body #modalRoot .modal {
+    border-radius: var(--ui-nav-radius) !important;
+  }
+  html:root body #modalRoot .modal-head .icon-btn {
+    border-radius: var(--ui-button-radius) !important;
+  }
+
+  html:root body #dashboard .ops-admin-home > .ops-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    gap: 10px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html:root body #dashboard .ops-admin-home > .ops-metrics > .ops-metric {
+    min-width: 0;
+    min-height: 0 !important;
+    margin: 0;
+    padding: 13px 14px !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: var(--ui-card-radius) !important;
+    background: var(--ui-panel) !important;
+  }
+  html:root body .ops-metric > .ops-metric-icon {
+    display: grid;
+    place-items: center;
+    width: 33px;
+    height: 33px;
+    margin-bottom: 4px;
+    border-radius: 11px;
+    background: var(--ui-selected);
+    color: var(--ui-accent) !important;
+  }
+  html:root body .ops-metric > .ops-metric-icon[data-tone="review"] { background: var(--ui-warning-bg); color: var(--ui-warning) !important; }
+  html:root body .ops-metric > .ops-metric-icon[data-tone="payment"] { background: var(--ui-success-bg); color: var(--ui-success) !important; }
+  html:root body .ops-metric > .ops-metric-icon { font-size: 18px; }
+  html:root body #dashboard .ops-admin-home > .ops-metrics .ops-metric strong { overflow-wrap: anywhere; }
+
+  @media (650px < width <= 900px) {
+    :root { --admin-sidebar-width: 235px; }
+  }
+  @media (min-width: 960px) {
+    :root { --admin-sidebar-width: 220px; }
+  }
+  @media (width > 650px) {
+    html:root body #dashboard .sidebar { --sidebar-width: var(--admin-sidebar-width); }
+    html:root body #employeePortal[data-team-mobile-role] .team-desktop-sidebar { --sidebar-width: var(--team-sidebar-width); }
+    html:root body #dashboard .sidebar,
+    html:root body #employeePortal[data-team-mobile-role] .team-desktop-sidebar {
+      inset: 12px auto 12px 12px !important;
+      width: calc(var(--sidebar-width) - 12px) !important;
+      height: auto !important;
+      min-height: 0 !important;
+      padding: 19px 10px 12px !important;
+      border: 1px solid var(--ui-nav-line) !important;
+      border-radius: var(--ui-nav-radius) !important;
+      background: color-mix(in srgb, var(--ui-panel) 84%, transparent) !important;
+      -webkit-backdrop-filter: var(--ui-glass-filter) !important;
+      backdrop-filter: var(--ui-glass-filter) !important;
+      box-shadow: var(--ui-nav-shadow) !important;
+    }
+    html:root body #dashboard .sidebar .brand,
+    html:root body #employeePortal .team-desktop-sidebar .brand {
+      padding: 0 4px 16px !important;
+      font-size: 16px !important;
+      min-width: 0;
+    }
+    html:root body :is(#adminNav,#teamDesktopNav) {
+      padding-inline: 1px !important;
+      scrollbar-width: thin;
+      scrollbar-color: color-mix(in srgb, var(--ui-brand-control) 50%, transparent) transparent;
+    }
+    html:root body :is(#adminNav,#teamDesktopNav) .admin-nav-item {
+      min-height: 41px !important;
+      min-width: 0;
+      padding: 6px 9px !important;
+      border-radius: 12px !important;
+      font-size: 13px !important;
+      line-height: 1.3;
+      white-space: normal !important;
+    }
+    html:root body :is(#adminNav,#teamDesktopNav) .admin-nav-item > span {
+      min-width: 0;
+      white-space: normal !important;
+      overflow-wrap: break-word;
+    }
+    html:root body :is(#adminNav,#teamDesktopNav) .admin-nav-item.active {
+      background: var(--ui-selected) !important;
+      color: var(--ui-nav-ink) !important;
+    }
+    html:root body #dashboard .admin-top,
+    html:root body #employeePortal[data-team-mobile-role] .employee-top {
+      border-bottom: 1px solid var(--ui-nav-line) !important;
+      box-shadow: none !important;
+    }
+  }
+  @media (min-width: 1100px) {
+    html:root body #dashboard .ops-admin-home > .ops-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  }
+
+  @media (max-width: 760px) {
+    html:root body #modalRoot .modal {
+      border-radius: var(--ui-nav-radius) var(--ui-nav-radius) 0 0 !important;
+    }
+  }
+  @media (max-width: 650px) {
+    html:root body #dashboard .sidebar { display: none !important; }
+    html:root body.admin-open #adminTabbar[aria-label],
+    html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .team-mobile-bar[aria-label] {
+      border-radius: var(--ui-nav-radius) !important;
+      background: color-mix(in srgb, var(--ui-panel) 88%, transparent) !important;
+      -webkit-backdrop-filter: var(--ui-glass-filter) !important;
+      backdrop-filter: var(--ui-glass-filter) !important;
+      box-shadow: var(--ui-nav-shadow);
+    }
+    html:root body #adminTabbar .admin-tab,
+    html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button,
+    html:root body .admin-tab-pill,
+    html:root body #employeePortal .team-mobile-pill {
+      border-radius: 18px !important;
+    }
+    html:root body #adminTabbar[aria-label] .admin-tab.active,
+    html:root body #adminTabbar[aria-label] .admin-tab.active svg,
+    html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button[aria-current],
+    html:root body #employeePortal[data-team-mobile-role] .team-mobile-bar button[aria-current] svg {
+      color: var(--ui-nav-ink) !important;
+    }
+    html:root body.admin-open #adminMore[open],
+    html:root body #employeePortal[data-team-mobile-role] .team-mobile-more[open] {
+      border-radius: var(--ui-nav-radius) !important;
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    :root { --ui-glass-filter: none; }
+    html:root body #store .topbar,
+    html:root body #dashboard :is(.sidebar,.admin-top),
+    html:root body #employeePortal[data-team-mobile-role] :is(.team-desktop-sidebar,.employee-top,.team-mobile-bar),
+    html:root body.admin-open #adminTabbar[aria-label] { background: var(--ui-panel) !important; }
+    html:root body .modal-back { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  }
+}
