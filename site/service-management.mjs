@@ -1,4 +1,4 @@
-import {estimateFinance,completed,cancelled,localDay,missingVideos} from './service-rules.mjs?v=protec-interface-66';
+import {estimateFinance,completed,cancelled,localDay,missingVideos} from './service-rules.mjs?v=protec-interface-67';
 const esc = value => String(value ?? '').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const money = cents => (Number(cents || 0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const role = () => localStorage.getItem('protecextintores_role') || sessionStorage.getItem('protecextintores_role');

@@ -35,25 +35,20 @@
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = mode === 'dark' ? '#1d293e' : '#e8eef8';
     const appleBar=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(appleBar)appleBar.content=mode==='dark'?'black-translucent':'default';
-    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const icon=link.rel==='apple-touch-icon'?'icon-192':link.sizes.value==='16x16'?'favicon-16':'favicon-32';const href=new URL('./icons/'+icon+'.png?v=protec-interface-66',assetRoot).href;if(link.href!==href)link.href=href;});
-    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=protec-interface-66',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
+    document.querySelectorAll('link[rel=icon],link[rel=apple-touch-icon]').forEach(link=>{const icon=link.rel==='apple-touch-icon'?'icon-192':link.sizes.value==='16x16'?'favicon-16':'favicon-32';const href=new URL('./icons/'+icon+'.png?v=protec-interface-67',assetRoot).href;if(link.href!==href)link.href=href;});
+    const manifest=document.querySelector('link[rel=manifest]'),manifestHref=new URL('./manifest'+(mode==='dark'?'-dark':'')+'.webmanifest?v=protec-interface-67',assetRoot).href;if(manifest&&manifest.href!==manifestHref)manifest.href=manifestHref;
     const button = document.querySelector('.theme-toggle');
     if (!button) return;
     const dark = mode === 'dark';
     button.setAttribute('aria-pressed', String(dark));
     button.setAttribute('aria-label', dark ? 'Ativar tema claro' : 'Ativar tema escuro');
     button.title = dark ? 'Ativar tema claro' : 'Ativar tema escuro';
-    const admin = button.closest('#dashboard');
-    const presentation = `${admin ? 'admin' : 'default'}:${mode}`;
-    if (button.dataset.themePresentation === presentation) return;
+    if (button.dataset.themePresentation === mode) return;
     const symbol = dark
       ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>'
       : '<path d="M20.7 14.2A8.6 8.6 0 0 1 9.8 3.3 9 9 0 1 0 20.7 14.2Z"/>';
-    const markup = admin
-      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${symbol}</svg>`
-      : dark ? '<span aria-hidden="true">☀</span><span>Tema claro</span>' : '<span aria-hidden="true">◐</span><span>Tema escuro</span>';
-    button.dataset.themePresentation = presentation;
-    button.innerHTML = markup;
+    button.dataset.themePresentation = mode;
+    button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">${symbol}</svg>`;
   }
 
   function mount() {

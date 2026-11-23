@@ -7,8 +7,145 @@
     --ui-nav-shadow: 0 7px 24px var(--ui-elevation);
     --ui-nav-ink: var(--ui-accent);
     --ui-nav-line: var(--ui-border);
-    --ui-nav-wash: color-mix(in srgb, var(--ui-selected) 48%, transparent);
-    --admin-sidebar-width: 204px;
+    --protec-frame-inset: 10px;
+    --protec-frame-pad: 12px;
+    --protec-rail-width: 192px;
+    --protec-workspace-gap: 12px;
+    --protec-frame-bg: radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--ui-selected) 70%, transparent), transparent 60%)
+      left top / 100% min(100%, 100svh) no-repeat, var(--ui-bg);
+  }
+
+  html:root body :is(#store,#login,#dashboard,#employeePortal):not(.hidden) {
+    position: relative;
+    min-width: 0;
+    min-height: calc(100dvh - 2 * var(--protec-frame-inset)) !important;
+    margin: var(--protec-frame-inset);
+    border: 1px solid var(--ui-border);
+    border-radius: 26px;
+    background: var(--protec-frame-bg) !important;
+    color: var(--ui-text);
+  }
+  html:root body :is(#dashboard > .main,#dashboard .admin-content,#dashboard #pageTabs,
+    #employeePortal .employee-main,#employeePortal .seller-dashboard,#login .login-main,
+    #store .hero,#store > .section,#store > footer,#store > .site-footer) {
+    background: transparent !important;
+  }
+  html:root body :is(#store,#login,#dashboard,#employeePortal) :is(h1,.brand) {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  }
+  html:root body :is(#store,#login,#dashboard,#employeePortal) :is(.hero-copy,.page-title,.workspace-heading) h1 {
+    font-weight: 710 !important;
+    letter-spacing: -.054em !important;
+  }
+  html:root body #store > .topbar {
+    position: sticky !important;
+    inset: 0 auto auto !important;
+    width: 100% !important;
+    border: 0 !important;
+    border-radius: 25px 25px 0 0;
+  }
+  html:root body #store .hero.public-view {
+    padding-block-start: clamp(30px, 6vw, 66px) !important;
+  }
+  html:root body #store .section.public-view {
+    padding-block-start: clamp(23px, 4vw, 42px) !important;
+  }
+  html:root body #store .hero :is(.hero-card,.product-reference-feature),
+  html:root body #store :is(.product,.feature,.public-help-card,.public-service-card) {
+    background: var(--ui-panel) !important;
+    box-shadow: none !important;
+  }
+  html:root body #store .hero-actions .btn { box-shadow: none !important; }
+  html:root body #store > :is(.section,footer,.site-footer) { border-color: var(--ui-border) !important; }
+  html:root body #store .hero::before { display: none !important; }
+
+  html:root body #login:not(.hidden) { padding: var(--protec-frame-pad); gap: var(--protec-workspace-gap); }
+  html:root body #login .login-aside {
+    background: color-mix(in srgb, var(--ui-brand) 84%, transparent) !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 21px;
+    -webkit-backdrop-filter: var(--ui-glass-filter);
+    backdrop-filter: var(--ui-glass-filter);
+  }
+  html:root body #login .login-aside::after { display: none; }
+  html:root body #login .login-box {
+    padding: clamp(17px, 3vw, 31px) !important;
+    border: 1px solid var(--ui-border) !important;
+    background: var(--ui-panel) !important;
+  }
+
+  html:root body :is(#dashboard,#employeePortal) :is(.admin-top,.employee-top,.seller-top) {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html:root body #dashboard .admin-content {
+    width: 100%;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 26px 20px 28px !important;
+  }
+  html:root body #dashboard #pageTabs {
+    margin-inline: 20px !important;
+    padding-inline: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  html:root body #dashboard .admin-top {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    min-height: 51px;
+  }
+  html:root body #employeePortal[data-team-mobile-role] .employee-main {
+    width: 100%;
+    min-width: 0;
+    max-width: none !important;
+  }
+  html:root body #employeePortal[data-team-mobile-role] .workspace-heading {
+    padding-inline: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  html:root body #employeePortal[data-team-mobile-role] .ops-team-summary {
+    display: flex !important;
+    flex-direction: column;
+    gap: 19px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html:root body #employeePortal[data-team-mobile-role] .ops-team-summary > .workspace-metrics {
+    order: -1;
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr) !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  html:root body #employeePortal[data-team-mobile-role] .workspace-metrics > .ops-metric {
+    min-width: 0;
+    padding: 13px !important;
+    margin: 0 !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 17px !important;
+    background: var(--ui-panel) !important;
+    overflow-wrap: anywhere;
+  }
+  html:root body #employeePortal .workspace-metrics .protec-summary-icon svg { width: 17px; height: 17px; }
+  html:root body #employeePortal .workspace-metrics .protec-summary-icon[data-tone="payment"] { color: var(--ui-success) !important; background: var(--ui-success-bg); }
+  html:root body #employeePortal .workspace-metrics .protec-summary-icon[data-tone="clock"] { color: var(--ui-warning) !important; background: var(--ui-warning-bg); }
+  html:root body #employeePortal[data-team-mobile-role] .ops-team-summary > header {
+    padding: 15px !important;
+    border: 1px solid var(--ui-border) !important;
+    border-radius: 17px !important;
+    background: var(--ui-panel) !important;
   }
 
   html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(button.btn,a.btn,.btn-soft,.btn-primary,.btn-dark) {
@@ -32,9 +169,8 @@
     line-height: 1.1;
   }
 
-  html:root body #store .topbar,
-  html:root body #employeePortal[data-team-mobile-role] .employee-top {
-    background: color-mix(in srgb, var(--ui-panel) 87%, transparent) !important;
+  html:root body #store .topbar {
+    background: color-mix(in srgb, var(--ui-panel) 35%, transparent) !important;
     -webkit-backdrop-filter: var(--ui-glass-filter) !important;
     backdrop-filter: var(--ui-glass-filter) !important;
   }
@@ -45,13 +181,6 @@
   html:root body #login :is(.login-card,.login-box) {
     border-radius: var(--ui-card-radius) !important;
   }
-  html:root body #store .hero {
-    background-image: linear-gradient(142deg, var(--ui-hero), var(--ui-hero-end)) !important;
-  }
-  html:root body :is(#employeePortal,#employeePortal .employee-main) {
-    background-image: radial-gradient(ellipse 640px 400px at 0 0, var(--ui-nav-wash), transparent) !important;
-  }
-
   html:root body .modal-back {
     -webkit-backdrop-filter: blur(14px) !important;
     backdrop-filter: blur(14px) !important;
@@ -64,18 +193,7 @@
   }
 
   html:root body #dashboard {
-    background: radial-gradient(ellipse 75% 83% at 18% 0%, color-mix(in srgb, var(--ui-selected) 58%, transparent), transparent 72%), var(--ui-bg) !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-  }
-  html:root body #dashboard .main { background: transparent !important; }
-  html:root body #dashboard .admin-content { max-width: 1150px !important; }
-  html:root body #dashboard .admin-top {
-    max-width: 1150px;
-    margin-inline: auto;
-    min-height: 60px;
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
   }
   html:root body #dashboard .admin-top :is(.crumb,#crumb) { color: var(--ui-muted) !important; font-weight: 650 !important; }
   html:root body #dashboard .admin-top :is(.avatar,#today,.company-admin-logo) { display: none !important; }
@@ -99,19 +217,20 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  html:root body #dashboard .admin-top :is(.protec-search-toggle,.theme-toggle) {
+  html:root body :is(#dashboard .admin-top :is(.protec-search-toggle,.theme-toggle),
+    #store .topbar .theme-toggle,#login .login-main > .theme-toggle) {
     display: grid;
     place-items: center;
     flex: none;
     width: 42px !important;
     height: 42px !important;
     padding: 0 !important;
-    border-radius: 50%;
+    border-radius: 50% !important;
     border: 1px solid var(--ui-border);
     background: color-mix(in srgb, var(--ui-panel) 88%, transparent) !important;
     color: var(--ui-text) !important;
   }
-  #dashboard .theme-toggle svg { width: 18px; height: 18px; }
+  .theme-toggle svg { width: 18px; height: 18px; }
   html:root body #adminSearch[hidden], html:root body #adminMore:not([open]) { display: none !important; }
 
   html:root body #dashboard .protec-overview .ops-hero {
@@ -322,9 +441,6 @@
   }
 
   @media (width > 650px) {
-    html:root body #dashboard .admin-top { padding-inline: 24px !important; }
-    html:root body #dashboard .sidebar { background: color-mix(in srgb, var(--ui-brand) 84%, transparent) !important; }
-    html:root body #dashboard .sidebar .brand { padding-bottom: 25px !important; }
     html:root body #adminNav [data-nav-more] > span { display: inline !important; }
     html:root body.admin-open #adminMore[open] {
       display: block !important;
@@ -350,30 +466,48 @@
     #adminMore .admin-more-row svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   }
   @media (651px <= width < 820px) {
-    :root { --admin-sidebar-width: 180px; }
+    :root { --protec-rail-width: 163px; }
     .protec-overview-columns { grid-template-columns: 1fr; }
   }
   @media (width > 650px) {
-    html:root body #dashboard .sidebar { --sidebar-width: var(--admin-sidebar-width); }
-    html:root body #employeePortal[data-team-mobile-role] .team-desktop-sidebar { --sidebar-width: var(--team-sidebar-width); }
-    html:root body #dashboard .sidebar,
+    html:root body #dashboard:not(.hidden) {
+      display: grid !important;
+      grid-template-columns: var(--protec-rail-width) minmax(0, 1fr);
+      gap: var(--protec-workspace-gap);
+      padding: var(--protec-frame-pad);
+    }
+    html:root body #dashboard > .main { margin: 0 !important; min-width: 0; width: auto !important; }
+    html:root body #dashboard .admin-top { padding: 7px 18px 0 !important; height: auto !important; }
+    html:root body #employeePortal[data-team-mobile-role]:not(.hidden) {
+      padding: var(--protec-frame-pad) var(--protec-frame-pad) var(--protec-frame-pad)
+        calc(var(--protec-frame-pad) + var(--protec-rail-width) + var(--protec-workspace-gap)) !important;
+    }
+    html:root body #employeePortal[data-team-mobile-role] :is(.employee-top,.employee-main) { padding-inline: 20px !important; }
+    html:root body #dashboard > .sidebar {
+      position: sticky !important;
+      inset: calc(var(--protec-frame-inset) + var(--protec-frame-pad)) auto auto !important;
+      align-self: start;
+    }
     html:root body #employeePortal[data-team-mobile-role] .team-desktop-sidebar {
-      inset: 12px auto 12px 12px !important;
-      width: calc(var(--sidebar-width) - 12px) !important;
-      height: auto !important;
+      inset: calc(var(--protec-frame-inset) + var(--protec-frame-pad) + 1px) auto
+        auto calc(var(--protec-frame-inset) + var(--protec-frame-pad) + 1px) !important;
+    }
+    html:root body :is(#dashboard > .sidebar,#employeePortal[data-team-mobile-role] .team-desktop-sidebar) {
+      width: var(--protec-rail-width) !important;
+      height: calc(100dvh - 2 * (var(--protec-frame-inset) + var(--protec-frame-pad) + 1px)) !important;
       min-height: 0 !important;
-      padding: 19px 10px 12px !important;
-      border: 1px solid var(--ui-nav-line) !important;
-      border-radius: var(--ui-nav-radius) !important;
-      background: color-mix(in srgb, var(--ui-panel) 84%, transparent) !important;
+      padding: 18px 10px 14px !important;
+      border: 1px solid color-mix(in srgb, var(--ui-panel) 75%, var(--ui-nav-line)) !important;
+      border-radius: 21px !important;
+      background: color-mix(in srgb, var(--ui-brand) 84%, transparent) !important;
       -webkit-backdrop-filter: var(--ui-glass-filter) !important;
       backdrop-filter: var(--ui-glass-filter) !important;
-      box-shadow: var(--ui-nav-shadow) !important;
+      box-shadow: none !important;
     }
     html:root body #dashboard .sidebar .brand,
     html:root body #employeePortal .team-desktop-sidebar .brand {
-      padding: 0 4px 16px !important;
-      font-size: 16px !important;
+      padding: 0 3px 24px !important;
+      font-size: 15px !important;
       min-width: 0;
     }
     html:root body :is(#adminNav,#teamDesktopNav) {
@@ -399,10 +533,6 @@
       background: var(--ui-selected) !important;
       color: var(--ui-nav-ink) !important;
     }
-    html:root body #employeePortal[data-team-mobile-role] .employee-top {
-      border-bottom: 1px solid var(--ui-nav-line) !important;
-      box-shadow: none !important;
-    }
   }
   @media (max-width: 760px) {
     html:root body #modalRoot .modal {
@@ -410,6 +540,16 @@
     }
   }
   @media (max-width: 650px) {
+    :root { --protec-frame-inset: 5px; --protec-frame-pad: 7px; }
+    html:root body :is(#store,#login,#dashboard,#employeePortal):not(.hidden) { border-radius: 21px; }
+    html:root body #dashboard .admin-content { padding: 17px 10px 24px !important; }
+    html:root body #dashboard #pageTabs { margin-inline: 10px !important; }
+    html:root body #login .login-aside { background: transparent !important; border: 0 !important; backdrop-filter: none; }
+    html:root body #login .login-main { padding-inline: 9px !important; }
+    html:root body #employeePortal[data-team-mobile-role] .ops-team-summary > .workspace-metrics {
+      grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    }
+    html:root body #employeePortal[data-team-mobile-role] .workspace-metrics > .ops-metric:last-child { grid-column: 1 / -1; }
     html:root body #dashboard .sidebar { display: none !important; }
     html:root body.admin-open #dashboard .admin-top { min-height: 58px !important; padding-block: 6px !important; }
     html:root body.admin-open[data-mobile-admin-page="overview"] #dashboard .admin-top .crumb { display: none !important; }
@@ -426,7 +566,7 @@
     html:root body.admin-open #adminTabbar[aria-label],
     html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .team-mobile-bar[aria-label] {
       border-radius: var(--ui-nav-radius) !important;
-      background: color-mix(in srgb, var(--ui-panel) 88%, transparent) !important;
+      background: color-mix(in srgb, var(--ui-panel) 91%, transparent) !important;
       -webkit-backdrop-filter: var(--ui-glass-filter) !important;
       backdrop-filter: var(--ui-glass-filter) !important;
       box-shadow: var(--ui-nav-shadow);
@@ -452,8 +592,8 @@
   @media (prefers-reduced-transparency: reduce) {
     :root { --ui-glass-filter: none; }
     html:root body #store .topbar,
-    html:root body #dashboard :is(.sidebar,.admin-top),
-    html:root body #employeePortal[data-team-mobile-role] :is(.team-desktop-sidebar,.employee-top,.team-mobile-bar),
+    html:root body #dashboard .sidebar,
+    html:root body #employeePortal[data-team-mobile-role] :is(.team-desktop-sidebar,.team-mobile-bar),
     html:root body.admin-open #adminTabbar[aria-label] { background: var(--ui-panel) !important; }
     html:root body .modal-back { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
   }
