@@ -8,7 +8,7 @@
     --ui-nav-ink: var(--ui-accent);
     --ui-nav-line: var(--ui-border);
     --ui-nav-wash: color-mix(in srgb, var(--ui-selected) 48%, transparent);
-    --admin-sidebar-width: 264px;
+    --admin-sidebar-width: 204px;
   }
 
   html:root body :is(#store,#login,#dashboard,#employeePortal,#modalRoot) :is(button.btn,a.btn,.btn-soft,.btn-primary,.btn-dark) {
@@ -33,7 +33,6 @@
   }
 
   html:root body #store .topbar,
-  html:root body #dashboard .admin-top,
   html:root body #employeePortal[data-team-mobile-role] .employee-top {
     background: color-mix(in srgb, var(--ui-panel) 87%, transparent) !important;
     -webkit-backdrop-filter: var(--ui-glass-filter) !important;
@@ -49,7 +48,7 @@
   html:root body #store .hero {
     background-image: linear-gradient(142deg, var(--ui-hero), var(--ui-hero-end)) !important;
   }
-  html:root body :is(#dashboard .main,#employeePortal,#employeePortal .employee-main) {
+  html:root body :is(#employeePortal,#employeePortal .employee-main) {
     background-image: radial-gradient(ellipse 640px 400px at 0 0, var(--ui-nav-wash), transparent) !important;
   }
 
@@ -64,43 +63,295 @@
     border-radius: var(--ui-button-radius) !important;
   }
 
-  html:root body #dashboard .ops-admin-home > .ops-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    padding: 0 !important;
-    border: 0 !important;
-    gap: 10px !important;
+  html:root body #dashboard {
+    background: radial-gradient(ellipse 75% 83% at 18% 0%, color-mix(in srgb, var(--ui-selected) 58%, transparent), transparent 72%), var(--ui-bg) !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  }
+  html:root body #dashboard .main { background: transparent !important; }
+  html:root body #dashboard .admin-content { max-width: 1150px !important; }
+  html:root body #dashboard .admin-top {
+    max-width: 1150px;
+    margin-inline: auto;
+    min-height: 60px;
     background: transparent !important;
+    border: 0 !important;
     box-shadow: none !important;
   }
-  html:root body #dashboard .ops-admin-home > .ops-metrics > .ops-metric {
-    min-width: 0;
-    min-height: 0 !important;
-    margin: 0;
-    padding: 13px 14px !important;
-    border: 1px solid var(--ui-border) !important;
-    border-radius: var(--ui-card-radius) !important;
-    background: var(--ui-panel) !important;
+  html:root body #dashboard .admin-top :is(.crumb,#crumb) { color: var(--ui-muted) !important; font-weight: 650 !important; }
+  html:root body #dashboard .admin-top :is(.avatar,#today,.company-admin-logo) { display: none !important; }
+  html:root body #dashboard .brand-mark .company-logo { display: none !important; }
+  html:root body #dashboard .brand-mark, #dashboard .protec-panel-mark {
+    display: grid;
+    place-items: center;
+    width: 31px !important;
+    height: 31px !important;
+    flex: 0 0 31px;
+    border-radius: 10px !important;
+    background: var(--ui-action) !important;
+    color: var(--ui-action-text) !important;
   }
-  html:root body .ops-metric > .ops-metric-icon {
+  #dashboard :is(.protec-panel-mark,.protec-search-toggle) svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  html:root body #dashboard .admin-top :is(.protec-search-toggle,.theme-toggle) {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border-radius: 50%;
+    border: 1px solid var(--ui-border);
+    background: color-mix(in srgb, var(--ui-panel) 88%, transparent) !important;
+    color: var(--ui-text) !important;
+  }
+  #dashboard .theme-toggle svg { width: 18px; height: 18px; }
+  html:root body #adminSearch[hidden], html:root body #adminMore:not([open]) { display: none !important; }
+
+  html:root body #dashboard .protec-overview .ops-hero {
+    display: flex !important;
+    align-items: end !important;
+    justify-content: space-between !important;
+    gap: 15px !important;
+    padding: 0 !important;
+    margin: 0 0 27px !important;
+    background: none !important;
+    border: 0 !important;
+  }
+  html:root body #dashboard .protec-overview .ops-hero h1 {
+    font-family: inherit !important;
+    font-size: clamp(30px, 4.4vw, 47px) !important;
+    font-weight: 710 !important;
+    line-height: 1.06 !important;
+    letter-spacing: -.054em !important;
+    margin: 0 !important;
+  }
+  html:root body #dashboard .protec-overview .ops-hero p { margin: 8px 0 0 !important; }
+  html:root body #dashboard #opsNewService {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    width: auto !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    white-space: nowrap;
+  }
+  .protec-overview svg { width: 18px; height: 18px; flex: none; }
+  .protec-overview-metrics {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 8px;
+    margin-bottom: 29px;
+  }
+  .protec-summary-card, .protec-overview-surface {
+    min-width: 0;
+    background: var(--ui-panel);
+    color: var(--ui-text);
+    border: 1px solid var(--ui-border);
+    border-radius: 17px;
+  }
+  .protec-summary-card {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 11px;
+    padding: 14px 13px;
+    text-align: start;
+    transition: border-color .18s ease, transform .18s ease;
+  }
+  .protec-summary-card:hover { border-color: var(--ui-accent); }
+  .protec-summary-card:active, .protec-overview-link:active { transform: scale(.97); }
+  .protec-summary-icon {
     display: grid;
     place-items: center;
     width: 33px;
     height: 33px;
-    margin-bottom: 4px;
+    flex: none;
     border-radius: 11px;
+    color: var(--ui-accent);
     background: var(--ui-selected);
-    color: var(--ui-accent) !important;
   }
-  html:root body .ops-metric > .ops-metric-icon[data-tone="review"] { background: var(--ui-warning-bg); color: var(--ui-warning) !important; }
-  html:root body .ops-metric > .ops-metric-icon[data-tone="payment"] { background: var(--ui-success-bg); color: var(--ui-success) !important; }
-  html:root body .ops-metric > .ops-metric-icon { font-size: 18px; }
-  html:root body #dashboard .ops-admin-home > .ops-metrics .ops-metric strong { overflow-wrap: anywhere; }
+  .protec-summary-card[data-tone="review"] .protec-summary-icon,
+  .protec-order-status:is([data-tone="review"],[data-tone="paused"]) { color: var(--ui-warning); background: var(--ui-warning-bg); }
+  .protec-summary-card[data-tone="payment"] .protec-summary-icon { color: var(--ui-success); background: var(--ui-success-bg); }
+  .protec-summary-text {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    color: var(--ui-muted);
+    font-size: 12px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .protec-summary-text strong, .protec-next-payment > strong {
+    color: var(--ui-text);
+    font-size: clamp(18px, 2.6vw, 25px);
+    font-weight: 710;
+    line-height: 1.1;
+    letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .protec-overview-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 15px;
+  }
+  .protec-overview-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 34px;
+    margin-bottom: 8px;
+  }
+  html:root body #dashboard .protec-overview .protec-overview-heading h2 { margin: 0 !important; font-size: 17px !important; font-weight: 700; line-height: 1.3; letter-spacing: -.03em; }
+  .protec-overview-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    min-height: 34px;
+    border: 0;
+    padding: 4px 0;
+    background: transparent;
+    color: var(--ui-accent);
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .protec-overview-link svg { width: 14px; height: 14px; }
+  .protec-overview-orders { margin: 0; padding: 0 12px; list-style: none; }
+  .protec-overview-orders li + li { border-top: 1px solid var(--ui-border); }
+  .protec-order-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+    min-height: 59px;
+    padding: 9px 0;
+    border: 0;
+    background: transparent;
+    color: var(--ui-text);
+    text-align: start;
+  }
+  .protec-order-row > span:first-child { display: grid; min-width: 0; gap: 3px; overflow-wrap: anywhere; }
+  .protec-order-row b { font-size: 13px; line-height: 1.25; }
+  .protec-order-row small { color: var(--ui-muted); font-size: 12px; }
+  .protec-order-row:hover b { color: var(--ui-accent); }
+  .protec-order-status { flex: 0 1 auto; max-width: 43%; border-radius: 999px; padding: 4px 8px; color: var(--ui-accent); background: var(--ui-selected); font-size: 11px; font-weight: 650; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+  .protec-next-payment { display: grid; justify-items: start; gap: 7px; padding: 15px; color: var(--ui-muted); font-size: 13px; }
+  .protec-next-payment > div { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px; }
+  .protec-next-payment > div svg { color: var(--ui-accent); }
+  html:root body #dashboard .protec-overview .protec-next-payment p { margin: 0 !important; }
+  .protec-overview-details { margin-top: 20px; padding: 0 13px; }
+  .protec-overview-details summary { padding: 12px 0; cursor: pointer; font-size: 13px; font-weight: 650; }
+  .protec-overview-details small { color: var(--ui-muted); }
+  .protec-overview-extras { padding-bottom: 13px; }
+  #adminMore::backdrop { background: rgb(var(--ui-scrim-rgb) / .35); backdrop-filter: var(--ui-glass-filter); }
+  html:root body #dashboard :is(.protec-services-compact,.protec-settings-list,.mobile-receipts) { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
+  html:root body[data-mobile-admin-page="services"] #dashboard #content > .page-title h1,
+  html:root body[data-mobile-admin-page="finance"] #dashboard #content > .page-title h1,
+  html:root body[data-mobile-admin-page="settings"] #dashboard #content > .page-title h1 {
+    font: 710 clamp(28px, 4.4vw, 47px)/1.06 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    letter-spacing: -.054em !important;
+  }
+  .protec-services-history .panel { margin-top: 0; }
+  .protec-services-compact svg, #dashboard .page-title button.btn > svg { width: 17px; height: 17px; }
+  #dashboard .page-title button.btn > svg { vertical-align: -.22em; margin-inline-end: 4px; }
+  html:root body #dashboard #content > .protec-settings-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0 !important;
+    overflow: hidden;
+    background: var(--ui-panel);
+    border: 1px solid var(--ui-border);
+    border-radius: 17px;
+  }
+  .protec-settings-list details + details { border-top: 1px solid var(--ui-border); }
+  .protec-settings-list details > summary {
+    display: grid;
+    grid-template-columns: 18px minmax(0,1fr) 16px;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    list-style: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 630;
+    font-size: 14px;
+  }
+  .protec-settings-list details > summary:hover { background: var(--ui-hover); }
+  .protec-settings-list details > summary::-webkit-details-marker { display: none; }
+  .protec-settings-list details > summary svg { width: 18px; height: 18px; color: var(--ui-accent); }
+  .protec-settings-list details > summary svg:last-child { transition: transform .18s ease-out; }
+  .protec-settings-list details[open] > summary svg:last-child { transform: rotate(90deg); }
+  html:root body #dashboard .protec-settings-list details > .config-card {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 15px 15px !important;
+  }
+  .protec-settings-list details > .config-card > h3[hidden] { display: none; }
+  html:root body #dashboard .mobile-receipts { display: block !important; }
+  html:root body #dashboard .mobile-receipts-summary { background: var(--ui-panel) !important; border: 1px solid var(--ui-border); padding: 15px; box-shadow: none !important; }
+  .mobile-receipts h2 { margin: 21px 0 8px; font-size: 17px; }
+  .mobile-receipts-summary > span, .mobile-receipts-summary > p { color: var(--ui-muted); font-size: 13px; }
+  .mobile-receipts-summary > strong { display: block; font-size: 27px; letter-spacing: -.04em; margin: 4px 0 0; }
+  .mobile-receipts-summary > p { margin: 3px 0 0; }
+  .mobile-receipts-summary > .mobile-receipt-primary { margin-top: 12px; }
+  .mobile-receipts-list { padding: 0 12px; border: 1px solid var(--ui-border); background: var(--ui-panel); border-radius: 17px; }
+  .mobile-receipt-line { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 7px; background: transparent; color: var(--ui-text); border: 0; width: 100%; padding: 9px 0; min-height: 57px; text-align: start; }
+  .mobile-receipt-line + .mobile-receipt-line { border-top: 1px solid var(--ui-border); }
+  .mobile-receipt-line :is(strong,small) { display: block; }
+  .mobile-receipt-line small { color: var(--ui-muted); font-size: 12px; margin-top: 3px; }
+  .mobile-receipt-line .mobile-receipt-status { display: inline-block; color: var(--ui-warning); background: var(--ui-warning-bg); padding: 3px 6px; border-radius: 8px; }
+  .mobile-receipt-amount { text-align: end; }
+  html:root:has(#adminMore[open]) { overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) {
+    .protec-settings-list details > summary svg:last-child { transition: none; }
+  }
 
-  @media (650px < width <= 900px) {
-    :root { --admin-sidebar-width: 235px; }
+  @media (width > 650px) {
+    html:root body #dashboard .admin-top { padding-inline: 24px !important; }
+    html:root body #dashboard .sidebar { background: color-mix(in srgb, var(--ui-brand) 84%, transparent) !important; }
+    html:root body #dashboard .sidebar .brand { padding-bottom: 25px !important; }
+    html:root body #adminNav [data-nav-more] > span { display: inline !important; }
+    html:root body.admin-open #adminMore[open] {
+      display: block !important;
+      inset: 0 !important;
+      margin: auto !important;
+      width: min(420px, calc(100% - 32px)) !important;
+      max-height: min(680px, 82dvh) !important;
+      overflow: auto;
+      padding: 16px !important;
+      color: var(--ui-text);
+      background: var(--ui-panel);
+      border: 1px solid var(--ui-border);
+      border-radius: 21px;
+      box-shadow: var(--ui-nav-shadow);
+    }
+    #adminMore > header, #adminMore .admin-more-row { display: flex; align-items: center; gap: 10px; }
+    #adminMore > header { justify-content: space-between; }
+    #adminMore > header h2 { margin: 0; font-size: 19px; }
+    #adminMore > header button { border-radius: 50%; width: 40px; height: 40px; border: 1px solid var(--ui-border); color: var(--ui-text); background: var(--ui-panel); }
+    #adminMore .admin-more-row { width: 100%; min-height: 47px; padding: 7px; border: 0; border-top: 1px solid var(--ui-border); color: var(--ui-text); background: transparent; text-align: start; }
+    #adminMore .admin-more-row:hover { background: var(--ui-selected); }
+    #adminMore .admin-more-row .ch { margin-inline-start: auto; }
+    #adminMore .admin-more-row svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   }
-  @media (min-width: 960px) {
-    :root { --admin-sidebar-width: 220px; }
+  @media (651px <= width < 820px) {
+    :root { --admin-sidebar-width: 180px; }
+    .protec-overview-columns { grid-template-columns: 1fr; }
   }
   @media (width > 650px) {
     html:root body #dashboard .sidebar { --sidebar-width: var(--admin-sidebar-width); }
@@ -148,16 +399,11 @@
       background: var(--ui-selected) !important;
       color: var(--ui-nav-ink) !important;
     }
-    html:root body #dashboard .admin-top,
     html:root body #employeePortal[data-team-mobile-role] .employee-top {
       border-bottom: 1px solid var(--ui-nav-line) !important;
       box-shadow: none !important;
     }
   }
-  @media (min-width: 1100px) {
-    html:root body #dashboard .ops-admin-home > .ops-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
-  }
-
   @media (max-width: 760px) {
     html:root body #modalRoot .modal {
       border-radius: var(--ui-nav-radius) var(--ui-nav-radius) 0 0 !important;
@@ -165,6 +411,18 @@
   }
   @media (max-width: 650px) {
     html:root body #dashboard .sidebar { display: none !important; }
+    html:root body.admin-open #dashboard .admin-top { min-height: 58px !important; padding-block: 6px !important; }
+    html:root body.admin-open[data-mobile-admin-page="overview"] #dashboard .admin-top .crumb { display: none !important; }
+    html:root body.admin-open #dashboard .admin-top .mobile-panel-brand { gap: 8px; font-size: 14px !important; }
+    html:root body #dashboard .protec-overview .ops-hero { align-items: start !important; flex-direction: column !important; margin-bottom: 16px !important; }
+    .protec-overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 18px; }
+    .protec-summary-card { flex-direction: row; align-items: center; gap: 7px; padding: 10px 9px; min-height: 61px; }
+    .protec-summary-card[data-tone="payment"] { grid-column: 1 / -1; }
+    .protec-overview-columns { grid-template-columns: 1fr; }
+    html:root body.admin-open #adminTabbar[aria-label] { grid-template-columns: 1fr 1fr 1.27fr 1fr .8fr !important; }
+    html:root body.admin-open #adminTabbar .admin-tab span { font-size: clamp(8px,2.8vw,11px) !important; }
+    html:root body[data-mobile-admin-page="services"] #dashboard #content > .page-title { align-items: start !important; flex-direction: column !important; }
+    html:root body[data-mobile-admin-page="services"] #dashboard #content > .page-title button.btn { width: auto !important; }
     html:root body.admin-open #adminTabbar[aria-label],
     html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .team-mobile-bar[aria-label] {
       border-radius: var(--ui-nav-radius) !important;

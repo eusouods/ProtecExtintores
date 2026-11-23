@@ -1,11 +1,11 @@
-import {mountDataTools} from './data-tools.mjs?v=protec-interface-65';
+import {mountDataTools} from './data-tools.mjs?v=protec-interface-66';
 import './team-mobile.mjs';
-import {mountWorkshop,bindWorkshopOrder,groupedEquipmentMarkup} from './workshop-ui.mjs?v=protec-interface-65';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-65';
+import {mountWorkshop,bindWorkshopOrder,groupedEquipmentMarkup} from './workshop-ui.mjs?v=protec-interface-66';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-66';
 function complementaryWork(service){return service.complementaryServices?.length?'<h3>Serviços complementares</h3><ul>'+service.complementaryServices.map(row=>'<li><b>'+esc(row.name)+'</b> · '+esc(row.variant)+' · '+Number(row.quantity)+' unidade(s)'+Object.entries(row.parameters||{}).map(([key,value])=>' · '+esc(({lengthMeters:'Comprimento',widthCm:'Largura',diameterMm:'Diâmetro'})[key]||key)+': '+esc(value)+(key==='lengthMeters'?' m':key==='widthCm'?' cm':key==='diameterMm'?' mm':'')).join('')+'</li>').join('')+'</ul>':'';}
 function suppliedEquipment(service){return service.soldExtinguishers?.length?'<h3>Extintores para fornecimento</h3><ul>'+service.soldExtinguishers.map(i=>'<li>'+esc(i.condition==='new'?'Novo lacrado · sem argola':'Seminovo revisado · com argola')+' · '+esc(i.type)+' '+esc(i.kg||'10 L')+' · '+i.quantity+' unidade(s)</li>').join('')+'</ul>':'';}
-import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-65';
-import {isPaused} from './offline-rules.mjs?v=protec-interface-65';
+import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-66';
+import {isPaused} from './offline-rules.mjs?v=protec-interface-66';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=value=>(Number(value||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -45,16 +45,128 @@ export function summarizeFinance(services,today=localDay(new Date())){
  const sum=(rows,key)=>rows.reduce((n,s)=>n+Number(s.finance[key]||0),0);
  return {revenue:sum(list,'revenueCents'),received:sum(paid,'revenueCents'),receivable:sum(open,'revenueCents'),cost:sum(list,'costCents'),forecast:sum(list.filter(s=>s.finance.costsComplete),'profitCents'),realized:sum(paid.filter(s=>s.finance.costsComplete),'profitCents'),missing:list.filter(s=>!s.finance.costsComplete).length,unrecorded:open.filter(s=>s.finance.payment?.status==='not-applicable').length,overdue:open.filter(s=>s.finance.dueDate&&s.finance.dueDate<today).length};
 }
-const metric=(label,value,note='',tone='')=>`<article class="ops-metric">${tone?`<span class="ops-metric-icon" aria-hidden="true" data-tone="${tone}">${icon({review:'review',work:'orders',paused:'clock',payment:'money'}[tone])}</span>`:''}<span>${esc(label)}</span><strong>${esc(value)}</strong>${note?`<small>${esc(note)}</small>`:''}</article>`;
+const metric=(label,value,note='')=>`<article class="ops-metric"><span>${esc(label)}</span><strong>${esc(value)}</strong>${note?`<small>${esc(note)}</small>`:''}</article>`;
 const empty=text=>`<p class="ops-empty">${esc(text)}</p>`;
 const icon=name=>({orders:'▤',review:'✓',clock:'◷',money:'＄'}[name]||'↗');
-function orderCard(s){return `<article class="ops-order"><div><span class="ops-code">${esc(s.code||'Ordem local')}</span><h3>${esc(s.clientName||'Cliente não informado')}</h3><p>${esc(s.serviceType||'Manutenção')} · ${day(s.date)}</p><span class="ops-badge">${esc(orderStatus(s))}</span></div><div class="ops-order-meta"><span>${s.items?.length||0} equipamento(s)</span><span>${esc(s.employeeName||'Aguardando responsável')}</span><button type="button" class="btn btn-soft btn-small" data-ops-order="${esc(s.id)}">Abrir ordem</button></div></article>`;}
+const overviewIcons = {
+ review:'<rect x="5" y="5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/>',
+ work:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z"/>',
+ payment:'<path d="M20 8H5a2 2 0 0 1 0-4h13m2 4v12H5a2 2 0 0 1-2-2V6m17 6h-5a2 2 0 0 0 0 4h5"/>',
+ clock:'<rect x="3" y="5" width="16" height="15" rx="2"/><path d="M7 3v4m8-4v4M3 10h16"/><circle cx="17" cy="16" r="5"/><path d="M17 14v3l1 1"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ company:'<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 8h1m4 0h1m-6 4h1m4 0h1m-4 8v-4h2v4"/>',
+ shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
+ chevron:'<path d="m9 6 6 6-6 6"/>'
+};
+const overviewIcon=name=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${overviewIcons[name]}</svg>`;
+const overviewLink=(label,page)=>`<button type="button" class="protec-overview-link" data-ops-nav="${page}">${label} ${overviewIcon('chevron')}</button>`;
+const receivableDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s.finance.dueDate||'')?s.finance.dueDate:'';
+const openReceivables=services=>services.filter(s=>s.closed&&s.finance&&s.finance.payment?.status!=='paid'&&!cancelled(s))
+ .sort((a,b)=>(receivableDate(a)||'9999-12-31').localeCompare(receivableDate(b)||'9999-12-31')||String(a.code||'').localeCompare(String(b.code||'')));
+const summaryCard=(tone,label,value,page)=>`<button type="button" class="protec-summary-card" data-tone="${tone}" data-ops-nav="${page}">
+ <span class="protec-summary-icon">${overviewIcon(tone)}</span><span class="protec-summary-text">${label}<strong>${esc(value)}</strong></span>
+</button>`;
+function orderCard(s){
+ const tone=s.employeeCompletedAt&&!s.closed?'review':isPaused(s)?'paused':'work';
+ const details=[s.code||'Ordem',`${s.items?.length||0} extintor(es)`].join(' · ');
+ return `<li><button type="button" class="protec-order-row" data-ops-order="${esc(s.id)}">
+  <span><b>${esc(s.clientName||'Cliente não informado')}</b><small>${esc(details)}</small></span>
+  <span class="protec-order-status" data-tone="${tone}">${esc(tone==='review'?'Em revisão':orderStatus(s))}</span>
+ </button></li>`;
+}
+function orderList(orders,message){
+ return orders.length?`<ul class="protec-overview-orders protec-overview-surface">${orders.map(orderCard).join('')}</ul>`:
+  `<div class="protec-overview-surface">${empty(message)}</div>`;
+}
 function bindOrders(root){root.querySelectorAll('[data-ops-order]').forEach(b=>b.onclick=()=>window.openServiceDetails(b.dataset.opsOrder));root.querySelectorAll('[data-ops-nav]').forEach(b=>b.onclick=()=>window.go(b.dataset.opsNav));}
 function adminHome(host){
- const list=(db.services||[]).filter(s=>!cancelled(s)),review=list.filter(s=>s.employeeCompletedAt&&!s.closed),paused=list.filter(s=>isPaused(s)&&!completed(s)),active=list.filter(s=>!completed(s)&&!isPaused(s)),totals=summarizeFinance(list);
- const priority=[...review,...paused,...active.filter(s=>!s.employeeId)].slice(0,6),recent=list.slice().sort((a,b)=>String(b.closedAt||b.date||'').localeCompare(String(a.closedAt||a.date||''))).slice(0,4);
- host.innerHTML=`<div class="ops-admin-home"><span class="admin-team-shortcuts" hidden></span><header class="ops-hero"><div><span class="ops-eyebrow">Centro operacional</span><h1>Seu dia, organizado.</h1><p>${review.length?'Há '+review.length+' ordem(ns) aguardando sua revisão.':'Acompanhe os atendimentos e os próximos compromissos da equipe.'}</p></div><button class="btn" type="button" id="opsNewService">＋ Nova ordem de serviço</button></header><div class="ops-metrics">${metric('Aguardando revisão',review.length,'Execução enviada pelo funcionário','review')}${metric('Em atendimento',active.length,'Inclui serviços disponíveis para aceite','work')}${metric('Serviços pausados',paused.length,'Etapas e anexos preservados','paused')}${metric('A receber',money(totals.receivable),totals.overdue+' acerto(s) vencido(s)','payment')}</div><nav class="ops-shortcuts" aria-label="Ações da operação">${[['workshop','money','Pó, preços e envios','Estoque e aceite da equipe'],['services','orders','Ordens de serviço','Acompanhar e revisar'],['finance','money','Custos e recebimentos','Conferir resultados']].map(([target,glyph,title,note])=>`<button type="button" data-ops-nav="${target}"><span aria-hidden="true">${icon(glyph)}</span><span><b>${title}</b><small>${note}</small></span><span aria-hidden="true">↗</span></button>`).join('')}</nav><nav class="ops-utility-links" aria-label="Alertas e relatórios"><button type="button" class="icon-btn" data-ops-nav="alerts">Alertas da operação</button><button type="button" class="icon-btn" data-ops-nav="reports">Relatórios</button></nav><div class="ops-columns"><section class="ops-panel"><header><div><h2>Precisam de atenção</h2><p>Revisões, pausas e serviços aguardando aceite.</p></div><button class="icon-btn" type="button" data-ops-nav="services">Ver ordens</button></header>${priority.map(orderCard).join('')||empty('Nenhuma pendência operacional neste momento.')}</section><section class="ops-panel"><header><div><h2>Recebimentos e resultado</h2><p>Somente ordens finalizadas e não canceladas.</p></div></header><dl class="ops-money-list"><div><dt>Recebimentos confirmados</dt><dd>${money(totals.received)}</dd></div><div><dt>Resultado bruto realizado</dt><dd>${money(totals.realized)}</dd></div><div><dt>Resultado bruto previsto</dt><dd>${money(totals.forecast)}</dd></div></dl><p class="ops-note">O realizado considera ordens pagas com todos os custos informados. ${totals.missing} ordem(ns) com custos incompletos ficam fora do resultado.</p><button class="btn btn-soft btn-small" type="button" data-ops-nav="finance">Conferir custos e cobranças</button></section></div><details class="ops-panel workspace-history"><summary>Movimentação recente</summary><header><div><h2>Histórico recente</h2><p>Consulte a ordem para ver cada registro e responsável.</p></div></header>${recent.map(orderCard).join('')||empty('As novas ordens aparecerão aqui.')}</details></div>`;
+ const list=(db.services||[]).filter(s=>!cancelled(s));
+ const review=list.filter(s=>s.employeeCompletedAt&&!s.closed);
+ const paused=list.filter(s=>isPaused(s)&&!completed(s));
+ const active=list.filter(s=>!completed(s)&&!isPaused(s));
+ const totals=summarizeFinance(list);
+ const newest=(a,b)=>String(b.date||'').localeCompare(String(a.date||''));
+ const featured=[...review.sort(newest),...active.sort(newest),...paused.sort(newest)].slice(0,3);
+ const recent=list.slice().sort(newest).slice(0,4);
+ const next=openReceivables(list)[0];
+ const message=review.length===1?'1 ordem aguarda sua revisão.':review.length?`${review.length} ordens aguardam sua revisão.`:'Acompanhe os atendimentos da equipe.';
+ const shortcuts=[['workshop','money','Pó, preços e envios','Estoque e aceite da equipe'],['alerts','review','Alertas da operação','Ver pendências'],['reports','orders','Relatórios','Conferir resultados']];
+ host.innerHTML=`<div class="ops-admin-home protec-overview">
+  <header class="ops-hero"><div><h1>Seu dia, organizado.</h1><p>${message}</p></div><button class="btn" type="button" id="opsNewService">${overviewIcon('plus')} Nova ordem</button></header>
+  <div class="protec-overview-metrics" aria-label="Resumo da operação">
+   ${summaryCard('review','Aguardando revisão',review.length,'services')}
+   ${summaryCard('work','Em atendimento',active.length,'services')}
+   ${summaryCard('payment','A receber',money(totals.receivable),'finance')}
+  </div>
+  <div class="protec-overview-columns">
+   <section><header class="protec-overview-heading"><h2>Ordens de serviço</h2>${overviewLink('Ver todas','services')}</header>${orderList(featured,'Nenhuma ordem em andamento.')}</section>
+   <section><header class="protec-overview-heading"><h2>Recebimentos</h2></header>
+    <div class="protec-overview-surface protec-next-payment"><div>Próxima cobrança ${overviewIcon('clock')}</div>
+     ${next?`<strong>${money(next.finance.revenueCents)}</strong><p>${esc(next.finance.payer?.name||billingOwner(next)?.name||next.clientName||'Cliente não informado')}</p>`:'<p>Nenhuma cobrança em aberto.</p>'}
+     ${overviewLink('Ver cobranças','finance')}
+    </div>
+   </section>
+  </div>
+  <details class="protec-overview-surface protec-overview-details"><summary>Acompanhamento e atalhos${paused.length?` <small>· ${paused.length} em pausa</small>`:''}</summary>
+   <div class="protec-overview-extras">
+    <nav class="ops-shortcuts" aria-label="Ações da operação">${shortcuts.map(([target,glyph,title,note])=>`<button type="button" data-ops-nav="${target}"><span aria-hidden="true">${icon(glyph)}</span><span><b>${title}</b><small>${note}</small></span><span aria-hidden="true">↗</span></button>`).join('')}</nav>
+    <p>${paused.length} serviço(s) pausado(s) · ${totals.overdue} cobrança(s) vencida(s)</p>
+    <dl class="ops-money-list"><div><dt>Recebimentos confirmados</dt><dd>${money(totals.received)}</dd></div><div><dt>Resultado bruto realizado</dt><dd>${money(totals.realized)}</dd></div><div><dt>Resultado bruto previsto</dt><dd>${money(totals.forecast)}</dd></div></dl>
+    <p class="ops-note">O realizado considera ordens pagas com todos os custos informados. ${totals.missing} ordem(ns) com custos incompletos ficam fora do resultado.</p>
+    <h2>Movimentação recente</h2>${orderList(recent,'As novas ordens aparecerão aqui.')}
+   </div>
+  </details>
+ </div>`;
  host.querySelector('#opsNewService').onclick=()=>window.openService();bindOrders(host);
+}
+
+function enhanceAdminServices(){
+ if(window.page!=='services')return;
+ const host=document.getElementById('content'), table=host?.querySelector('#servicesTable');
+ const heading=host?.querySelector('.page-title');
+ if(!table||!heading||host.querySelector('.protec-services-compact'))return;
+ const allOrders=(db.services||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+ const latest=allOrders.filter(s=>!cancelled(s)).slice(0,3);
+ const list=document.createElement('section');
+ list.className='protec-services-compact';
+ list.setAttribute('aria-label','Ordens recentes');
+ list.innerHTML=orderList(latest,'Nenhuma ordem de serviço registrada.');
+ const actions=table.closest('.panel');
+ if(actions?.parentElement===host){
+  const details=document.createElement('details');
+  details.className='protec-overview-surface protec-overview-details protec-services-history';
+  details.innerHTML='<summary>Histórico, filtros e ações</summary>';
+  actions.before(details);
+  details.append(actions);
+ }
+ const title=heading.querySelector('h1'), subheading=heading.querySelector('h1 + p');
+ if(title)title.textContent='Serviços';
+ if(subheading)subheading.textContent='Acompanhe e revise as ordens de manutenção.';
+ const register=heading.querySelector('button.btn:not(.btn-soft)');
+ if(register)register.innerHTML=overviewIcon('plus')+' Nova ordem';
+ heading.after(list);
+ bindOrders(list);
+}
+
+const settingsOrder=['Empresa e identidade','Etapas do serviço','Pagamento via Pix','Privacidade e acesso'];
+const settingsIcons=['company','review','payment','shield'];
+function enhanceAdminSettings(){
+ if(window.page!=='settings')return;
+ const grid=document.querySelector('#content > .config-grid');
+ if(!grid)return;
+ grid.classList.add('protec-settings-list');
+ grid.querySelectorAll(':scope > .config-card').forEach(card=>{
+  const heading=card.querySelector(':scope > h3');
+  if(!heading)return;
+  const title=heading.textContent.trim();
+  const order=settingsOrder.indexOf(title);
+  const disclosure=document.createElement('details');
+  disclosure.style.order=order<0?settingsOrder.length:order;
+  disclosure.innerHTML=`<summary>${overviewIcon(settingsIcons[order]||'work')}<span>${esc(title)}</span>${overviewIcon('chevron')}</summary>`;
+  card.before(disclosure);
+  disclosure.append(card);
+  heading.hidden=true;
+ });
 }
 
 let detailUrls=[],previousFocus=null;
@@ -102,13 +214,11 @@ async function privateVideo(value){const url=new URL(value),api=new URL(API_BASE
 function enhanceFinance(){
  const host=document.getElementById('content');if(window.page!=='finance'||!host||host.querySelector('#opsFinance'))return;
  const services=db.services||[],totals=summarizeFinance(services),section=document.createElement('section');section.id='opsFinance';section.className='ops-panel';
- const dueOf=s=>/^\d{4}-\d{2}-\d{2}$/.test(s.finance.dueDate||'')?s.finance.dueDate:'';
- const pending=services.filter(s=>s.closed&&s.finance?.payment?.status!=='paid'&&s.finance&&!cancelled(s))
-  .sort((a,b)=>(dueOf(a)||'9999-12-31').localeCompare(dueOf(b)||'9999-12-31')||String(a.code||'').localeCompare(String(b.code||'')));
- const next=pending.find(s=>dueOf(s)),featured=next||pending[0],today=localDay(new Date());
+ const pending=openReceivables(services);
+ const featured=pending[0],next=featured&&receivableDate(featured)?featured:null,today=localDay(new Date());
  const mobile=document.createElement('section');mobile.className='mobile-receipts';mobile.setAttribute('aria-label','Cobranças a receber');
  const lines=pending.map(s=>{
-  const payer=s.finance.payer?.name||billingOwner(s)?.name, due=dueOf(s);
+  const payer=s.finance.payer?.name||billingOwner(s)?.name, due=receivableDate(s);
   const status=due&&due<today?'Vencida':s===next?'Vence primeiro':'';
   return `<button class="mobile-receipt-line" type="button" data-mobile-receipt="${esc(s.id)}"><span><strong>${esc(payer||s.clientName||s.code||'Ordem')}</strong><small>${esc((payer?s.code:s.serviceType)||'Serviço')} · ${due?day(due):'Sem vencimento'}</small></span><span class="mobile-receipt-amount"><strong>${money(s.finance.revenueCents)}</strong>${status?`<small class="mobile-receipt-status">${status}</small>`:''}</span></button>`;
  }).join('');
@@ -119,7 +229,13 @@ function enhanceFinance(){
   openOrderDetail(s);
   document.querySelector('#modalRoot [data-ops-section="finance"]')?.click();
  }));
- host.prepend(mobile);
+ const heading=host.querySelector('.page-title');
+ if(heading){
+  const title=heading.querySelector('h1'), caption=heading.querySelector('p');
+  if(title)title.textContent='Recebimentos';
+  if(caption)caption.textContent='Consulte as cobranças em aberto.';
+  heading.after(mobile);
+ }else host.prepend(mobile);
  section.innerHTML=`<h2>Resultados e recebimentos</h2><div class="ops-metrics">${metric('Recebido',money(totals.received),'Pagamentos confirmados')}${metric('A receber',money(totals.receivable),'Inclui recebimentos não registrados')}${metric('Resultado bruto realizado',money(totals.realized),'Ordens pagas com custos completos')}${metric('Resultado bruto previsto',money(totals.forecast),'Ordens finalizadas com custos completos')}</div><p class="ops-note">${totals.missing} ordem(ns) com custos incompletos não entram nos resultados. Custos registrados: ${money(totals.cost)}. ${totals.unrecorded} ordem(ns) diretas aguardam registro de recebimento.</p>`;
  const old=host.querySelector(':scope > .finance-metrics');if(old)old.replaceWith(section);else host.querySelector('.page-title')?.after(section);
  const direct=(db.services||[]).filter(s=>s.closed&&s.finance&&!billingOwner(s)&&!s.finance.payer&&s.finance.payment?.status!=='paid'&&!cancelled(s));
@@ -176,7 +292,7 @@ function enhanceTeam(){
   summary.querySelector('[data-ops-assigned]')?.addEventListener('click',()=>host.querySelector('[data-employee-scope="assigned"]')?.click());
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-65',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-66',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{
@@ -196,7 +312,7 @@ function install(){
  const finalize=window.finalizeService,finalizing=new Set();
  window.finalizeService=async function(id,...args){if(finalizing.has(id))return;finalizing.add(id);try{return await finalize.call(this,id,...args)}finally{finalizing.delete(id)}};
  installBillingControls();
- let scheduled=false;const update=()=>{scheduled=false;enhanceFinance();enhanceTables();enhanceDialogs();enhanceTeam();mountTeamBilling();};
+ let scheduled=false;const update=()=>{scheduled=false;enhanceFinance();enhanceTables();enhanceAdminServices();enhanceAdminSettings();enhanceDialogs();enhanceTeam();mountTeamBilling();};
  new MutationObserver(()=>{if(!scheduled){scheduled=true;requestAnimationFrame(update)}}).observe(document.body,{subtree:true,childList:true});
  update();if(role()==='admin'&&!document.getElementById('dashboard').classList.contains('hidden')&&(window.page||'overview')==='overview')adminHome(document.getElementById('content'));
 }

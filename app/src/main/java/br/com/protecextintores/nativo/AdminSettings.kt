@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
+import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -16,8 +17,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,15 +43,15 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
-private enum class SettingsSection(val title: String, val description: String, val icon: PanelIcon) {
-    Company("Empresa e identidade", "Nome público e logotipo", PanelIcon.Gear),
-    Availability("Disponibilidade do site", "Loja e solicitações de manutenção", PanelIcon.Cart),
-    Stages("Etapas do serviço", "Sequência exibida no acompanhamento", PanelIcon.List),
-    StaffFlow("Avanço pelo funcionário", "Etapas permitidas e regras de conclusão", PanelIcon.Wrench),
-    Complements("Serviços complementares", "Opções e tipos disponíveis no cadastro", PanelIcon.Plus),
-    Pix("Pagamento via Pix", "Chave Pix e cidade do recebedor", PanelIcon.Wallet),
-    PixProvider("Verificação automática de Pix", "Provedor e confirmação por webhook", PanelIcon.Wallet),
-    Access("Privacidade e acesso", "Usuário e senha do administrador", PanelIcon.Shield)
+private enum class SettingsSection(val title: String, val icon: PanelIcon) {
+    Company("Empresa e identidade", PanelIcon.Gear),
+    Availability("Disponibilidade do site", PanelIcon.Cart),
+    Stages("Etapas do serviço", PanelIcon.List),
+    StaffFlow("Avanço pelo funcionário", PanelIcon.Wrench),
+    Complements("Serviços complementares", PanelIcon.Plus),
+    Pix("Pagamento via Pix", PanelIcon.Wallet),
+    PixProvider("Verificação automática de Pix", PanelIcon.Wallet),
+    Access("Privacidade e acesso", PanelIcon.Shield)
 }
 
 private data class SettingsEdit(val section: SettingsSection, val state: JSONObject)
@@ -58,9 +62,26 @@ internal fun AdminSettings(vm: AppVm, state: JSONObject, openTypes: () -> Unit, 
     var editing by remember { mutableStateOf<SettingsEdit?>(null) }
     val close = { editing = null }
     PanelList {
-        item { PanelIntro("", "Configurações", "Gerencie as preferências da empresa e do painel.") }
-        for (section in SettingsSection.entries) item(key = section.name) {
-            PanelShortcut(section.title, section.description, section.icon) { editing = SettingsEdit(section, state) }
+        item { PanelIntro("", "Configurações", "Preferências da empresa e do painel.") }
+        item {
+            val first = listOf(SettingsSection.Company, SettingsSection.Stages, SettingsSection.Pix, SettingsSection.Access)
+            val sections = first + SettingsSection.entries.filterNot { it in first }
+            val colors = MaterialTheme.colorScheme
+            Surface(shape = MaterialTheme.shapes.large, color = colors.surface, border = BorderStroke(1.dp, colors.outline)) {
+                Column {
+                    sections.forEachIndexed { index, section ->
+                        if (index > 0) HorizontalDivider(color = colors.outline)
+                        Surface(onClick = { editing = SettingsEdit(section, state) }, color = colors.surface) {
+                            Row(Modifier.fillMaxWidth().heightIn(min = 55.dp).padding(horizontal = 14.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                PanelGlyph(section.icon, colors.primary, 19.dp)
+                                Text(section.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                PanelGlyph(PanelIcon.Chevron, colors.primary, 16.dp)
+                            }
+                        }
+                    }
+                }
+            }
         }
         item { PanelShortcut("Tipos de extintor", "Capacidades e preços de manutenção", PanelIcon.Flame, openTypes) }
         item { PanelShortcut("Preços sugeridos", "Extintores, peças e serviços complementares", PanelIcon.Chart, openPrices) }

@@ -1,6 +1,6 @@
-import {openInventoryEntry} from './inventory-ui.mjs?v=protec-interface-65';
-import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=protec-interface-65';
-import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=protec-interface-65';
+import {openInventoryEntry} from './inventory-ui.mjs?v=protec-interface-66';
+import {registrationCatalog,complementDefinitions,billingOwner} from './service-rules.mjs?v=protec-interface-66';
+import {PRICE_SOURCES,minimumRate,minimumSaleRate,saleMinimumKey,equipmentKey,powderCapacity,equipmentGroups,powderEntryReversal} from './workshop-rules.mjs?v=protec-interface-66';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const when=v=>v?new Date(v).toLocaleString('pt-BR'):'—';

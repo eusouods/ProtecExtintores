@@ -2,14 +2,21 @@ package br.com.protecextintores.nativo
 
 import android.os.SystemClock
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
@@ -17,9 +24,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
 import org.json.JSONObject
 import java.text.NumberFormat
 import java.text.Normalizer
@@ -41,7 +51,7 @@ import java.util.Locale
 
 private val adminTabs = listOf(
     PanelTab("Painel", PanelIcon.Grid, "Visão geral"),
-    PanelTab("Manutenções", PanelIcon.Wrench),
+    PanelTab("Serviços", PanelIcon.Wrench),
     PanelTab("Extintores", PanelIcon.Flame),
     PanelTab("Clientes", PanelIcon.People, "Clientes e vendedores"),
     PanelTab("Pedidos", PanelIcon.List),
@@ -62,7 +72,7 @@ private val adminTabs = listOf(
 )
 private const val ADMIN_SETTINGS_PAGE = 18
 private val adminKeys = mapOf(1 to "services", 2 to "types", 3 to "clients", 4 to "orders", 5 to "products", 6 to "employees")
-private val adminDockPages = listOf(0, 1, 7)
+private val adminDockPages = listOf(0, 1, 7, ADMIN_SETTINGS_PAGE)
 private val sellerMore = listOf(
     PanelTab("Catálogo", PanelIcon.Flame),
     PanelTab("Pedidos", PanelIcon.List),
@@ -85,8 +95,9 @@ fun PortalScreen(vm: AppVm) {
     val root = vm.portalState ?: return
     val admin = role == "admin"
     val sellerTabs = teamTabs.toMutableList().apply { this[1] = PanelTab("Ordens", PanelIcon.Wrench, "Ordens de serviço") }
-    val tabs = if (admin) adminDockPages.map { if (it == 1) adminTabs[it].copy(label = "Serviços") else adminTabs[it] } else sellerTabs
+    val tabs = if (admin) adminDockPages.map { if (it == ADMIN_SETTINGS_PAGE) adminTabs[it].copy(label = "Ajustes") else adminTabs[it] } else sellerTabs
     var page by rememberSaveable(role) { mutableIntStateOf(0) }
+    var searchAdmin by rememberSaveable(role) { mutableStateOf(false) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var owner by remember { mutableStateOf<WalletOwner?>(null) }
     var serviceId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -108,7 +119,6 @@ fun PortalScreen(vm: AppVm) {
             adminGroups.forEach { group ->
                 add(PanelAction(group.label, group.icon) { page = group.sections.first().first })
             }
-            add(PanelAction("Configurações", PanelIcon.Gear) { page = ADMIN_SETTINGS_PAGE })
             add(PanelAction("Atualizar painel", PanelIcon.Refresh, refresh))
         }
         if (!admin) sellerMore.forEachIndexed { index, tab ->
@@ -117,21 +127,30 @@ fun PortalScreen(vm: AppVm) {
         if (admin) add(PanelAction("Sair do painel", PanelIcon.Exit) { vm.logout() })
         else addAll(panelActions(vm, refresh))
     }
-    val title = if (admin) adminTabs.getOrNull(page)?.title else sellerMore.getOrNull(page - 4)?.title
+    val title = when {
+        !admin -> sellerMore.getOrNull(page - 4)?.title
+        page == 0 || page == 1 || page == ADMIN_SETTINGS_PAGE -> ""
+        else -> adminTabs.getOrNull(page)?.title
+    }
     val sections = if (!admin || page == 7) emptyList() else if (maintenanceSections.any { it.first == page }) maintenanceSections
     else adminGroups.firstOrNull { group -> group.sections.any { it.first == page } }?.sections.orEmpty()
-    PanelChrome(tabs, page, { page = it }, actions,
+    fun select(target: Int) {
+        if (target != 0) searchAdmin = false
+        page = target
+    }
+    PanelChrome(tabs, page, ::select, actions,
         refresh = refresh, changeTheme = vm::cycleTheme, team = !admin, title = title,
         dockSection = if (admin) adminDockPages.indexOf(if (page == 9) 1 else page) else page,
-        selectDock = { page = if (admin) adminDockPages[it] else it },
-        openAlerts = if (admin) ({ page = 10 }) else null, subTabs = sections
+        selectDock = { select(if (admin) adminDockPages[it] else it) },
+        openAlerts = if (admin) ({ select(10) }) else null, subTabs = sections,
+        adminSearch = if (admin) ({ searchAdmin = page != 0 || !searchAdmin; page = 0 }) else null
     ) { active ->
         if (admin) {
             val state = root.optJSONObject("state") ?: JSONObject()
             when (active) {
-                0 -> AdminOverview(state, vm::startRegistration, { openOrder(it.str("id")) }) { page = it }
+                0 -> AdminOverview(state, searchAdmin, vm::startRegistration, { openOrder(it.str("id")) }, ::select)
                 1 -> RecordsPage(adminTabs[active].title, state.optJSONArray("services").objects(),
-                    filterStatus = true, register = vm::startRegistration, openRecord = { openOrder(it.str("id")) })
+                    filterStatus = true, register = vm::startRegistration, openRecord = { openOrder(it.str("id")) }, compactOrders = true)
                 2 -> AdminCatalog(vm, state, CatalogArea.Types)
                 3 -> AdminDirectory(vm, state, employees = false)
                 4 -> RecordsPage(adminTabs[active].title, state.optJSONArray("orders").objects())
@@ -195,18 +214,22 @@ fun PortalScreen(vm: AppVm) {
 }
 
 @Composable
-private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: (JSONObject) -> Unit, select: (Int) -> Unit) {
-    val services = state.optJSONArray("services").objects().map(::Svc)
-    val pending = services.count { it.employeeCompleted && !it.closed && !it.cancelled }
+private fun AdminOverview(state: JSONObject, showSearch: Boolean, register: () -> Unit, openService: (JSONObject) -> Unit, select: (Int) -> Unit) {
+    val services = state.optJSONArray("services").objects().map(::Svc).filterNot(Svc::cancelled)
+    val review = services.filter { it.employeeCompleted && !it.closed }.sortedByDescending(Svc::date)
+    val active = services.filter { !it.finished && !it.paused }.sortedByDescending(Svc::date)
+    val paused = services.filter(Svc::paused).sortedByDescending(Svc::date)
+    val featured = (review + active + paused).take(3)
     val unpaid = eligibleReceipts(state).filterNot { it.paid }
-    val today = LocalDate.now().toString()
-    val overdue = unpaid.count { it.finance.str("dueDate").let { date -> date.isNotEmpty() && date < today } }
+    val next = unpaid.minByOrNull { it.due ?: LocalDate.MAX }
     var query by rememberSaveable { mutableStateOf("") }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val search = (1..6).flatMap { state.optJSONArray(adminKeys.getValue(it)).objects() }
-        .filter { query.isNotBlank() && matches(it, query) }.take(20)
-    PanelList {
-        item { PanelSearch(query, { query = it }, "Buscar cliente, ordem ou funcionário") }
-        if (query.isNotBlank()) {
+        .filter { showSearch && query.isNotBlank() && matches(it, query) }.take(20)
+    val colors = MaterialTheme.colorScheme
+    PanelList(horizontalPadding = 16.dp) {
+        if (showSearch) item { PanelSearch(query, { query = it }, "Buscar cliente, ordem ou funcionário", autofocus = true) }
+        if (showSearch && query.isNotBlank()) {
             if (search.isEmpty()) item { EmptyRecord("Nenhum resultado encontrado.") }
             items(search) { record ->
                 val isService = record.str("serviceType").isNotBlank() && record.has("items")
@@ -214,38 +237,137 @@ private fun AdminOverview(state: JSONObject, register: () -> Unit, openService: 
             }
         } else {
             item {
-                val description = when (pending) {
-                    0 -> "Acompanhe os atendimentos e os próximos compromissos da equipe."
-                    1 -> "Há 1 ordem aguardando sua revisão."
-                    else -> "Há $pending ordens aguardando sua revisão."
+                val description = when (review.size) {
+                    0 -> "Acompanhe os atendimentos da equipe."
+                    1 -> "1 ordem aguarda sua revisão."
+                    else -> "${review.size} ordens aguardam sua revisão."
                 }
-                PanelIntro("CENTRO OPERACIONAL", "Seu dia, organizado.", description,
-                    modifier = Modifier.padding(top = 21.dp))
-            }
-            item { PrimaryButton("+ Nova ordem de serviço", modifier = Modifier.padding(top = 5.dp, bottom = 20.dp), onClick = register) }
-            item {
-                PanelMetrics(listOf(
-                    PanelMetric("Aguardando revisão", pending.toString(), "Execução enviada pela equipe", PanelIcon.Shield),
-                    PanelMetric("Em atendimento", services.count { !it.finished && !it.paused }.toString(), icon = PanelIcon.Wrench),
-                    PanelMetric("Serviços pausados", services.count { it.paused }.toString(), icon = PanelIcon.Clock),
-                    PanelMetric("A receber", currency(unpaid.sumOf { it.finance.optLong("revenueCents") } / 100.0),
-                        if (overdue == 1) "1 acerto vencido" else "$overdue acertos vencidos", PanelIcon.Wallet)
-                ), animateValues = true)
+                PanelIntro("", "Seu dia, organizado.", description)
             }
             item {
-                Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PanelShortcut("Pó, preços e envios", "Estoque e aceite da equipe", PanelIcon.Money) { select(14) }
-                    PanelShortcut("Ordens de serviço", "Acompanhar e revisar", PanelIcon.List) { select(1) }
-                    PanelShortcut("Custos e recebimentos", "Conferir resultados", PanelIcon.Money) { select(7) }
+                ExpressiveButton(onClick = register) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PanelGlyph(PanelIcon.Plus, colors.protecOnAction, 16.dp)
+                        Text("Nova ordem")
+                    }
                 }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    SoftButton("Agenda") { select(9) }
-                    SoftButton("Alertas") { select(10) }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OverviewMetric("Aguardando revisão", review.size.toString(), PanelIcon.Review,
+                            Modifier.weight(1f).fillMaxHeight()) { select(1) }
+                        OverviewMetric("Em atendimento", active.size.toString(), PanelIcon.Wrench,
+                            Modifier.weight(1f).fillMaxHeight()) { select(1) }
+                    }
+                    OverviewMetric("A receber", formatRegistrationMoney(unpaid.sumOf(ReceiptOrder::cents)), PanelIcon.Wallet,
+                        Modifier.fillMaxWidth()) { select(7) }
+                }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Ordens de serviço", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        OverviewLink("Ver todas") { select(1) }
+                    }
+                    if (featured.isEmpty()) EmptyRecord("Nenhuma ordem em andamento.")
+                    else Surface(shape = MaterialTheme.shapes.large, color = colors.surface,
+                        border = BorderStroke(1.dp, colors.outline)) {
+                        Column {
+                            featured.forEachIndexed { index, order ->
+                                if (index > 0) HorizontalDivider(Modifier.padding(horizontal = 12.dp), color = colors.outline)
+                                OverviewOrder(order) { openService(order.j) }
+                            }
+                        }
+                    }
+                }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Text("Recebimentos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = colors.surface,
+                        border = BorderStroke(1.dp, colors.outline)) {
+                        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Próxima cobrança", Modifier.weight(1f), color = colors.onSurfaceVariant, fontSize = 13.sp)
+                                PanelGlyph(PanelIcon.Clock, colors.primary, 18.dp)
+                            }
+                            if (next != null) {
+                                Text(formatRegistrationMoney(next.cents), fontSize = 24.sp, lineHeight = 29.sp, fontWeight = FontWeight.Bold)
+                                Text(next.payer.ifBlank { next.service.client.ifBlank { "Cliente não informado" } },
+                                    color = colors.onSurfaceVariant, fontSize = 13.sp)
+                            } else Text("Nenhuma cobrança em aberto.", color = colors.onSurfaceVariant, fontSize = 13.sp)
+                            OverviewLink("Ver cobranças") { select(7) }
+                        }
+                    }
+                }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SoftButton(if (expanded) "Ocultar acompanhamento" else "Acompanhamento e atalhos") { expanded = !expanded }
+                    if (expanded) {
+                        val overdue = unpaid.count { it.due?.isBefore(LocalDate.now()) == true }
+                        Text("${paused.size} serviço(s) pausado(s) · $overdue cobrança(s) vencida(s)", color = colors.onSurfaceVariant)
+                        PanelShortcut("Pó, preços e envios", "Estoque e aceite da equipe", PanelIcon.Box) { select(14) }
+                        PanelShortcut("Agenda", "Próximas manutenções", PanelIcon.Clock) { select(9) }
+                        PanelShortcut("Alertas e relatórios", "Acompanhamento da operação", PanelIcon.Chart) { select(10) }
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun OverviewMetric(label: String, value: String, icon: PanelIcon, modifier: Modifier, open: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val (tint, ink) = when (icon) {
+        PanelIcon.Review -> colors.tertiaryContainer to colors.onTertiaryContainer
+        PanelIcon.Wallet -> colors.protecSuccessContainer to colors.protecSuccess
+        else -> colors.primaryContainer to colors.primary
+    }
+    Surface(onClick = open, modifier = modifier, shape = MaterialTheme.shapes.large,
+        color = colors.surface, border = BorderStroke(1.dp, colors.outline)) {
+        Row(Modifier.heightIn(min = 61.dp).padding(9.dp), horizontalArrangement = Arrangement.spacedBy(7.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(33.dp).background(tint, RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
+                PanelGlyph(icon, ink, 18.dp)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(label, fontSize = 12.sp, lineHeight = 15.sp, color = colors.onSurfaceVariant)
+                Text(value, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewOrder(order: Svc, open: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val caution = order.employeeCompleted || order.paused
+    Surface(onClick = open, color = colors.surface) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 58.dp).padding(horizontal = 12.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1.6f)) {
+                Text(order.client.ifBlank { "Cliente não informado" }, fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.SemiBold)
+                Text("${order.code.ifBlank { "Ordem" }} · ${order.items.size} extintor(es)", color = colors.onSurfaceVariant, fontSize = 12.sp, lineHeight = 16.sp)
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                Surface(shape = RoundedCornerShape(50), color = if (caution) colors.tertiaryContainer else colors.primaryContainer) {
+                    Text(if (order.employeeCompleted) "Em revisão" else order.displayStatus, Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                        color = if (caution) colors.onTertiaryContainer else colors.primary,
+                        fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewLink(label: String, open: () -> Unit) {
+    TextButton(onClick = open, contentPadding = PaddingValues(horizontal = 4.dp)) {
+        Text(label, fontSize = 13.sp)
+        PanelGlyph(PanelIcon.Chevron, MaterialTheme.colorScheme.primary, 14.dp)
     }
 }
 
@@ -299,7 +421,8 @@ internal fun TeamDataPage(path: String, title: String, field: String, refresh: I
 
 @Composable
 private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: Boolean = false,
-                        register: (() -> Unit)? = null, openRecord: ((JSONObject) -> Unit)? = null) {
+                        register: (() -> Unit)? = null, openRecord: ((JSONObject) -> Unit)? = null,
+                        compactOrders: Boolean = false) {
     var query by rememberSaveable(title) { mutableStateOf("") }
     var filter by rememberSaveable(title) { mutableIntStateOf(0) }
     val matching = records.filter { matches(it, query) }
@@ -315,8 +438,11 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
     } else emptyList()
     val shown = categories.getOrNull(filter)?.second?.map(Svc::j) ?: matching
     PanelList {
-        item { PanelIntro("", title) }
-        if (register != null) item { PrimaryButton("＋ Registrar serviço", onClick = register) }
+        item { PanelIntro("", title, if (compactOrders) "Acompanhe e revise as ordens de manutenção." else "") }
+        if (register != null) item {
+            if (compactOrders) ExpressiveButton(onClick = register) { Text("＋ Nova ordem") }
+            else PrimaryButton("＋ Registrar serviço", onClick = register)
+        }
         item { PanelSearch(query, { query = it }, "Buscar nesta seção") }
         if (filterStatus) item {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -326,7 +452,14 @@ private fun RecordsPage(title: String, records: List<JSONObject>, filterStatus: 
             }
         }
         if (shown.isEmpty()) item { EmptyRecord("Nenhum registro encontrado.") }
-        items(shown) { RecordCard(it, openRecord) }
+        items(shown) { record ->
+            if (compactOrders && openRecord != null) {
+                val colors = MaterialTheme.colorScheme
+                Surface(shape = MaterialTheme.shapes.large, border = BorderStroke(1.dp, colors.outline)) {
+                    OverviewOrder(Svc(record)) { openRecord(record) }
+                }
+            } else RecordCard(record, openRecord)
+        }
     }
 }
 

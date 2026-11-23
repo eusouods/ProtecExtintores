@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -69,6 +72,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -89,6 +93,9 @@ internal enum class PanelIcon(val data: String) {
     Chart("M5 19V11m6 8V5m6 14V8M3 20h18"),
     Dots("M5 12h.1M12 12h.1M19 12h.1"),
     Search("M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0M20 20l-3.5-3.5"),
+    Review("M9 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3M9 3h6v4H9zM9 14l2 2 4-4"),
+    Moon("M20.7 14.2A8.6 8.6 0 0 1 9.8 3.3 9 9 0 1 0 20.7 14.2"),
+    Sun("M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"),
     Refresh("M20 11a8 8 0 1 0-2 6m2-12v6h-6"),
     Theme("M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0M12 7v10m-2-9v8M8.5 9v6"),
     Bell("M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12a2 2 0 0 0 4 0"),
@@ -134,6 +141,7 @@ internal fun PanelChrome(
     selectDock: (Int) -> Unit = select,
     openAlerts: (() -> Unit)? = null,
     subTabs: List<Pair<Int, String>> = emptyList(),
+    adminSearch: (() -> Unit)? = null,
     content: @Composable (Int) -> Unit
 ) {
     var more by remember { mutableStateOf(false) }
@@ -143,7 +151,9 @@ internal fun PanelChrome(
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             Column(Modifier.fillMaxSize()) {
-                PanelHeader(title ?: tabs.getOrNull(selected)?.title.orEmpty(), refresh, changeTheme, openAlerts)
+                val heading = title ?: tabs.getOrNull(selected)?.title.orEmpty()
+                if (adminSearch != null) AdminPanelHeader(heading, adminSearch, openAlerts, changeTheme)
+                else PanelHeader(heading, refresh, changeTheme, openAlerts)
                 if (subTabs.size > 1) WebSectionTabs(subTabs, selected, select,
                     Modifier.padding(start = 12.dp, end = 12.dp, top = 14.dp))
                 pages.SaveableStateProvider(selected) {
@@ -162,6 +172,30 @@ internal fun PanelChrome(
                 PanelMore(actions, closeMore, team)
             }
         }
+    }
+}
+
+@Composable
+private fun AdminPanelHeader(title: String, search: () -> Unit, alerts: (() -> Unit)?, changeTheme: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val dark = when (Store.theme) {
+        "dark" -> true
+        "light" -> false
+        else -> isSystemInDarkTheme()
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 7.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(31.dp).background(colors.protecAction, RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center) { PanelGlyph(PanelIcon.Flame, colors.protecOnAction, 17.dp) }
+            Text("ProtecExtintores", Modifier.weight(1f).padding(start = 4.dp), fontSize = 14.sp,
+                fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            HeaderPanelAction("Buscar no painel", PanelIcon.Search, colors.onSurface, search)
+            if (alerts != null) HeaderPanelAction("Alertas", PanelIcon.Bell, colors.onSurface, alerts)
+            HeaderPanelAction("Alternar tema", if (dark) PanelIcon.Sun else PanelIcon.Moon, colors.onSurface, changeTheme)
+        }
+        if (title.isNotEmpty()) Text(title, fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold,
+            letterSpacing = (-.9).sp, modifier = Modifier.padding(top = 9.dp))
     }
 }
 
@@ -253,13 +287,26 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
         shape = RoundedCornerShape(24.dp), color = colors.surface.copy(alpha = .94f), shadowElevation = 6.dp,
         border = BorderStroke(1.dp, colors.outline)) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(trackPadding).clipToBounds()) {
-            val slot = (maxWidth - tabGap * (destinations.size - 1)).coerceAtLeast(0.dp) / destinations.size
+            val available = (maxWidth - tabGap * (destinations.size - 1)).coerceAtLeast(0.dp)
+            val weights = destinations.map { tab ->
+                when {
+                    !team && tab.icon == PanelIcon.Wallet -> 1.27f
+                    !team && tab.icon == PanelIcon.Dots -> .8f
+                    else -> 1f
+                }
+            }
+            val totalWeight = weights.sum()
+            val widths = weights.map { available * (it / totalWeight) }
+            val fontSize = if (!team && maxWidth < 340.dp) 10.sp else 11.sp
             // Abrir o menu Mais mantém o destaque na tela atual.
             val index = if (selected in tabs.indices) selected else tabs.size
-            val offset by animateDpAsState((slot + tabGap) * index,
+            val start = widths.take(index).fold(0.dp) { accumulated, width -> accumulated + width }
+            val offset by animateDpAsState(start + tabGap * index,
                 tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Destaque da aba")
+            val pillWidth by animateDpAsState(widths[index],
+                tween(420, easing = if (team) WebTeamPillEase else WebEaseSpring), label = "Largura do destaque")
             Canvas(Modifier.matchParentSize()) {
-                val width = slot.toPx()
+                val width = pillWidth.toPx()
                 val x = if (layoutDirection == LayoutDirection.Rtl) size.width - width - offset.toPx() else offset.toPx()
                 drawRoundRect(colors.primaryContainer, Offset(x, 0f), Size(width, size.height), CornerRadius(18.dp.toPx()))
             }
@@ -271,7 +318,7 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
                     val iconColor by animateColorAsState(labelColor,
                         tween(250, easing = WebEase), label = "Cor do ícone")
                     Column(
-                        Modifier.weight(1f).heightIn(min = 50.dp)
+                        Modifier.weight(weights[item]).heightIn(min = 50.dp)
                             .pressLikeWeb(source, pressedScale = if (team) .94f else .96f)
                             .webActionFocus(source)
                             .selectable(
@@ -283,9 +330,9 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
                         verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)
                     ) {
                         PanelGlyph(tab.icon, iconColor, 19.dp)
-                        Text(tab.label, fontSize = 11.sp, lineHeight = 12.sp, letterSpacing = (-.11).sp,
+                        Text(tab.label, fontSize = fontSize, lineHeight = 12.sp, letterSpacing = (-.11).sp,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            maxLines = if (team) 1 else 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                             color = labelColor)
                     }
                 }
@@ -295,14 +342,16 @@ private fun PanelDock(tabs: List<PanelTab>, selected: Int, team: Boolean, select
 }
 
 @Composable
-internal fun PanelSearch(query: String, change: (String) -> Unit, hint: String) {
+internal fun PanelSearch(query: String, change: (String) -> Unit, hint: String, autofocus: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(14.dp)
     val interactions = remember { MutableInteractionSource() }
     val focused by interactions.collectIsFocusedAsState()
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(autofocus) { if (autofocus) focusRequester.requestFocus() }
     val style = MaterialTheme.typography.bodyLarge
     BasicTextField(
-        query, change, Modifier.fillMaxWidth().semantics { contentDescription = hint }, singleLine = true,
+        query, change, Modifier.fillMaxWidth().focusRequester(focusRequester).semantics { contentDescription = hint }, singleLine = true,
         textStyle = style.copy(color = colors.onSurface), interactionSource = interactions,
         cursorBrush = SolidColor(colors.primary), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
     ) { field ->

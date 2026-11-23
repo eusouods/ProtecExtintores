@@ -207,37 +207,48 @@
   ];
   const gmap = Object.fromEntries(G.map(g => [g.id, g])), byPage = {};
   G.forEach(g => g.pages.forEach(([p]) => { byPage[p] = g; }));
-  const SECTIONS = [[null,['overview']],['Operação',['services','extinguishers','clients','stock','insights']],['Equipe',['team','history']],['Comercial',['shop','after']],['Sistema',['data','settings','logout']]];
-  const TABS = ['overview','services'], MORE = ['extinguishers','clients','stock','insights','team','history','shop','after','data','settings','logout'];
+  const PRIMARY = [['overview','grid','Visão geral','Painel'],['services','wrench','Serviços'],['finance','wallet','Recebimentos'],['settings','gear','Configurações','Ajustes']];
+  const MORE = ['extinguishers','clients','stock','insights','team','history','shop','after','data','logout'];
   const svg = n => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
   const norm = v => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const entry = (id, cls) => id === 'logout'
-    ? `<button type="button" class="${cls}" data-nav-logout>${svg('out')}<span>Sair do painel</span></button>`
-    : `<button type="button" class="${cls}" data-nav-group="${id}" data-go="${gmap[id].pages[0][0]}">${svg(gmap[id].icon)}<span>${id==='services'&&cls==='admin-tab'?'Serviços':gmap[id].label}</span></button>`;
+  const entry = ([id,icon,label,short],mobile=false) => `<button type="button" class="${mobile?'admin-tab':'admin-nav-item'}" data-admin-destination="${id}" data-go="${id}">${svg(icon)}<span>${mobile&&short?short:label}</span></button>`;
+  const moreButton = (cls) => `<button type="button" class="${cls}" data-nav-more aria-haspopup="dialog" aria-controls="adminMore" aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
 
   function mount() {
     const header=document.querySelector('#dashboard .admin-top');
     if(header&&!header.querySelector('.mobile-panel-brand')){
       const brand=document.createElement('span');brand.className='mobile-panel-brand';
-      brand.innerHTML='<img src="./icons/company-logo.png" alt="">ProtecExtintores';
+      brand.innerHTML=`<span class="protec-panel-mark">${svg('flame')}</span><span>ProtecExtintores</span>`;
       header.prepend(brand);
       const alert=document.createElement('button');alert.type='button';alert.className='mobile-panel-alert';alert.dataset.go='alerts';
       alert.setAttribute('aria-label','Alertas');alert.innerHTML=svg('bell');header.querySelector('.admin-top-right')?.prepend(alert);
+      const searchToggle=document.createElement('button');searchToggle.type='button';searchToggle.className='protec-search-toggle';
+      searchToggle.setAttribute('aria-label','Buscar no painel');searchToggle.setAttribute('aria-controls','adminSearch');searchToggle.setAttribute('aria-expanded','false');
+      searchToggle.innerHTML=svg('search');header.querySelector('.admin-top-right')?.prepend(searchToggle);
+      searchToggle.onclick=()=>{
+        if((window.page||'overview')!=='overview')window.go('overview');
+        search();
+        const box=document.getElementById('adminSearch');
+        box.hidden=!box.hidden;
+        searchToggle.setAttribute('aria-expanded',String(!box.hidden));
+        if(!box.hidden)box.querySelector('input').focus();
+      };
       const title=document.createElement('span');title.className='mobile-receipts-title';title.textContent='Recebimentos';header.querySelector('.crumb')?.append(title);
     }
     const sidebar = document.querySelector('#dashboard .sidebar');
     if (sidebar && !document.getElementById('adminNav')) {
       const nav = document.createElement('nav');
       nav.id = 'adminNav'; nav.setAttribute('aria-label', 'Menu do painel');
-      nav.innerHTML = SECTIONS.map(([title, ids]) => (title ? `<p class="admin-nav-title">${title}</p>` : '') + ids.map(id => entry(id, 'admin-nav-item')).join('')).join('');
+      nav.innerHTML = PRIMARY.map(item=>entry(item)).join('') + moreButton('admin-nav-item');
+      const brandMark=sidebar.querySelector('.brand-mark');
+      if(brandMark)brandMark.insertAdjacentHTML('beforeend',`<span class="protec-panel-mark">${svg('flame')}</span>`);
       (sidebar.querySelector('.brand') || sidebar.firstElementChild)?.insertAdjacentElement('afterend', nav);
     }
     if (!document.getElementById('adminTabbar')) {
       const bar = document.createElement('nav');
       bar.id = 'adminTabbar'; bar.setAttribute('aria-label', 'Navegação principal');
-      bar.innerHTML = '<span class="admin-tab-pill" aria-hidden="true"></span>' + TABS.map(id => entry(id, 'admin-tab')).join('') +
-        `<button type="button" class="admin-tab" data-go="finance" data-receipts-tab>${svg('wallet')}<span>Recebimentos</span></button><button type="button" class="admin-tab" data-nav-more aria-haspopup="dialog" aria-controls="adminMore" aria-expanded="false">${svg('dots')}<span>Mais</span></button>`;
+      bar.innerHTML = '<span class="admin-tab-pill" aria-hidden="true"></span>' + PRIMARY.map(item=>entry(item,true)).join('') + moreButton('admin-tab');
       document.body.appendChild(bar);
       const sheet = document.createElement('dialog');
       sheet.id = 'adminMore'; sheet.hidden = true; sheet.setAttribute('aria-labelledby', 'adminMobileMoreTitle');
@@ -245,7 +256,7 @@
         ? `<button type="button" class="admin-more-row" data-nav-logout><span class="ic">${svg('out')}</span><b>Sair do painel</b></button>`
         : `<button type="button" class="admin-more-row" data-nav-group="${id}" data-go="${gmap[id].pages[0][0]}"><span class="ic">${svg(gmap[id].icon)}</span><b>${gmap[id].label}</b><span class="ch">${svg('chev')}</span></button>`).join('');
       document.body.appendChild(sheet);
-      sheet.addEventListener('close',()=>{sheet.hidden=true;document.querySelector('[data-nav-more]')?.setAttribute('aria-expanded','false');last=null;sync();});
+      sheet.addEventListener('close',()=>{sheet.hidden=true;document.querySelectorAll('[data-nav-more]').forEach(button=>button.setAttribute('aria-expanded','false'));last=null;sync();});
       sheet.addEventListener('click',event=>{
         if(event.target!==sheet)return;
         const bounds=sheet.getBoundingClientRect();
@@ -258,7 +269,7 @@
   function tabs(group, current) {
     let el = document.getElementById('pageTabs');
     if (!el) { const c = document.getElementById('content'); if (!c) return; el = document.createElement('nav'); el.id = 'pageTabs'; el.setAttribute('aria-label', 'Seções'); c.insertAdjacentElement('beforebegin', el); }
-    if (!group || group.pages.length < 2 || (current==='finance' && matchMedia('(max-width:650px)').matches)) { el.hidden = true; el.innerHTML = ''; el.dataset.key = ''; return; }
+    if (!group || group.pages.length < 2 || current==='finance') { el.hidden = true; el.innerHTML = ''; el.dataset.key = ''; return; }
     const key = group.id + ':' + current;
     if (el.dataset.key === key) return;
     const cs = getComputedStyle(document.getElementById('content'));
@@ -271,10 +282,17 @@
     const c = document.getElementById('content');
     if (!c || document.getElementById('adminSearch')) return;
     const box = document.createElement('div');
-    box.id = 'adminSearch';
+    box.id = 'adminSearch'; box.hidden = true;
+    document.querySelector('.protec-search-toggle')?.setAttribute('aria-expanded','false');
     box.innerHTML = `<label class="admin-search-field">${svg('search')}<input type="search" placeholder="Buscar cliente, ordem ou funcionário" aria-label="Buscar cliente, ordem ou funcionário" autocomplete="off"></label><div class="admin-search-results" hidden></div>`;
     c.prepend(box);
     const input = box.querySelector('input'), out = box.querySelector('.admin-search-results');
+    input.addEventListener('keydown',event=>{
+      if(event.key!=='Escape')return;
+      box.hidden=true;
+      const button=document.querySelector('.protec-search-toggle');
+      button?.setAttribute('aria-expanded','false');button?.focus();
+    });
     input.addEventListener('input', () => {
       const q = norm(input.value.trim());
       if (q.length < 2) { out.hidden = true; out.innerHTML = ''; return; }
@@ -383,31 +401,33 @@
     });
   }
 
-  let last = null, pendingCount = true;
+  let last = null;
   function sync() {
     mount();
     const dash = document.getElementById('dashboard'), open = Boolean(dash && !dash.classList.contains('hidden'));
     document.body.classList.toggle('admin-open', open);
-    if (!open) { closeMore(); delete document.body.dataset.mobileAdminPage; return; }
+    if (!open) { last=null; closeMore(); delete document.body.dataset.mobileAdminPage; return; }
     const cur = window.page || 'overview', group = byPage[cur];
     if(document.body.dataset.mobileAdminPage!==cur)document.body.dataset.mobileAdminPage=cur;
     if (cur !== last) {
-      last = cur; pendingCount = cur === 'overview';
+      last = cur;
       document.querySelectorAll('[data-nav-group]').forEach(b => {
         const on = b.dataset.navGroup === group?.id;
         b.classList.toggle('active', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current');
       });
-      const selected = cur==='finance'?document.querySelector('[data-receipts-tab]'):
-        [...document.querySelectorAll('#adminTabbar [data-nav-group]')].find(b=>b.dataset.navGroup===group?.id);
-      const active=selected||document.querySelector('[data-nav-more]');
-      document.querySelectorAll('#adminTabbar button').forEach(b=>{
-        b.classList.toggle('active',b===active);
-        if(b===active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+      const destination = cur==='next-maintenance'?'services':cur;
+      const mainDestination=PRIMARY.some(([id])=>id===destination);
+      document.querySelectorAll('#adminNav button,#adminTabbar button').forEach(button=>{
+        const active=button.dataset.adminDestination===destination||(!mainDestination&&button.hasAttribute('data-nav-more'));
+        button.classList.toggle('active',active);
+        if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
       });
+      if(cur!=='overview') document.querySelector('.protec-search-toggle')?.setAttribute('aria-expanded','false');
+      if(cur==='services') document.getElementById('crumb').textContent='Serviços';
+      if(cur==='finance') document.getElementById('crumb').textContent='Recebimentos';
     }
     tabs(group, cur);
     if (cur === 'overview') search();
-    if (cur === 'overview' && pendingCount && window.__protecCountUp && window.__protecCountUp()) pendingCount = false;
     if (window.__protecPill) window.__protecPill();
     if (cur === 'settings') stagePanel();
     if (cur === 'services') tidyServices();
