@@ -1,12 +1,12 @@
-import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=protec-interface-74';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-74';
-import './service-management.mjs?v=protec-interface-74';
-import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=protec-interface-74';
-import {vault,nativeCall} from './offline-vault.mjs?v=protec-interface-74';
-import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=protec-interface-74';
-import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=protec-interface-74';
+import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=protec-interface-75';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-75';
+import './service-management.mjs?v=protec-interface-75';
+import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=protec-interface-75';
+import {vault,nativeCall} from './offline-vault.mjs?v=protec-interface-75';
+import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=protec-interface-75';
+import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=protec-interface-75';
 
-const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=protec-interface-74',import.meta.url);document.head.append(css);
+const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=protec-interface-75',import.meta.url);document.head.append(css);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
@@ -589,7 +589,7 @@ async function serviceModal(serviceId,title,body,onSave,label='Salvar'){
 function duration(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file);let settled=false,seeking=false;const timer=setTimeout(()=>done(Error('Não foi possível conferir a duração do vídeo.')),15000);const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);video.onloadedmetadata=video.onseeked=video.ondurationchange=video.onerror=null;video.removeAttribute('src');video.load();URL.revokeObjectURL(url);error?reject(error):resolve(value)};const check=()=>{if(Number.isFinite(video.duration)&&video.duration>0){done(null,video.duration);return}if(!seeking){seeking=true;video.currentTime=1e100}};video.preload='metadata';video.onloadedmetadata=check;video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)done(null,video.duration)};video.onseeked=()=>{const seconds=Number.isFinite(video.duration)?video.duration:video.currentTime;done(!Number.isFinite(seconds)||seconds<=0?Error('Duração de vídeo inválida.'):null,seconds)};video.onerror=()=>done(Error('Este aparelho não conseguiu ler o vídeo.'));video.src=url})}
 
 let shellPreparing=null,shellReady=false,shellError='';
-const shellVersion='protec-interface-74';
+const shellVersion='protec-interface-75';
 async function prepareShell(account=''){
  if(shellPreparing)return shellPreparing;
  if(shellReady&&(await vault.get('shell:'+account))?.version===shellVersion)return;

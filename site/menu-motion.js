@@ -2,15 +2,48 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const animations = new WeakMap();
   window.protecMotion = Object.freeze({
-    transition(element, { axis = 'Y', direction = 1, duration = 285 } = {}) {
+    transition(element, { axis = 'Y', direction = 1, duration = 285, delay = 0 } = {}) {
       if (!element) return;
       animations.get(element)?.cancel();
       if (reducedMotion.matches || !element.animate) return;
       const animation = element.animate([
         { opacity: .78, transform: `translate${axis}(${direction * 10}px)` },
         { opacity: 1, transform: 'none' }
-      ], { duration, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      ], { duration, delay, fill: 'backwards', easing: 'cubic-bezier(.2,.8,.2,1)' });
       animations.set(element, animation);
+    },
+    enterView(root) {
+      if (!root || reducedMotion.matches) return;
+      const groups = '.protec-overview, .inventory-page, .protec-overview-metrics, .protec-overview-columns, .protec-services-compact, .protec-overview-orders, .record-finance-layout, .record-alerts, [data-report-results], .record-report-summary, #opsTeamSummary, .workspace-metrics';
+      const sections = [];
+      function collect(parent) {
+        for (const child of parent.children) {
+          if (sections.length === 8) return;
+          if (!child.getClientRects().length || child.getBoundingClientRect().top > innerHeight + 80) continue;
+          if (child.matches(groups)) collect(child);
+          else sections.push(child);
+        }
+      }
+      collect(root);
+      sections.forEach((section, index) => this.transition(section, { duration: 400, delay: Math.min(index * 42, 168) }));
+    },
+    countUp(element, from, to, format) {
+      const text = element?.firstChild;
+      if (!text || reducedMotion.matches || from === to || !Number.isFinite(to)) return;
+      const start = performance.now();
+      function draw(value) {
+        element.dataset.currentValue = value;
+        text.data = format(value);
+      }
+      function frame(now) {
+        if (!element.isConnected) return;
+        const progress = reducedMotion.matches ? 1 : Math.min(1, Math.max(0, (now - start) / 740));
+        const ease = 1 - (1 - progress) ** 3;
+        draw(Math.round(from + (to - from) * ease));
+        if (progress < 1) requestAnimationFrame(frame);
+      }
+      draw(from);
+      requestAnimationFrame(frame);
     },
     dismiss() {
       const backdrop = document.querySelector('#modalRoot > .modal-back');

@@ -71,8 +71,9 @@ try {
       return networkFetch(input, options);
     };` });
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
   await send('Page.navigate', { url });
-  await until(() => evaluate(() => Boolean(window.offlineServices && window.openServiceDetails && window.protecClientView)), 'Módulos do site não iniciaram');
+  await until(() => evaluate(() => document.readyState === 'complete' && Boolean(window.protecOfflineLoaded && window.openServiceDetails && window.protecClientView)), 'Módulos do site não iniciaram');
 
   await evaluate(() => {
     const prior = window.apiCall;
@@ -99,8 +100,31 @@ try {
       { id:'s2', clientId:'c1', clientName:'Condomínio Aurora', code:'OS-002', date:'2026-10-12', employeeCompletedAt:'2026-10-12', items:[unit], history:[] },
       { id:'s3', clientId:'c2', clientName:'Condomínio Aurora', code:'OS-003', date:'2026-11-15', status:'Cancelado', cancelledAt:'2026-11-16', items:[], history:[] }
     ];
-    showDashboard();
   });
+  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 860, deviceScaleFactor: 1, mobile: false });
+  const motion = await evaluate(async () => {
+    showDashboard();
+    const payment = document.querySelector('.protec-summary-card[data-tone=payment]');
+    const amount = payment.querySelector('strong');
+    const start = Number(amount.dataset.currentValue);
+    await new Promise(done => setTimeout(done, 130));
+    const delays = [...document.querySelectorAll('.protec-summary-card')].map(card =>
+      card.getAnimations().find(animation => animation.effect.getTiming().duration === 400)?.effect.getTiming().delay);
+    return { start, delays, label: payment.getAttribute('aria-label') };
+  });
+  assert.equal(motion.start, 0);
+  assert.match(motion.label, /R\$\s100,00/);
+  assert.ok(motion.delays[0] < motion.delays[1] && motion.delays[1] < motion.delays[2], JSON.stringify(motion));
+  await until(() => evaluate(() => {
+    const value = Number(document.querySelector('.protec-summary-card[data-tone=payment] strong').dataset.currentValue);
+    return value > 0 && value < 10000;
+  }), 'Nenhum valor intermediário apareceu na contagem');
+  await until(() => evaluate(() => document.querySelector('.protec-summary-card[data-tone=payment] strong').dataset.currentValue === '10000'), 'Contador não chegou ao valor correto');
+  assert.equal(await evaluate(() => {
+    window.overview(document.getElementById('content'));
+    return document.querySelector('.protec-summary-card[data-tone=payment] strong').dataset.currentValue;
+  }), undefined, 'Uma atualização da tela reiniciou a contagem');
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   await click('.protec-search-toggle');
   await evaluate(() => { const input = document.querySelector('#adminSearch input'); input.value = 'condominio aurora'; input.dispatchEvent(new Event('input', { bubbles: true })); });
   assert.equal(await evaluate(() => document.querySelectorAll('#adminSearch [data-open-client-record]').length), 2, 'homônimos precisam de cadastros separados');
@@ -154,8 +178,35 @@ try {
   await click('#opsNewService');
   await until(() => show('.maintenance-registration-form [aria-current=step]'), 'Registrar serviço não abriu');
   await evaluate(() => closeModal());
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  const reduced = await evaluate(async () => {
+    go('services');
+    await new Promise(requestAnimationFrame);
+    go('overview');
+    await new Promise(requestAnimationFrame);
+    const payment = document.querySelector('.protec-summary-card[data-tone=payment]');
+    return { text: payment.querySelector('strong').textContent, animated: payment.getAnimations().some(animation => animation.effect.getTiming().duration === 400) };
+  });
+  assert.match(reduced.text, /R\$\s100,00/);
+  assert.equal(reduced.animated, false);
   assert.equal(await evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  console.log('Site no navegador: rastreio, homônimos, agrupamento, comprovante, histórico, alertas e CSV conferidos.');
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+  for (const role of ['employee', 'seller']) {
+    await evaluate(role => {
+      localStorage.removeItem('protecextintores_session');
+      localStorage.setItem('protecextintores_role', role);
+      if (role === 'employee') renderEmployeePortal('Conta de teste', []);
+      else renderSellerPortal({ username:'Conta de teste', products:[], orders:[], services:[] });
+    }, role);
+    const selector = `.team-mobile-bar[data-role=${role}] [data-destination=orders]`;
+    await until(() => show(selector), 'Menu da equipe não abriu');
+    assert.equal(await evaluate(sel => {
+      document.querySelector(sel).click();
+      const main = document.querySelector('#employeePortal .employee-main');
+      return main.getAnimations({ subtree:true }).some(animation => animation.effect.getTiming().duration === 400);
+    }, selector), true, `A lista do perfil ${role} não recebeu a transição`);
+  }
+  console.log('Site no navegador: navegação, agrupamentos, CSV, contadores, entrada dos cartões e movimento reduzido conferidos.');
 } finally {
   socket?.close();
   if (browser?.pid) {

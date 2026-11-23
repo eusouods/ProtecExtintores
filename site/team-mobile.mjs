@@ -92,10 +92,8 @@ function show(tab) {
   current = tab;
   if (tab === 'agenda') window.openNextMaintenancePage?.(root.dataset.teamMobileRole);
   else window.closeNextMaintenancePage?.();
+  window.scrollTo({ top: 0, behavior: 'instant' });
   sync();
-  const section = root.querySelector(tab === 'agenda' ? '#teamNextMaintenancePage' : '.employee-main');
-  window.protecMotion?.transition(section, { duration: 310 });
-  window.scrollTo(0, 0);
 }
 
 function runAction(action, role) {
@@ -170,7 +168,8 @@ function sync() {
     return;
   }
   const nextAccount = role + ':' + (localStorage.getItem('protecextintores_username') || '');
-  if (account !== nextAccount) current = 'overview';
+  const accountChanged = account !== nextAccount;
+  if (accountChanged) current = 'overview';
   account = nextAccount;
   root.dataset.teamMobileRole = role;
   const header = root.querySelector('.employee-top');
@@ -184,6 +183,7 @@ function sync() {
   const agenda = root.querySelector('#teamNextMaintenancePage');
   if (current === 'agenda' && (!agenda || agenda.classList.contains('hidden'))) current = 'overview';
   else if (agenda && !agenda.classList.contains('hidden')) current = 'agenda';
+  const tabChanged = root.dataset.teamMobilePage !== current;
   root.dataset.teamMobilePage = current;
   const title = root.querySelector('[data-team-mobile-title] b');
   const label = tabs[role].find(([id]) => id === current)[1];
@@ -201,6 +201,7 @@ function sync() {
   sidebar.querySelector('[data-option="register"]').hidden = !root.querySelector('[data-team-register]');
   sidebar.querySelector('[data-option="theme"]').hidden = !root.querySelector('.theme-toggle');
   updatePill();
+  if (accountChanged || tabChanged) window.protecMotion?.enterView(current === 'agenda' ? agenda : main);
 }
 
 function schedule() {

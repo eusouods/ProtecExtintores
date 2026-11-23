@@ -336,8 +336,9 @@
     document.body.classList.toggle('admin-open', open);
     if (!open) { last=null;document.getElementById('adminMore')?.close();delete document.body.dataset.mobileAdminPage;return; }
     const cur = window.page || 'overview', group = byPage[cur];
+    const changed = cur !== last;
     if(document.body.dataset.mobileAdminPage!==cur)document.body.dataset.mobileAdminPage=cur;
-    if (cur !== last) {
+    if (changed) {
       last = cur;
       window.protecPanelHistory?.(cur);
       document.querySelectorAll('[data-nav-group]').forEach(b => {
@@ -360,6 +361,7 @@
     if (window.__protecPill) window.__protecPill();
     if (cur === 'settings') stagePanel();
     if (cur === 'services') tidyServices();
+    if (changed) window.protecMotion?.enterView(document.getElementById('content'));
   }
 
   document.addEventListener('click', event => {
@@ -389,19 +391,6 @@
 /* Movimento: troca de tela, revelar ao rolar, marcador da barra inferior e toque nos botões. */
 (() => {
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  /* 1) painel: animar a troca de tela */
-  const wrapGo = () => {
-    if (typeof window.go !== 'function' || window.go.__mv) return;
-    const base = window.go;
-    const fn = function () {
-      const before = window.page;
-      const result = base.apply(this, arguments);
-      if (before !== window.page) window.protecMotion.transition(document.getElementById('content'));
-      return result;
-    };
-    fn.__mv = true; window.go = fn;
-  };
-  wrapGo(); setTimeout(wrapGo, 1200);
   /* 2) site: revelar blocos ao rolar */
   const REVEAL = '#store .home-equipment .section-head,#store .home-family,#store #servicos .section-head,#store #servicos .feature,#store #como-funciona .section-head,#store #como-funciona .how-steps li,#store #perguntas .section-head,#store #perguntas .faq-list details,#store #perguntas .faq-foot,#store .catalog-card,#store .customer-services-heading,#store .customer-service-card';
   if (!reduce && 'IntersectionObserver' in window) {

@@ -1,9 +1,9 @@
-import {mountDataTools} from './data-tools.mjs?v=protec-interface-74';
+import {mountDataTools} from './data-tools.mjs?v=protec-interface-75';
 import './team-mobile.mjs';
-import {mountWorkshop,bindWorkshopOrder} from './workshop-ui.mjs?v=protec-interface-74';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-74';
-import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-74';
-import {isPaused} from './offline-rules.mjs?v=protec-interface-74';
+import {mountWorkshop,bindWorkshopOrder} from './workshop-ui.mjs?v=protec-interface-75';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-75';
+import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-75';
+import {isPaused} from './offline-rules.mjs?v=protec-interface-75';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function groupedOrderItems(service) {
@@ -64,9 +64,14 @@ const overviewLink=(label,page)=>`<button type="button" class="protec-overview-l
 const receivableDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s.finance.dueDate||'')?s.finance.dueDate:'';
 const openReceivables=services=>services.filter(s=>s.closed&&s.finance&&s.finance.payment?.status!=='paid'&&!cancelled(s))
  .sort((a,b)=>(receivableDate(a)||'9999-12-31').localeCompare(receivableDate(b)||'9999-12-31')||String(a.code||'').localeCompare(String(b.code||'')));
-const summaryCard=(tone,label,value,page)=>`<button type="button" class="protec-summary-card" data-tone="${tone}" data-ops-nav="${page}">
- <span class="protec-summary-icon">${overviewIcon(tone)}</span><span class="protec-summary-text">${label}<strong>${esc(value)}</strong></span>
-</button>`;
+const summaryNumber = new Intl.NumberFormat('pt-BR');
+const summaryFormat = tone => tone === 'payment' ? money : value => summaryNumber.format(value);
+function summaryCard(tone,label,value,page){
+ const formatted=summaryFormat(tone)(value);
+ return `<button type="button" class="protec-summary-card" data-tone="${tone}" data-ops-nav="${page}" aria-label="${esc(label+': '+formatted)}">
+  <span class="protec-summary-icon">${overviewIcon(tone)}</span><span class="protec-summary-text">${label}<strong data-summary-value="${esc(value)}" aria-hidden="true">${esc(formatted)}</strong></span>
+ </button>`;
+}
 function orderCard(s){
  const tone=s.employeeCompletedAt&&!s.closed?'review':isPaused(s)?'paused':'work';
  const details=[s.code||'Ordem',`${s.items?.length||0} extintor(es)`].join(' · ');
@@ -81,6 +86,10 @@ function orderList(orders,message){
 }
 function bindOrders(root){root.querySelectorAll('[data-ops-order]').forEach(b=>b.onclick=()=>window.openServiceDetails(b.dataset.opsOrder));root.querySelectorAll('[data-ops-nav]').forEach(b=>b.onclick=()=>window.go(b.dataset.opsNav));}
 function adminHome(host){
+ const previous=new Map([...host.querySelectorAll('.protec-summary-card[data-tone]')].map(card=>{
+  const value=card.querySelector('[data-summary-value]');
+  return [card.dataset.tone, Number(value?.dataset.currentValue ?? value?.dataset.summaryValue) || 0];
+ }));
  const list=(db.services||[]).filter(s=>!cancelled(s));
  const review=list.filter(s=>s.employeeCompletedAt&&!s.closed);
  const paused=list.filter(s=>isPaused(s)&&!completed(s));
@@ -97,7 +106,7 @@ function adminHome(host){
   <div class="protec-overview-metrics" aria-label="Resumo da operação">
    ${summaryCard('review','Aguardando revisão',review.length,'services')}
    ${summaryCard('work','Em atendimento',active.length,'services')}
-   ${summaryCard('payment','A receber',money(totals.receivable),'finance')}
+   ${summaryCard('payment','A receber',totals.receivable,'finance')}
   </div>
   <div class="protec-overview-columns">
    <section><header class="protec-overview-heading"><h2>Ordens de serviço</h2>${overviewLink('Ver todas','services')}</header>${orderList(featured,'Nenhuma ordem em andamento.')}</section>
@@ -119,6 +128,10 @@ function adminHome(host){
   </details>
  </div>`;
  host.querySelector('#opsNewService').onclick=()=>window.openService();bindOrders(host);
+ host.querySelectorAll('.protec-summary-card[data-tone]').forEach(card=>{
+  const value=card.querySelector('[data-summary-value]'),tone=card.dataset.tone;
+  window.protecMotion?.countUp(value,previous.get(tone) ?? 0,Number(value.dataset.summaryValue),summaryFormat(tone));
+ });
 }
 
 function enhanceAdminServices(){
@@ -297,7 +310,7 @@ function enhanceTeam(){
   summary.querySelector('[data-ops-assigned]')?.addEventListener('click',()=>host.querySelector('[data-employee-scope="assigned"]')?.click());
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-74',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-75',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{
