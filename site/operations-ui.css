@@ -295,7 +295,7 @@ html:root body #employeePortal .workspace-metrics .ops-metric:first-child{paddin
 /* Compact status, calmer workspaces and the shared three-step registration. */
 @layer protecNeutral {
 html:root body :is(#dashboard,#employeePortal,#modalRoot) [hidden]{display:none!important}
-html:root body :is(#adminOfflineToolbar,#offlineToolbar,#offlineAvailability).sync-control{display:inline-flex!important;align-items:center!important;width:auto!important;min-width:0!important;max-width:280px!important;padding:0!important;margin:0!important;gap:0!important;border:0!important;box-shadow:none!important;background:transparent!important;grid-template-columns:none!important}
+html:root body :is(#offlineToolbar,#offlineAvailability).sync-control{display:inline-flex!important;align-items:center!important;width:auto!important;min-width:0!important;max-width:280px!important;padding:0!important;margin:0!important;gap:0!important;border:0!important;box-shadow:none!important;background:transparent!important;grid-template-columns:none!important}
 html:root body .sync-control .sync-indicator{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 12px;border:1px solid var(--ui-border);border-radius:100px;background:var(--ui-panel);color:var(--ui-muted);font:600 12px/1.4 Inter,"Segoe UI",sans-serif;white-space:normal;max-width:100%;text-align:left;cursor:pointer}
 html:root body .sync-control[data-sync-state=attention] .sync-indicator{border-color:var(--ui-action);color:var(--ui-text)}
 html:root body .sync-dot{width:7px;height:7px;flex:0 0 7px;border:1px solid currentColor;border-radius:50%;background:currentColor}
@@ -360,7 +360,7 @@ html:root body .maintenance-registration-form [data-draft-state]{font-size:12px;
 @media(max-width:760px){
  html:root body #dashboard .admin-top{height:auto!important;min-height:68px;padding:10px 12px!important;gap:8px;flex-wrap:wrap}
  html:root body #dashboard .admin-top-right{flex-wrap:wrap;gap:8px}
- html:root body :is(#adminOfflineToolbar,#offlineToolbar,#offlineAvailability).sync-control{max-width:210px!important}
+ html:root body :is(#offlineToolbar,#offlineAvailability).sync-control{max-width:210px!important}
  html:root body .sync-control .sync-indicator{min-height:34px;font-size:11px;padding:7px 10px}
  html:root body #employeePortal .employee-top{flex-wrap:wrap;gap:8px!important}
  html:root body #employeePortal #offlineToolbar{order:4;margin-left:auto!important}

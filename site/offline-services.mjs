@@ -1,12 +1,12 @@
-import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=protec-interface-70';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-70';
-import './service-management.mjs?v=protec-interface-70';
-import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=protec-interface-70';
-import {vault,nativeCall} from './offline-vault.mjs?v=protec-interface-70';
-import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=protec-interface-70';
-import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=protec-interface-70';
+import {paintingField,powderFields,powderPayload} from './workshop-ui.mjs?v=protec-interface-71';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-71';
+import './service-management.mjs?v=protec-interface-71';
+import {openOrderDetail,enhanceRegistrationSteps} from './operations-ui.mjs?v=protec-interface-71';
+import {vault,nativeCall} from './offline-vault.mjs?v=protec-interface-71';
+import {applyOperation,replayLocal,isPaused,adminChanges,applyAdminChanges,stageFlow} from './offline-rules.mjs?v=protec-interface-71';
+import {PART_NAMES,completed,cancelled,applyAdminOperation,finalizeAdminOrder,updateAdminOrder,preserveAndCapture,registrationCatalog,registrationQuote,normalizeRegistration,SALE_CONDITIONS,complementDefinitions,validateComplementSettings,registrationContacts,registrationCapacityAllowed,localDay,employeeCreatedService,employeeServiceView} from './service-rules.mjs?v=protec-interface-71';
 
-const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=protec-interface-70',import.meta.url);document.head.append(css);
+const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./offline-services.css?v=protec-interface-71',import.meta.url);document.head.append(css);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tokenKey='protecextintores_session',roleKey='protecextintores_role';
 const base=String(window.API_BASE_URL || (typeof API_BASE_URL!=='undefined'?API_BASE_URL:''));
@@ -589,7 +589,7 @@ async function serviceModal(serviceId,title,body,onSave,label='Salvar'){
 function duration(file){return new Promise((resolve,reject)=>{const video=document.createElement('video'),url=URL.createObjectURL(file);let settled=false,seeking=false;const timer=setTimeout(()=>done(Error('Não foi possível conferir a duração do vídeo.')),15000);const done=(error,value)=>{if(settled)return;settled=true;clearTimeout(timer);video.onloadedmetadata=video.onseeked=video.ondurationchange=video.onerror=null;video.removeAttribute('src');video.load();URL.revokeObjectURL(url);error?reject(error):resolve(value)};const check=()=>{if(Number.isFinite(video.duration)&&video.duration>0){done(null,video.duration);return}if(!seeking){seeking=true;video.currentTime=1e100}};video.preload='metadata';video.onloadedmetadata=check;video.ondurationchange=()=>{if(Number.isFinite(video.duration)&&video.duration>0)done(null,video.duration)};video.onseeked=()=>{const seconds=Number.isFinite(video.duration)?video.duration:video.currentTime;done(!Number.isFinite(seconds)||seconds<=0?Error('Duração de vídeo inválida.'):null,seconds)};video.onerror=()=>done(Error('Este aparelho não conseguiu ler o vídeo.'));video.src=url})}
 
 let shellPreparing=null,shellReady=false,shellError='';
-const shellVersion='protec-interface-70';
+const shellVersion='protec-interface-71';
 async function prepareShell(account=''){
  if(shellPreparing)return shellPreparing;
  if(shellReady&&(await vault.get('shell:'+account))?.version===shellVersion)return;
@@ -601,7 +601,7 @@ async function prepareShell(account=''){
    await new Promise((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();reject(Error('A preparação automática será retomada ao conectar.'));},45000);channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();e.data.ok?resolve():reject(Error(e.data.error||'Preparação pendente.'));};(reg.active||navigator.serviceWorker.controller).postMessage({type:'PREPARE_OFFLINE'},[channel.port2]);});
   }
   shellReady=true;shellError='';await vault.put('shell:'+account,{at:new Date().toISOString(),version:shellVersion});
- })().catch(e=>{shellError=e.message;throw e;}).finally(()=>{shellPreparing=null;adminRender();});return shellPreparing;
+ })().catch(e=>{shellError=e.message;throw e;}).finally(()=>{shellPreparing=null;});return shellPreparing;
 }
 
 // Administrator outbox. A successful response means the encrypted write has
@@ -631,7 +631,6 @@ async function adminHydrate(){
   for(const op of included){await vault.remove(adminPrefix+op.id);await vault.remove('result:'+adminAccount+':'+op.id);delete adminResults[op.id];}
   adminOps=adminOps.filter(op=>!included.some(saved=>saved.id===op.id));
  }
- adminRender();
  };
  if(navigator.locks)return navigator.locks.request('protec-admin-cache',hydrateCache);
  return hydrateCache();
@@ -672,20 +671,10 @@ async function initializeAdminOffline(){
   return;
  }
  adminProfile=saved;adminBase=structuredClone(saved.state);adminAuth=auth.token;await adminHydrate();adminView=adminProject(adminBase);
- if(!locked){db=structuredClone(adminView);window.showDashboard();adminRender();adminSchedule();}
+ if(!locked){db=structuredClone(adminView);window.showDashboard();adminSchedule();}
  const shell=await vault.get('shell:'+adminAccount);shellReady=vault.native()||shell?.version===shellVersion;if(navigator.onLine)prepareShell(adminAccount).catch(()=>{});
 }
-function adminShow(){if(!adminReady())return;db=structuredClone(adminView||adminProject(adminBase));window.showDashboard();adminRender();}
-function adminRender(){
- const dashboard=document.getElementById('dashboard');if(!adminReady()||!dashboard||dashboard.classList.contains('hidden')){document.getElementById('adminOfflineToolbar')?.remove();return;}
- const host=document.getElementById('content');if(!host)return;
- let bar=document.getElementById('adminOfflineToolbar');if(!bar){bar=document.createElement('div');bar.id='adminOfflineToolbar';bar.className='sync-control';dashboard.querySelector('.admin-top-right')?.prepend(bar);}
- const pending=adminPending(),conflicts=pending.filter(o=>adminResults[o.id]?.conflict),state=conflicts.length||adminNeedsLogin?'attention':adminBusy?'sending':pending.length?'pending':!navigator.onLine?'offline':'synced';
- const caption=conflicts.length?pending.length+' pendentes · '+conflicts.length+' para revisar':adminNeedsLogin?'Entrar para sincronizar':adminBusy?'Sincronizando':pending.length?pending.length+' pendente(s)':!navigator.onLine?'Offline · salvo no aparelho':'Tudo sincronizado';
- const signature=JSON.stringify([state,caption]);if(bar.dataset.state===signature)return;bar.dataset.state=signature;bar.dataset.syncState=state;
- bar.innerHTML=`<button type="button" class="sync-indicator" data-pending="${pending.length||''}${conflicts.length?' · '+conflicts.length+'!':adminNeedsLogin?'!':''}" data-admin-queue aria-label="Sincronização: ${esc(caption)}. Abrir detalhes"><span class="sync-dot" aria-hidden="true"></span><span>${esc(caption)}</span></button>`;
- bar.querySelector('[data-admin-queue]').onclick=()=>openSyncDetails(true);
-}
+function adminShow(){if(!adminReady())return;db=structuredClone(adminView||adminProject(adminBase));window.showDashboard();}
 function openSyncDetails(admin=false){
  const pending=admin?adminPending():ops.filter(o=>!results[o.id]?.ok&&!results[o.id]?.discarded),issues=pending.filter(o=>(admin?adminResults:results)[o.id]?.conflict),last=admin?adminLastSync:lastSyncAt,login=admin?adminNeedsLogin:needsLogin;
  window.openModal('Sincronização automática',`<p>As alterações são guardadas neste aparelho e enviadas automaticamente assim que houver conexão. Não é necessário autorizar o envio.</p><dl class="sync-facts"><div><dt>Conexão</dt><dd>${navigator.onLine?'Disponível':'Offline'}</dd></div><div><dt>Pendentes</dt><dd>${pending.length}</dd></div><div><dt>Precisam de revisão</dt><dd>${issues.length}</dd></div><div><dt>Última confirmação</dt><dd>${last?esc(new Date(last).toLocaleString('pt-BR')):'Nenhum envio neste aparelho'}</dd></div></dl>${login?'<p>Seu trabalho local está disponível. Entre novamente para retomar os envios.</p>':''}<p class="ops-note">${shellReady?'Telas guardadas para uso offline.':'As telas são preparadas automaticamente enquanto houver conexão.'} O acesso local continua até sair da conta.</p><div class="ops-detail-actions"><button type="button" class="btn btn-soft" data-sync-pending>Ver registros pendentes</button><button type="button" class="btn btn-soft" data-sync-now>Verificar agora</button>${login?'<button type="button" class="btn" data-sync-login>Entrar novamente</button>':''}</div>`,()=>{},'Fechar');
@@ -713,7 +702,7 @@ async function adminReview(id){
     const replacement={...op,id:crypto.randomUUID(),createdAt:new Date().toISOString(),changes:adminChanges(latest.state,target)};replacement.preview=replacement.changes;
     await vault.batch([{key:adminPrefix+replacement.id,value:replacement},{key:'result:'+adminAccount+':'+id,value:{discarded:true}}]);
    }else await vault.put('result:'+adminAccount+':'+id,{discarded:true});
-   adminBase=latest.state;adminProfile.state=adminBase;await adminHydrate();adminView=adminProject(adminBase);db=structuredClone(adminView);window.saveLocal();window.closeModal();window.renderPage();adminRender();adminSchedule();return false;
+   adminBase=latest.state;adminProfile.state=adminBase;await adminHydrate();adminView=adminProject(adminBase);db=structuredClone(adminView);window.saveLocal();window.closeModal();window.renderPage();adminSchedule();return false;
   });
  }catch(error){notify(error.message);}
 }
@@ -757,7 +746,7 @@ async function adminEnqueue(kind,payload,desired=null){return adminRun(async()=>
  if(!op.preview.length)return structuredClone(adminView);
  if(localStorage.getItem(tokenKey)!==token||!adminReady())throw Error('A conta mudou antes de salvar.');
  await vault.put(adminPrefix+op.id,op);
- await adminHydrate();adminView=adminProject(adminBase);adminRender();adminSchedule();return structuredClone(adminView);
+ await adminHydrate();adminView=adminProject(adminBase);adminSchedule();return structuredClone(adminView);
 });}
 let adminRetryTimer,adminRetry=0;
 function adminSchedule(retry=false){
@@ -785,7 +774,7 @@ async function adminRefresh(){
     if(changed){const content=document.getElementById('content'),opened=[...content.querySelectorAll('details')].map(d=>d.open),scroll=window.scrollY;window.renderPage?.();requestAnimationFrame(()=>{content.querySelectorAll('details').forEach((d,i)=>{if(opened[i])d.open=true;});window.scrollTo(0,scroll);});}
    }
   });
- }catch{/* Local work remains available during outages. */}finally{adminRefreshBusy=false;adminRender();}
+ }catch{/* Local work remains available during outages. */}finally{adminRefreshBusy=false;}
 }
 let adminSyncPromise=null;
 function adminSync(){
@@ -797,7 +786,7 @@ async function performAdminSync(){
  if(adminApiUnavailable&&!await verifyAdminOfflineBackend(adminAuth))return;
  if(vault.native()){adminSchedule();return;}
  const work=async()=>{
-  adminBusy=true;adminRender();const token=adminAuth;
+  adminBusy=true;const token=adminAuth;
   try{
    await adminRun(()=>adminHydrate());
    for(const op of adminPending()){
@@ -811,7 +800,7 @@ async function performAdminSync(){
     await vault.batch([{key:'result:'+adminAccount+':'+op.id,value:data},{key:'last-sync:'+adminAccount,value:{at:data.serverAt}}]);
     await adminRun(()=>adminHydrate());
    }
-  }catch{/* Retry automatically; the immutable operation remains in the vault. */}finally{adminBusy=false;adminRender();if(adminPending().some(o=>!adminResults[o.id]?.conflict))adminSchedule(true);else adminRetry=0;}
+  }catch{/* Retry automatically; the immutable operation remains in the vault. */}finally{adminBusy=false;if(adminPending().some(o=>!adminResults[o.id]?.conflict))adminSchedule(true);else adminRetry=0;}
   await adminRefresh();
  };
  if(navigator.locks)await navigator.locks.request('protec-sync:'+adminAccount,{ifAvailable:true},lock=>lock?work():undefined);else await work();
@@ -841,7 +830,7 @@ window.apiCall=async function(path,method='GET',data=null){
    if(path==='/api/admin/services/update'&&method==='POST')return reply({ok:true,local:true,state:await adminEnqueue('admin-update',data)});
    if(method!=='GET'&&path!=='/api/logout'&&adminPending().length){
     if(navigator.onLine)await adminSync();else adminSchedule();
-    if(adminPending().length)return new Response(JSON.stringify({error:'Aguarde a confirmação dos envios ou revise Pendências antes de alterar acessos ou pagamentos. As alterações já estão salvas neste aparelho.'}),{status:409,headers:{'Content-Type':'application/json'}});
+    if(adminPending().length)return new Response(JSON.stringify({error:'Aguarde a confirmação dos envios ou revise os registros em Dados e backup → Ver sincronização antes de alterar acessos ou pagamentos. As alterações já estão salvas neste aparelho.'}),{status:409,headers:{'Content-Type':'application/json'}});
    }
    if(!navigator.onLine&&method!=='GET'&&path!=='/api/logout')return new Response(JSON.stringify({error:'Esta ação precisa de internet para validar acesso ou pagamento. Ordens, catálogo e configurações gerais continuam disponíveis offline.'}),{status:503,headers:{'Content-Type':'application/json'}});
    if(!navigator.onLine&&method==='GET'&&path.startsWith('/api/admin/')){const cached=await vault.get('read:'+adminAccount+':'+path);if(cached)return reply(cached.data);throw Error('Esta consulta ainda não foi carregada neste aparelho. Conecte-se para atualizá-la.');}
@@ -854,7 +843,7 @@ window.apiCall=async function(path,method='GET',data=null){
   if(admin&&method==='GET'){const cached=await vault.get('read:'+adminAccount+':'+path);if(cached)return reply(cached.data);}
   throw error;
  }
- if(admin&&path==='/api/session'&&r.status===401&&adminReady()){adminNeedsLogin=true;adminRender();return reply({role:'admin',username:adminProfile.username,state:{...structuredClone(adminView),__offlineLocal:true}});}
+ if(admin&&path==='/api/session'&&r.status===401&&adminReady()){adminNeedsLogin=true;return reply({role:'admin',username:adminProfile.username,state:{...structuredClone(adminView),__offlineLocal:true}});}
  if(cachedRead&&r.ok){const d=await r.clone().json();await vault.put('read:'+account+':'+path,{data:d,at:new Date().toISOString()}).catch(()=>{});}
  if(path==='/api/login'&&r.ok){
   const d=await r.clone().json();if(d.role==='admin'){
@@ -876,11 +865,10 @@ window.apiCall=async function(path,method='GET',data=null){
 const adminLogout=window.logout;
 window.logout=function(){
  if(adminAuth){vault.remove('auth:'+adminAccount).catch(()=>{});if(vault.native())nativeCall('stopSync',{accountKey:adminAccount}).catch(()=>{});}
- adminAuth='';adminProfile=null;adminBase=null;adminView=null;adminOps=[];adminResults={};adminApiUnavailable=false;adminCapabilityToken='';adminCapabilityAt=0;adminCapabilityState=null;preparationIssue=null;document.getElementById('offlineAvailability')?.remove();document.getElementById('adminOfflineToolbar')?.remove();adminLogout();
+ adminAuth='';adminProfile=null;adminBase=null;adminView=null;adminOps=[];adminResults={};adminApiUnavailable=false;adminCapabilityToken='';adminCapabilityAt=0;adminCapabilityState=null;preparationIssue=null;document.getElementById('offlineAvailability')?.remove();adminLogout();
 };
 window.adminOffline={showSync:()=>openSyncDetails(true),get ready(){return adminReady();},get pending(){return adminPending().length;},show:adminShow,sync:adminSync,capture:adminAccept,overlay(state){return state?.__offlineLocal?structuredClone(adminView):adminProject(state);}};
-window.addEventListener('online',()=>{if(adminReady()){adminRetry=0;prepareShell(adminAccount).catch(()=>{});adminSync().catch(()=>{});}adminRender();});
-window.addEventListener('offline',adminRender);
+window.addEventListener('online',()=>{if(adminReady()){adminRetry=0;prepareShell(adminAccount).catch(()=>{});adminSync().catch(()=>{});}});
 window.addEventListener('protec-native-lock',()=>{if(localStorage.getItem(roleKey)==='admin'){document.getElementById('dashboard')?.classList.add('hidden');showInitialLock();}});
 window.addEventListener('protec-native-unlock',()=>{if(adminProfile)adminShow();});
 setInterval(()=>{if(adminReady()&&!document.hidden){adminRun(()=>adminHydrate()).then(()=>{if(vault.native()&&!document.querySelector('.modal:not(.hidden),dialog[open]')){adminView=adminProject(adminBase);db=structuredClone(adminView);}}).catch(()=>{});}},3000);
@@ -892,11 +880,11 @@ setInterval(()=>{
   verifyAdminOfflineBackend(token).then(async state=>{
    if(!state||token!==localStorage.getItem(tokenKey)||localStorage.getItem(roleKey)!=='admin')return;
    await adminAccept(state,state.settings?.username,token);
-   if(!document.querySelector('#editForm')&&document.querySelector('#dashboard:not(.hidden)')){db=structuredClone(adminView);window.saveLocal();window.renderPage?.();}adminRender();
+   if(!document.querySelector('#editForm')&&document.querySelector('#dashboard:not(.hidden)')){db=structuredClone(adminView);window.saveLocal();window.renderPage?.();}
   }).catch(()=>{});
  }
 },30000);
-new MutationObserver(()=>{renderAvailability();if(adminReady())adminRender();}).observe(document.getElementById('dashboard'),{attributes:true,attributeFilter:['class']});
+new MutationObserver(renderAvailability).observe(document.getElementById('dashboard'),{attributes:true,attributeFilter:['class']});
 
 const earlierRegistrationSettings=window.settings;
 window.settings=function(container){
