@@ -38,7 +38,7 @@
   .mobile-panel-brand img, .mobile-team-brand img {
     width: 27px !important; height: 27px !important; border-radius: 6px; object-fit: cover; flex: none;
   }
-  html:root body.admin-open #dashboard .admin-top .admin-top-right { grid-row: 1; grid-column: 2; flex-wrap: nowrap; gap: 5px; }
+  html:root body.admin-open #dashboard .admin-top .admin-top-right { grid-row: 1; grid-column: 2; flex-wrap: nowrap; }
   html:root body.admin-open #dashboard .admin-top :is(.avatar, #today) { display: none !important; }
   html:root body.admin-open #dashboard .admin-top .crumb .company-admin-logo { display: none !important; }
   html:root body.admin-open #dashboard .admin-top .crumb,
@@ -52,10 +52,9 @@
   html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top .theme-toggle { grid-row: 1; grid-column: 2; }
   html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .employee-top .sync-control { grid-row: 1; grid-column: 3; }
   html:root body.admin-open #dashboard .admin-top .mobile-panel-alert {
-    display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0;
-    border: 1px solid #a2c6ed62; color: inherit; background: transparent; border-radius: 10px;
+    display: inline-flex;
   }
-  .mobile-panel-alert svg, #adminMore .admin-more-row svg {
+  #adminMore .admin-more-row svg {
     width: 19px; height: 19px; fill: none; stroke: currentColor;
     stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round;
   }

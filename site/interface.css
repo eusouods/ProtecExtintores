@@ -166,7 +166,7 @@
     -webkit-backdrop-filter: var(--ui-glass-filter) !important;
     backdrop-filter: var(--ui-glass-filter) !important;
   }
-  html:root body :is(#dashboard .admin-top-right,#employeePortal .employee-top) :is(.theme-toggle,.sync-indicator,.mobile-panel-alert) {
+  html:root body #employeePortal .employee-top :is(.theme-toggle,.sync-indicator) {
     border-radius: var(--ui-button-radius) !important;
   }
   html:root body #store :is(.product,.public-help-card,.fogo-service-card,.hero-card,.public-service-card),
@@ -230,7 +230,7 @@
     background: var(--ui-action) !important;
     color: var(--ui-action-text) !important;
   }
-  #dashboard :is(.protec-panel-mark,.protec-search-toggle) svg {
+  #dashboard .protec-panel-mark svg {
     width: 18px;
     height: 18px;
     fill: none;
@@ -239,8 +239,7 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  html:root body :is(#dashboard .admin-top :is(.protec-search-toggle,.theme-toggle),
-    #store .topbar .theme-toggle,#login .login-main > .theme-toggle) {
+  html:root body :is(#store .topbar .theme-toggle,#login .login-main > .theme-toggle) {
     display: grid;
     place-items: center;
     flex: none;
@@ -253,6 +252,46 @@
     color: var(--ui-text) !important;
   }
   .theme-toggle svg { width: 18px; height: 18px; }
+  html:root body #dashboard .admin-top .admin-top-right {
+    gap: 6px !important;
+  }
+  html:root body #dashboard .admin-top-right > :is(.protec-search-toggle,.mobile-panel-alert,.theme-toggle) {
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    border: 1px solid var(--record-frost-border) !important;
+    border-radius: 14px !important;
+    background: var(--record-frost-background) !important;
+    color: var(--record-ink) !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: var(--record-frost-filter) !important;
+    backdrop-filter: var(--record-frost-filter) !important;
+  }
+  html:root body #dashboard .admin-top-right > :is(.protec-search-toggle,.theme-toggle) {
+    display: inline-flex !important;
+  }
+  #dashboard .admin-top-right > :is(.protec-search-toggle,.mobile-panel-alert,.theme-toggle) svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  html:root body #dashboard .admin-top-right > :is(.protec-search-toggle,.mobile-panel-alert,.theme-toggle):is(:focus-visible,[aria-expanded="true"]) {
+    outline: 2px solid var(--record-accent) !important;
+    outline-offset: -2px;
+  }
+  @media (hover: hover) {
+    html:root body #dashboard .admin-top-right > :is(.protec-search-toggle,.mobile-panel-alert,.theme-toggle):hover {
+      background: color-mix(in srgb, var(--record-frost-background) 80%, var(--ui-hover)) !important;
+    }
+  }
   html:root body #adminSearch[hidden], html:root body #adminMore:not([open]) { display: none !important; }
 
   html:root body #dashboard .protec-overview .ops-hero {
@@ -684,7 +723,7 @@
     -webkit-backdrop-filter: var(--admin-glass-filter);
     backdrop-filter: var(--admin-glass-filter);
   }
-  html:root body #dashboard :is(.protec-overview-link,.protec-search-toggle,.admin-top .theme-toggle),
+  html:root body #dashboard .protec-overview-link,
   html:root body #dashboard #content :is(.btn.btn-soft,.page-title .icon-btn,.admin-team-shortcut-links button) {
     background: var(--admin-glass-chrome) !important;
     border: 1px solid var(--admin-glass-rim) !important;
