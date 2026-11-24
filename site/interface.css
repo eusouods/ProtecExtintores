@@ -671,28 +671,24 @@
   }
 
   html:root body:has(#dashboard:not(.hidden)) {
-    --admin-glass-base: light-dark(#eaf0fa, #101929);
     --admin-glass-card: light-dark(#f9fcff, #1b2941);
     --admin-glass-line: light-dark(#c0d0e6, #465878);
     --admin-glass-highlight: light-dark(rgb(255 255 255 / .88), rgb(204 225 255 / .31));
     --admin-glass-shadow: light-dark(rgb(30 57 103 / .23), rgb(0 0 0 / .42));
     --admin-glass-rim: color-mix(in srgb, var(--admin-glass-line) 65%, var(--admin-glass-highlight));
-    --admin-glass-surface: color-mix(in srgb, var(--admin-glass-card) 76%, transparent);
+    --admin-glass-surface: var(--record-frost-background);
     --admin-glass-chrome: color-mix(in srgb, var(--admin-glass-card) 86%, transparent);
-    --admin-glass-dialog: linear-gradient(145deg, color-mix(in srgb, var(--admin-glass-highlight) 24%, transparent), transparent 52%),
-      color-mix(in srgb, var(--admin-glass-card) 89%, transparent);
+    --admin-glass-dialog: color-mix(in srgb, var(--admin-glass-card) 89%, transparent);
     --admin-glass-control: light-dark(#154fab, #2454a0);
     --admin-glass-sheen: inset 0 1px 1px var(--admin-glass-highlight);
-    --admin-glass-filter: blur(16px) saturate(1.12);
+    --admin-glass-filter: var(--record-frost-filter);
     --admin-glass-overlay: light-dark(rgb(37 60 94 / .24), rgb(7 13 24 / .52));
   }
-  html:root body #dashboard:not(.hidden) {
-    background: radial-gradient(ellipse 71% 75svh at 9% 4svh, light-dark(#b8cffb, #263f73), transparent),
-      radial-gradient(ellipse 63% 55svh at 93% 19svh, light-dark(#d6d6fa, #2e2d57), transparent),
-      radial-gradient(ellipse 61% 72svh at 70% 95svh, light-dark(#bee7e5, #193f4e), transparent),
-      var(--admin-glass-base) !important;
-    border-color: var(--admin-glass-rim);
+  html:root body #dashboard:not(.hidden),
+  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) {
+    background: linear-gradient(150deg, light-dark(#b9cef4, #253955), light-dark(#e2f2f0, #0e202e)) !important;
   }
+  html:root body #dashboard:not(.hidden) { border-color: var(--admin-glass-rim); }
   html:root body #dashboard :is(.protec-summary-card,.protec-overview-surface,.ops-panel,.admin-team-shortcuts,.mobile-receipts-list,.mobile-receipts-summary),
   html:root body #dashboard #content > :is(.panel,.protec-settings-list),
   html:root body #dashboard #content :is(.stat,.config-grid > .config-card) {
@@ -721,8 +717,7 @@
   html:root body #dashboard .protec-overview-link { padding-inline: 12px; }
   html:root body #dashboard #content :is(button.btn,a.btn):not(.btn-soft,.btn-dark,.btn-outline-light) {
     border-radius: 14px !important;
-    background: linear-gradient(155deg, color-mix(in srgb,var(--admin-glass-control) 85%,var(--admin-glass-highlight)),
-      var(--admin-glass-control) 75%) !important;
+    background: var(--admin-glass-control) !important;
     color: white !important;
     box-shadow: var(--admin-glass-sheen);
   }
@@ -773,15 +768,9 @@
   @media (max-width: 650px) {
     html:root body.admin-open #dashboard .protec-overview .ops-hero h1 { font-size: clamp(28px, 8vw, 34px) !important; }
     html:root body.admin-open #adminTabbar[aria-label] {
-      --admin-tabbar-rim: light-dark(rgb(255 255 255 / .92), rgb(170 200 244 / .39));
-      --admin-tabbar-highlight: light-dark(rgb(255 255 255 / .56), rgb(143 185 244 / .17));
-      --admin-tabbar-surface: light-dark(rgb(245 250 255 / .62), rgb(19 31 52 / .68));
       --admin-tabbar-selected: light-dark(#d6e7ff, #314e77);
       --admin-tabbar-label: light-dark(#253650, #d9e6f8);
       --admin-tabbar-selected-label: light-dark(#143c80, #edf5ff);
-      background: var(--admin-glass-card) !important;
-      border: 1px solid var(--admin-tabbar-rim) !important;
-      box-shadow: inset 0 1px 0 var(--admin-tabbar-highlight), 0 8px 24px -8px var(--admin-glass-shadow);
     }
     html:root body.admin-open #adminTabbar[aria-label] .admin-tab {
       color: var(--admin-tabbar-label) !important;
@@ -791,20 +780,7 @@
       color: var(--admin-tabbar-selected-label) !important;
     }
     html:root body.admin-open #adminTabbar[aria-label] .admin-tab-pill {
-      background: var(--admin-tabbar-selected) !important;
-    }
-    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-      html:root body.admin-open #adminTabbar[aria-label] {
-        background: linear-gradient(155deg, var(--admin-tabbar-highlight), transparent 62%),
-          var(--admin-tabbar-surface) !important;
-        -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
-        backdrop-filter: blur(18px) saturate(1.4) !important;
-      }
-      html:root body.admin-open #adminTabbar[aria-label] .admin-tab-pill {
-        background: linear-gradient(165deg, var(--admin-tabbar-highlight), transparent 72%),
-          color-mix(in srgb, var(--admin-tabbar-selected) 80%, transparent) !important;
-        box-shadow: inset 0 0 0 1px var(--admin-tabbar-highlight);
-      }
+      background: color-mix(in srgb, var(--admin-tabbar-selected) 80%, transparent) !important;
     }
   }
   @media (prefers-reduced-transparency: reduce) {
@@ -813,11 +789,6 @@
       --admin-glass-chrome: var(--admin-glass-card);
       --admin-glass-dialog: var(--admin-glass-card);
       --admin-glass-filter: none;
-    }
-    html:root body.admin-open #adminTabbar[aria-label] {
-      background: var(--admin-glass-card) !important;
-      -webkit-backdrop-filter: none !important;
-      backdrop-filter: none !important;
     }
     html:root body.admin-open #adminTabbar[aria-label] .admin-tab-pill {
       background: var(--admin-tabbar-selected) !important;

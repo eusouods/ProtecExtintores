@@ -6,8 +6,6 @@
     --record-ink: light-dark(#142442, #f1f5ff);
     --record-muted: light-dark(#465977, #bbcbe5);
     --record-accent: light-dark(#164584, #bfd8ff);
-    --record-frost-tint: light-dark(rgb(246 251 255 / .53), rgb(20 33 53 / .68));
-    --record-frost-highlight: light-dark(rgb(255 255 255 / .55), rgb(178 209 255 / .15));
     --record-frost-background: var(--record-surface);
     --record-frost-border: var(--record-border);
     --record-frost-filter: none;
@@ -15,9 +13,9 @@
   }
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     :root {
-      --record-frost-background: linear-gradient(156deg, var(--record-frost-highlight), transparent 66%), var(--record-frost-tint);
-      --record-frost-border: light-dark(rgb(255 255 255 / .72), rgb(175 204 250 / .24));
-      --record-frost-filter: blur(18px) saturate(1.35);
+      --record-frost-background: light-dark(rgb(250 253 255 / .24), rgb(16 28 47 / .29));
+      --record-frost-border: light-dark(rgb(255 255 255 / .58), rgb(175 204 250 / .24));
+      --record-frost-filter: blur(22px);
     }
   }
   @media (prefers-reduced-transparency: reduce) {
@@ -45,9 +43,13 @@
   html:root body #employeePortal[data-team-mobile-role]:not(.hidden) .team-mobile-bar[aria-label] {
     background: var(--record-frost-background) !important;
     border-color: var(--record-frost-border) !important;
-    box-shadow: inset 0 1px 0 var(--record-frost-highlight), 0 8px 24px -16px var(--record-elevation) !important;
+    box-shadow: 0 8px 24px -16px var(--record-elevation) !important;
     -webkit-backdrop-filter: var(--record-frost-filter) !important;
     backdrop-filter: var(--record-frost-filter) !important;
+  }
+  html:root body :is(#dashboard,#employeePortal) :is(.btn,.btn-primary,.button-primary,.submit-button,.save-button,.fab,.floating-action),
+  html:root body:has(:is(#dashboard,#employeePortal):not(.hidden)) #modalRoot :is(.btn,.btn-primary,.button-primary,.submit-button,.save-button,.wiz-opt) {
+    background-image: none !important;
   }
   html:root body :is(#store,#login,#dashboard,#employeePortal) :is(.brand,.company-team-brand,.mobile-panel-brand) {
     font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;

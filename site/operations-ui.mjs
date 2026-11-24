@@ -1,9 +1,9 @@
-import {mountDataTools} from './data-tools.mjs?v=protec-interface-76';
+import {mountDataTools} from './data-tools.mjs?v=protec-interface-77';
 import './team-mobile.mjs';
-import {mountWorkshop,bindWorkshopOrder} from './workshop-ui.mjs?v=protec-interface-76';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-76';
-import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-76';
-import {isPaused} from './offline-rules.mjs?v=protec-interface-76';
+import {mountWorkshop,bindWorkshopOrder} from './workshop-ui.mjs?v=protec-interface-77';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-77';
+import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-77';
+import {isPaused} from './offline-rules.mjs?v=protec-interface-77';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function groupedOrderItems(service) {
@@ -310,7 +310,7 @@ function enhanceTeam(){
   summary.querySelector('[data-ops-assigned]')?.addEventListener('click',()=>host.querySelector('[data-employee-scope="assigned"]')?.click());
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-76',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-77',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{
