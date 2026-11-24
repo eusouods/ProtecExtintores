@@ -13,8 +13,7 @@
     --protec-workspace-gap: 12px;
     --protec-menu-enter: 460ms cubic-bezier(.24,.88,.26,1);
     --protec-menu-exit: 300ms cubic-bezier(.4,0,.75,.25);
-    --protec-frame-bg: radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--ui-selected) 70%, transparent), transparent 60%)
-      left top / 100% min(100%, 100svh) no-repeat, var(--ui-bg);
+    --protec-frame-bg: linear-gradient(150deg, light-dark(#b9cef4, #253955), light-dark(#e2f2f0, #0e202e));
   }
 
   html:root body :is(#store,#login,#dashboard,#employeePortal):not(.hidden) {
@@ -52,28 +51,19 @@
   html:root body #store .section.public-view {
     padding-block-start: clamp(23px, 4vw, 42px) !important;
   }
-  html:root body #store .hero :is(.hero-card,.product-reference-feature),
-  html:root body #store :is(.product,.feature,.public-help-card,.public-service-card) {
-    background: var(--ui-panel) !important;
-    box-shadow: none !important;
-  }
   html:root body #store .hero-actions .btn { box-shadow: none !important; }
   html:root body #store > :is(.section,footer,.site-footer) { border-color: var(--ui-border) !important; }
   html:root body #store .hero::before { display: none !important; }
 
   html:root body #login:not(.hidden) { padding: var(--protec-frame-pad); gap: var(--protec-workspace-gap); }
   html:root body #login .login-aside {
-    background: color-mix(in srgb, var(--ui-brand) 84%, transparent) !important;
     border: 1px solid var(--ui-border) !important;
     border-radius: 21px;
-    -webkit-backdrop-filter: var(--ui-glass-filter);
-    backdrop-filter: var(--ui-glass-filter);
   }
   html:root body #login .login-aside::after { display: none; }
   html:root body #login .login-box {
     padding: clamp(17px, 3vw, 31px) !important;
     border: 1px solid var(--ui-border) !important;
-    background: var(--ui-panel) !important;
   }
 
   html:root body :is(#dashboard,#employeePortal) :is(.admin-top,.employee-top,.seller-top) {
@@ -483,7 +473,6 @@
   .protec-settings-list details > summary svg:last-child { transition: transform .18s ease-out; }
   .protec-settings-list details[open] > summary svg:last-child { transform: rotate(90deg); }
   html:root body #dashboard .protec-settings-list details > .config-card {
-    background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
     margin: 0 !important;
@@ -684,10 +673,6 @@
     --admin-glass-filter: var(--record-frost-filter);
     --admin-glass-overlay: light-dark(rgb(37 60 94 / .24), rgb(7 13 24 / .52));
   }
-  html:root body #dashboard:not(.hidden),
-  html:root body #employeePortal[data-team-mobile-role]:not(.hidden) {
-    background: linear-gradient(150deg, light-dark(#b9cef4, #253955), light-dark(#e2f2f0, #0e202e)) !important;
-  }
   html:root body #dashboard:not(.hidden) { border-color: var(--admin-glass-rim); }
   html:root body #dashboard :is(.protec-summary-card,.protec-overview-surface,.ops-panel,.admin-team-shortcuts,.mobile-receipts-list,.mobile-receipts-summary),
   html:root body #dashboard #content > :is(.panel,.protec-settings-list),
@@ -698,12 +683,6 @@
     box-shadow: var(--admin-glass-sheen) !important;
     -webkit-backdrop-filter: var(--admin-glass-filter);
     backdrop-filter: var(--admin-glass-filter);
-  }
-  html:root body #dashboard #content .protec-settings-list details > .config-card {
-    background: transparent !important;
-    border: 0 !important;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
   html:root body #dashboard :is(.protec-overview-link,.protec-search-toggle,.admin-top .theme-toggle),
   html:root body #dashboard #content :is(.btn.btn-soft,.page-title .icon-btn,.admin-team-shortcut-links button) {
@@ -736,7 +715,6 @@
     box-shadow: var(--admin-glass-sheen), 0 23px 58px -12px var(--admin-glass-shadow) !important;
   }
   html:root body:has(#dashboard:not(.hidden)) #modalRoot .modal :is(.modal-head,.modal-actions) {
-    background: var(--admin-glass-chrome) !important;
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
   }

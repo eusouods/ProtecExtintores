@@ -206,7 +206,7 @@
     const host=document.getElementById('content');
     if(window.inventoryPage)return window.inventoryPage(host);
     host.textContent='Carregando estoque…';
-    import('./inventory-ui.mjs?v=protec-interface-77').then(()=>{if(page==='inventory')window.inventoryPage(host);}).catch(()=>{
+    import('./inventory-ui.mjs?v=protec-interface-78').then(()=>{if(page==='inventory')window.inventoryPage(host);}).catch(()=>{
       if(page==='inventory')host.textContent='O estoque não pôde ser carregado. Abra a seção novamente.';
     });
   };
@@ -1628,7 +1628,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
 
   const style = document.createElement('style');
   style.textContent = `
-    .customer-services-section{margin:34px -1px 0;padding:34px 28px;border:1px solid var(--ui-border,#c5d8e6);border-radius:24px;background:linear-gradient(150deg,var(--ui-panel,#f9fcff),var(--ui-panel,#f9fcff));box-shadow:0 16px 44px rgb(var(--ui-scrim-rgb,17 14 12) / 0.047)}
+    .customer-services-section{margin:34px -1px 0;padding:34px 28px;border:1px solid var(--ui-border,#c5d8e6);border-radius:24px;background:var(--ui-panel,#f9fcff);box-shadow:0 16px 44px rgb(var(--ui-scrim-rgb,17 14 12) / 0.047)}
     .customer-services-heading{max-width:740px;margin:0 auto 24px;text-align:center}
     .customer-services-heading h2{margin:8px 0;font-size:clamp(24px,4vw,34px);color:var(--ui-text,#20374a)}
     .customer-services-heading p{margin:0;color:var(--ui-muted,#526b80);line-height:1.6}
@@ -1852,7 +1852,7 @@ document.addEventListener('change',function(event){const typeSelect=event.target
   const makeId = () => window.crypto?.randomUUID?.() || `fs-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = './professional-updates.css?v=protec-interface-77';
+  style.href = './professional-updates.css?v=protec-interface-78';
   document.head.append(style);
 
   const loginNote = document.querySelector('.login-note');

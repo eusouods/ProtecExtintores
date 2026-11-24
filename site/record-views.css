@@ -7,6 +7,7 @@
     --record-muted: light-dark(#465977, #bbcbe5);
     --record-accent: light-dark(#164584, #bfd8ff);
     --record-frost-background: var(--record-surface);
+    --record-frost-dialog: var(--record-surface);
     --record-frost-border: var(--record-border);
     --record-frost-filter: none;
     --record-elevation: light-dark(rgb(53 79 122 / .20), rgb(0 0 0 / .38));
@@ -14,6 +15,7 @@
   @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     :root {
       --record-frost-background: light-dark(rgb(250 253 255 / .24), rgb(16 28 47 / .29));
+      --record-frost-dialog: light-dark(rgb(250 253 255 / .62), rgb(16 28 47 / .70));
       --record-frost-border: light-dark(rgb(255 255 255 / .58), rgb(175 204 250 / .24));
       --record-frost-filter: blur(22px);
     }
@@ -21,6 +23,7 @@
   @media (prefers-reduced-transparency: reduce) {
     :root {
       --record-frost-background: var(--record-surface);
+      --record-frost-dialog: var(--record-surface);
       --record-frost-border: var(--record-border);
       --record-frost-filter: none;
     }
@@ -30,12 +33,18 @@
   html:root body #store .hero .hero-copy h1 { max-width: 18ch; text-wrap: balance; font-weight: 720 !important; }
   html:root body #store .hero .hero-copy h1 span { color: var(--record-accent) !important; }
   html:root body #store .hero .hero-copy > p { max-width: 43ch; line-height: 1.62; }
-  html:root body #store .hero :is(.product-reference-feature, .hero-card-bottom) {
-    background: var(--record-surface) !important;
-    border-color: var(--record-border) !important;
-    border-radius: 23px;
-  }
-  html:root body #dashboard #content :is(.protec-summary-card,.protec-overview-surface,.ops-panel,.admin-team-shortcuts,.mobile-receipts-list,.mobile-receipts-summary,.record-directory,.record-section),
+  html:root body #login .login-main::before { background-image: none !important; }
+  html:root body #login .login-aside { color: var(--record-ink) !important; }
+
+  html:root body :is(#store,#login,#dashboard #content,#employeePortal,#modalRoot) :is(
+    .panel,.stat,.card,.config-card,.table-wrap,.tracking-card,.admin-page-intro,.admin-person-card,.admin-record-card,.admin-empty-state,.admin-team-shortcuts,
+    .hero-card,.product-reference-feature,.product,.catalog-card,.home-family,.feature,.how-steps > li,.faq-list > details,.faq-foot,.public-help-card,.public-service-card,
+    .customer-services-section,.customer-service-gate,.customer-service-card,.customer-service-contact,.customer-service-details,.customer-maintenance-row,.customer-service-group,.service-request-card,.request-result,.customer-account-card,.customer-order,.customer-panel-welcome,.customer-overview-cards > *,.care-card,.care-admin-card,
+    .login-aside,.login-box,.login-help,.dashboard-welcome,.dashboard-stat,.dashboard-stat-card,.employee-service,.employee-service-tools,.employee-group,.employee-item,.employee-item-parts,.seller-service-status,.seller-status-tools,.seller-tracking-summary,.seller-tracking-event,.next-maintenance-section,.next-maintenance-card,
+    .protec-summary-card,.protec-overview-surface,.protec-settings-list,.protec-settings-list > details,.mobile-receipts-list,.mobile-receipts-summary,.ops-panel,.ops-metrics,.ops-summary > article,.team-operations-summary > article,.ops-shortcuts > button,.ops-receivable,.ops-month,.ops-alert-card,.workspace-current,.workspace-history,.workspace-powder-stock,
+    .record-directory,.record-section,.record-report-filters,.record-empty,.record-subsection,.record-equipment,.record-series,.order-group,.stock-detail,.stock-review,.workshop-rate-section,.workshop-equipment-group,.workshop-powder-field,.ops-evidence,.ops-equipment,
+    .form-card,.offline-form-section,.offline-queue-item,.offline-locked,.registration-service-card,.registration-purchase-card,.registration-choice-card,.registration-price,.registration-review-summary,.service-extra-card,.service-detail-item,.admin-review-item
+  ),
   html:root body #employeePortal[data-team-mobile-role] :is(.workspace-metrics > .ops-metric,.workspace-current,.workspace-powder-stock),
   html:root body #dashboard:not(.hidden) > .sidebar,
   html:root body #employeePortal[data-team-mobile-role] .team-desktop-sidebar,
@@ -47,9 +56,19 @@
     -webkit-backdrop-filter: var(--record-frost-filter) !important;
     backdrop-filter: var(--record-frost-filter) !important;
   }
-  html:root body :is(#dashboard,#employeePortal) :is(.btn,.btn-primary,.button-primary,.submit-button,.save-button,.fab,.floating-action),
-  html:root body:has(:is(#dashboard,#employeePortal):not(.hidden)) #modalRoot :is(.btn,.btn-primary,.button-primary,.submit-button,.save-button,.wiz-opt) {
-    background-image: none !important;
+  html:root body :is(#store,#login,#dashboard #content,#employeePortal,#modalRoot) :is(
+    .panel-head,.hero-card-top,.hero-card-bottom,.catalog-media,.product-image,.employee-service-head,.employee-service-body,
+    .modal-head,.modal-body,.modal-actions,.customer-service-fields,.public-progress,.order-group > h3,.seller-service-status > header,.admin-record-top,.service-item-heading
+  ) {
+    background: transparent !important;
+  }
+  html:root body #store .customer-service-card:has(input:checked) {
+    border-color: var(--ui-focus) !important;
+  }
+  html:root body:has(:is(#store,#login,#dashboard,#employeePortal):not(.hidden)) #modalRoot .modal-back > .modal {
+    background: var(--record-frost-dialog) !important;
+    -webkit-backdrop-filter: var(--record-frost-filter) !important;
+    backdrop-filter: var(--record-frost-filter) !important;
   }
   html:root body :is(#store,#login,#dashboard,#employeePortal) :is(.brand,.company-team-brand,.mobile-panel-brand) {
     font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
@@ -69,7 +88,6 @@
   html:root body .record-row:focus-visible { outline: 2px solid var(--record-accent) !important; outline-offset: -3px; }
 
   .record-directory, .record-section, .record-empty, .record-report-filters {
-    background: var(--record-surface) !important;
     border: 1px solid var(--record-border) !important;
     border-radius: 20px !important;
     color: var(--record-ink);
@@ -101,10 +119,10 @@
   .record-contact { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; margin: 0 0 18px; }
   .record-contact p { margin: 0; overflow-wrap: anywhere; color: var(--record-muted); }
   .record-contact > span, .record-subsection h4 span { color: var(--record-accent); font-weight: 650; }
-  .record-subsection { margin: 0 0 12px; background: var(--record-surface); border: 1px solid var(--record-border); border-radius: 15px; }
+  .record-subsection { margin: 0 0 12px; border: 1px solid var(--record-border); border-radius: 15px; }
   .record-subsection h4 { margin: 9px 12px 0; font-size: .83rem; display: flex; gap: 6px; align-items: center; }
   .client-record > section + section { margin-block-start: 20px; }
-  .record-equipment { margin: 0 0 8px; background: var(--record-surface); border: 1px solid var(--record-border); border-radius: 13px; }
+  .record-equipment { margin: 0 0 8px; border: 1px solid var(--record-border); border-radius: 13px; }
   .record-equipment summary, .record-series summary { cursor: pointer; padding: 12px; color: var(--record-ink); }
   .record-equipment summary > span, .record-series summary > small { color: var(--record-muted); margin-inline-start: 6px; font-size: .76rem; }
   .record-series { margin: 0 7px 7px; border: 1px solid var(--record-border); border-radius: 10px; }
@@ -124,8 +142,8 @@
   .record-finance-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(10px, 2vw, 22px); align-items: start; }
   .record-finance-layout > #opsFinance { margin: 0 !important; }
 
-  .order-group { margin-block: 0 14px; background: var(--record-surface); border: 1px solid var(--record-border); border-radius: 14px; overflow: hidden; }
-  .order-group h3 { margin: 0; padding: 10px 12px; color: var(--record-muted); font-size: .82rem; background: var(--record-surface-raised); }
+  .order-group { margin-block: 0 14px; border: 1px solid var(--record-border); border-radius: 14px; overflow: hidden; }
+  .order-group h3 { margin: 0; padding: 10px 12px; color: var(--record-muted); font-size: .82rem; }
   .order-group ul { margin: 0; padding: 0; list-style: none; }
   .order-group li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; border-block-end: 1px solid var(--record-border); }
   .order-group li:last-child { border-block-end: 0; }
