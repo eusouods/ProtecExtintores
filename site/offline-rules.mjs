@@ -1,6 +1,7 @@
-import {recordPowder,setPainting,requestOwnership,powderCapacity} from './workshop-rules.mjs?v=protec-interface-79';
+import {recordPowder,setPainting,requestOwnership,powderCapacity} from './workshop-rules.mjs?v=protec-interface-80';
 // Shared, deterministic rules. The server is authoritative for ownership and time.
-import {PART_NAMES, cancelled, completed, missingVideos,teamBase,normalizeRegistration,registrationQuote,estimateFinance,registrationContacts} from './service-rules.mjs?v=protec-interface-79';
+import {PART_NAMES, cancelled, completed, missingVideos,teamBase,normalizeRegistration,registrationQuote,estimateFinance,registrationContacts} from './service-rules.mjs?v=protec-interface-80';
+import {registrationAsset,attachRegistryData} from './equipment-registry.mjs?v=protec-interface-80';
 export const uuid = value => /^[a-zA-Z0-9_-]{8,80}$/.test(String(value || ''));
 export function fail(message, status = 400) { throw Object.assign(new Error(message), {status}); }
 const text = (value, max = 3000) => String(value ?? '').trim().slice(0, max);
@@ -34,7 +35,7 @@ export function applyOperation(state, actor, op, at) {
       const client=directory.clients.find(c=>c.id===clientChoice),seller=directory.sellers.find(s=>s.id===sellerChoice);
       if(!['','__new__','__self__'].includes(clientChoice)&&!client)fail('O cliente selecionado não está mais disponível para esta conta. Revise o cadastro.',409);
       if(sellerChoice&&!seller)fail('O vendedor selecionado não está disponível para esta conta.',403);
-      const manual=clientChoice==='__new__';if(manual&&Number(data.registrationVersion)>=8&&!text(data.clientName,100))fail('Informe o nome do novo cliente ou escolha Serviço próprio.');chosenContacts={client,seller};
+      const manual=clientChoice==='__new__';if(manual&&Number(data.registrationVersion)>=8&&!text(data.clientName,100))fail('Informe o nome do novo cliente ou escolha Serviço próprio.');chosenContacts={client,seller,equipment:directory.equipment||[]};
       data={...data,clientId:client&&!client.id.startsWith('service:')?client.id:'',sellerId:seller?.id||'',clientName:client?.name||(manual?data.clientName:''),clientPhone:client?.phone||(manual?data.clientPhone:''),clientEmail:client?.email||(manual?data.clientEmail:'')};
     }
 
@@ -52,13 +53,14 @@ export function applyOperation(state, actor, op, at) {
     const selection=Number(data.registrationVersion)>=3?normalizeRegistration(state,data):{plannedParts:[],hydrantHoses:[],soldExtinguishers:[]};
     if(!input.length&&(Number(data.registrationVersion)<4||!selection.hydrantHoses.length&&!selection.soldExtinguishers.length&&!selection.complementaryServices?.length))fail('Adicione pelo menos um equipamento, mangueira ou extintor para fornecimento.');
     if (actor.role==='employee' && activeWork(state,actor.id)) fail('Pause ou conclua o serviço em execução antes de iniciar outro.',409);
-    const items=[]; let price=0;
+    const items=[],usedEquipment=new Set(); let price=0;
     for (const line of input) {
       const type=text(line.type,100),kg=text(line.kg,12),qty=Number(line.qty);
       if (!type || !Number.isInteger(qty) || qty<1 || qty>50 || items.length+qty>100) fail('Confira os equipamentos e as quantidades (máximo de 100).');
       const config=state.types.find(t=>t.name===type && String(t.kg || '')===kg);
       const unitPrice=Number(config?.price) || 0;
-      for(let i=0;i<qty;i++) items.push({type,kg,serial:'',unitPrice,status:actor.role==='employee'?'Recebido':'Solicitado',notes:'',replacedParts:[],replacementMedia:{},history:[]});
+      const asset=registrationAsset(chosenContacts?.equipment||[],chosenContacts?.client?.id,line,usedEquipment);
+      for(let i=0;i<qty;i++) items.push(attachRegistryData({type,kg,serial:'',unitPrice,status:actor.role==='employee'?'Recebido':'Solicitado',notes:'',replacedParts:[],replacementMedia:{},history:[]},asset));
       price+=qty*unitPrice;
     }
     let retailAmount=null;
@@ -191,7 +193,7 @@ export function adminChanges(before,after,canonical=false){
      walk(old,next,[group,id]);
    }
  }
- if(canonical)for(const key of ['__rev','__ts','__dataEpoch','teamBills','powderHistoryClearedAt','powderHistoryClearedBy'])walk(before[key],after[key],[key]);
+ if(canonical)for(const key of ['__rev','__ts','__dataEpoch','teamBills','powderHistoryClearedAt','powderHistoryClearedBy','equipmentRegistry'])walk(before[key],after[key],[key]);
  return changes;
 }
 export function applyAdminChanges(state,changes,{force=false,canonical=false}={}){

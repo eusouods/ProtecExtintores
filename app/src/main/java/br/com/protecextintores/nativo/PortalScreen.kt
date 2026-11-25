@@ -160,7 +160,8 @@ fun PortalScreen(vm: AppVm) {
                 1 -> RecordsPage(adminTabs[active].title, state.optJSONArray("services").objects(),
                     filterStatus = true, register = vm::startRegistration, openRecord = { openOrder(it.str("id")) }, compactOrders = true)
                 2 -> AdminCatalog(vm, state, CatalogArea.Types)
-                3 -> AdminDirectory(vm, state, employees = false, openSellerAccess = ::openSellerAccess)
+                3 -> AdminDirectory(vm, state, employees = false, openSellerAccess = ::openSellerAccess,
+                    openOrder = { openOrder(it) })
                 4 -> RecordsPage(adminTabs[active].title, state.optJSONArray("orders").objects())
                 5 -> AdminCatalog(vm, state, CatalogArea.Products)
                 6 -> AdminDirectory(vm, state, employees = true)

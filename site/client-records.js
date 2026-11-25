@@ -64,10 +64,12 @@
       ['Em revisão', client.services.filter(order => !order.closed && order.employeeCompletedAt && !cancelled(order))],
       ['Finalizadas', client.services.filter(order => order.closed && !cancelled(order))], ['Canceladas', client.services.filter(cancelled)]];
     const serviceList = orders.filter(([, items]) => items.length).map(([title, items]) => `<section class="record-subsection"><h4>${title} <span>${items.length}</span></h4><div class="record-list">${items.map(orderRow).join('')}</div></section>`).join('');
-    window.openModal(esc(client.name), `<div class="client-record"><div class="record-contact"><p>${esc(contact(client) || source(client))}</p><span>${label(count,'ordem','ordens')}</span></div>${client.source === 'historical' && !contact(client) ? '<p class="record-note">Histórico sem vínculo cadastral. Os registros abaixo usam o nome informado nas ordens.</p>' : ''}<section><h3>Serviços</h3>${serviceList || '<p class="record-note">Nenhuma ordem vinculada a este cliente.</p>'}</section><section><h3>Extintores por tipo e capacidade</h3>${equipment || '<p class="record-note">Nenhum extintor registrado nas ordens deste cliente.</p>'}</section></div>`, () => true, 'Fechar');
+    const registry = window.protecEquipmentRecords;
+    window.openModal(esc(client.name), `<div class="client-record"><div class="record-contact"><p>${esc(contact(client) || source(client))}</p><span>${label(count,'ordem','ordens')}</span></div>${client.source === 'historical' && !contact(client) ? '<p class="record-note">Histórico sem vínculo cadastral. Os registros abaixo usam o nome informado nas ordens.</p>' : ''}${registry?.render(client) || ''}<section><h3>Serviços</h3>${serviceList || '<p class="record-note">Nenhuma ordem vinculada a este cliente.</p>'}</section><section><h3>Extintores por tipo e capacidade</h3>${equipment || '<p class="record-note">Nenhum extintor registrado nas ordens deste cliente.</p>'}</section></div>`, () => true, 'Fechar');
     const form = document.getElementById('editForm');
     form.classList.add('client-record-dialog');
     form.querySelector('.modal-actions button:first-child').hidden = true;
+    registry?.bind(form, client, () => openClient(key));
     form.addEventListener('click', event => {
       const order = event.target.closest('[data-client-order]');
       if (order) return openOrder(order.dataset.clientOrder, key);
@@ -82,7 +84,7 @@
     input.addEventListener('input', () => {
       const query = normalize(input.value);
       if (query.length < 2) { results.hidden = true; results.replaceChildren(); return; }
-      const clients = directory().filter(client => matches(client, query) || client.services.some(order =>
+      const clients = directory().filter(client => matches(client, query) || window.protecEquipmentRecords?.matches(client, query) || client.services.some(order =>
         (order.items || []).some(item => normalize(item?.serial).includes(query))));
       const orders = (db.services || []).filter(order => normalize(order.code).includes(query) || (
         !clients.length && normalize([order.employeeName, order.sellerName].filter(Boolean).join(' ')).includes(query)
@@ -103,7 +105,7 @@
     const out = host.querySelector('[data-directory-results]');
     let limit = 30;
     function render() {
-      const query = normalize(input.value), visible = clients.filter(client => matches(client,query));
+      const query = normalize(input.value), visible = clients.filter(client => matches(client,query) || window.protecEquipmentRecords?.matches(client,query));
       out.innerHTML = visible.slice(0, limit).map(clientRow).join('') || '<p class="record-note">Nenhum cliente encontrado.</p>';
       if (visible.length > limit) out.insertAdjacentHTML('beforeend', '<button type="button" class="btn btn-soft btn-small" data-more-client-records>Mostrar mais clientes</button>');
     }

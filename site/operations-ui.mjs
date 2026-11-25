@@ -1,9 +1,9 @@
-import {mountDataTools} from './data-tools.mjs?v=protec-interface-79';
+import {mountDataTools} from './data-tools.mjs?v=protec-interface-80';
 import './team-mobile.mjs';
-import {mountWorkshop,bindWorkshopOrder} from './workshop-ui.mjs?v=protec-interface-79';
-import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-79';
-import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-79';
-import {isPaused} from './offline-rules.mjs?v=protec-interface-79';
+import {mountWorkshop,bindWorkshopOrder} from './workshop-ui.mjs?v=protec-interface-80';
+import {equipmentGroups,powderCapacity} from './workshop-rules.mjs?v=protec-interface-80';
+import {cancelled,completed,estimateFinance,localDay,missingVideos,billingOwner,teamDiscount,servicePolicy,employeeCreatedService} from './service-rules.mjs?v=protec-interface-80';
+import {isPaused} from './offline-rules.mjs?v=protec-interface-80';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function groupedOrderItems(service) {
@@ -310,7 +310,7 @@ function enhanceTeam(){
   summary.querySelector('[data-ops-assigned]')?.addEventListener('click',()=>host.querySelector('[data-employee-scope="assigned"]')?.click());
 }
 function install(){
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-79',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./operations-ui.css?v=protec-interface-80',import.meta.url);document.head.append(css);
  window.overview=adminHome;
  window.openServiceDetails=id=>{const list=role()==='admin'?db.services:role()==='employee'?window.employeePortalState?.services:window.sellerPortalState?.services;const s=(list||[]).find(s=>s.id===id);if(!s)return window.toast('Ordem não encontrada. Atualize os dados.');if(['employee','seller'].includes(role())&&window.offlineServices?.ready)return window.offlineServices.openDetails(id);openOrderDetail(s);};
  window.recordOrderReceipt=id=>{
@@ -513,8 +513,13 @@ export function enhanceRegistrationSteps(form,initialStep=0){
  const previous=document.createElement('button'),next=document.createElement('button');previous.type=next.type='button';previous.className='btn btn-soft btn-small';next.className='btn btn-small';previous.textContent='Voltar';next.textContent='Avançar';footer.insertBefore(previous,submit);footer.insertBefore(next,submit);
  let step=0;
  const refresh=()=>{
-  const lines=[],value=(row,key)=>row.querySelector(key)?.selectedOptions[0]?.textContent||'';
-  for(const row of form.querySelectorAll('[data-equipment-row]'))lines.push(['Manutenção · '+value(row,'[data-type]')+' · '+value(row,'[data-kg]'),value(row,'[data-qty]')]);
+  const lines=[],value=(row,key)=>{
+   const control=row.querySelector(key);return control?.selectedOptions?.[0]?.textContent||control?.value||'';
+  };
+  for(const row of form.querySelectorAll('[data-equipment-row]')){
+   const equipment=row.dataset.equipmentId?row.querySelector('[data-registered-name]')?.textContent:value(row,'[data-type]')+' · '+value(row,'[data-kg]');
+   lines.push(['Manutenção · '+equipment,value(row,'[data-qty]')]);
+  }
   if(form.querySelector('[data-sales-enabled]').checked)for(const row of form.querySelectorAll('[data-sale-row]'))lines.push(['Compra · '+value(row,'[data-sale-condition]')+' · '+value(row,'[data-sale-type]')+' · '+value(row,'[data-sale-kg]'),value(row,'[data-sale-qty]')]);
   if(form.querySelector('[data-hoses-enabled]').checked)for(const row of form.querySelectorAll('[data-hose-row]'))lines.push(['Mangueira · '+value(row,'[data-hose-type]')+' · '+value(row,'[data-hose-diameter]')+' · '+value(row,'[data-hose-length]'),value(row,'[data-hose-qty]')]);
   for(const card of form.querySelectorAll('[data-complement-card]'))if(card.querySelector('[data-complement-toggle]').checked)for(const row of card.querySelectorAll('[data-complement-row]'))lines.push([card.querySelector('.registration-choice b').textContent+' · '+value(row,'[data-complement-variant]')+' '+[...row.querySelectorAll('[data-complement-param]')].map(select=>select.selectedOptions[0]?.textContent).join(' · '),value(row,'[data-complement-qty]')]);

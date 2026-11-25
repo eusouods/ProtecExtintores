@@ -30,6 +30,9 @@ internal class RegistrationCatalog(val context: JSONObject) {
 
     fun options(key: String): List<String> = data.optJSONArray(key).strings()
 
+    fun registeredEquipment(clientId: String): List<JSONObject> =
+        contacts.optJSONArray("equipment").objects().filter { it.str("clientId") == clientId }
+
     fun validate(draft: JSONObject, step: Int): String? {
         if (step == 0 || step == 3) {
             val choice = draft.str("clientChoice")
@@ -48,6 +51,15 @@ internal class RegistrationCatalog(val context: JSONObject) {
             }
         }
         if (step >= 1) {
+            val linked = draft.optJSONArray("items").objects().filter { it.str("equipmentId").isNotBlank() }
+            val assets = registeredEquipment(draft.str("clientChoice")).associateBy { it.str("id") }
+            if (linked.any { it.str("equipmentId") !in assets }) {
+                return "Remova os equipamentos que não pertencem ao cliente selecionado ou saíram da ficha."
+            }
+            if (linked.map { it.str("equipmentId") }.distinct().size != linked.size ||
+                linked.any { it.optInt("qty") != 1 }) {
+                return "Vincule cada equipamento da ficha uma única vez."
+            }
             val groups = if (step == 1) registrationGroups.take(2)
                 else if (step == 2) registrationGroups.drop(2) else registrationGroups
             for (group in groups) {

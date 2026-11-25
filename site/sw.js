@@ -1,5 +1,5 @@
 /* Cache the public shell; private records remain in the encrypted account vault. */
-const CACHE='protecextintores-interface-v79',VERSION=79;
+const CACHE='protecextintores-interface-v80',VERSION=80;
 const root=new URL('./',self.location.href),marker=new URL('__shell-ready',root);
 let preparing;
 function prepareShell(){

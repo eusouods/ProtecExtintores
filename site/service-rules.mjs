@@ -1,4 +1,5 @@
-import {maintenanceSuggestion,saleSuggestion,partSuggestion,complementSuggestion,minimumRate,minimumSaleRate,workshopAdminOperation,powderCapacity} from './workshop-rules.mjs?v=protec-interface-79';
+import {maintenanceSuggestion,saleSuggestion,partSuggestion,complementSuggestion,minimumRate,minimumSaleRate,workshopAdminOperation,powderCapacity} from './workshop-rules.mjs?v=protec-interface-80';
+import {applyRegistryChange,registryChoices} from './equipment-registry.mjs?v=protec-interface-80';
 export const SALE_CONDITIONS=[{value:'new',label:'Novo lacrado',hasRing:false},{value:'refurbished',label:'Seminovo revisado',hasRing:true}];
 export const PART_NAMES = ['Válvula M30','Válvula de CO₂','Sifão','Manômetro','Mangueira','Difusor','Outro'];
 export const REGISTRATION_SERVICES=['Manutenção','Inspeção','Recarga','Teste hidrostático','Instalação','Pintura','Substituição de peças','Teste de mangueira de hidrante','Fornecimento de extintores','Compra de extintores'];
@@ -67,7 +68,10 @@ export function registrationContacts(state,actor){
  if(state.registrationContacts)return state.registrationContacts;
  const clean=c=>({id:String(c.id),name:String(c.name||'Cliente').slice(0,100),phone:String(c.phone||'').slice(0,30),email:String(c.email||'').slice(0,254)});
  const people=state.sellers||[];
- if(actor.role==='admin')return {clients:(state.clients||[]).filter(c=>c.active!==false).map(clean),sellers:people.filter(p=>p.active!==false).map(p=>({id:p.id,name:p.name}))};
+ if(actor.role==='admin'){
+  const clients=(state.clients||[]).filter(c=>c.active!==false).map(clean);
+  return {clients,sellers:people.filter(p=>p.active!==false).map(p=>({id:p.id,name:p.name})),equipment:registryChoices(state,clients)};
+ }
  const related=(state.services||[]).filter(s=>s.billingOwner?.role===actor.role&&s.billingOwner.id===actor.id||actor.role==='employee'&&s.employeeId===actor.id||actor.role==='seller'&&s.sellerId===actor.id);
  const clients=[],seen=new Set();for(const service of related){
   if(service.clientSource==='creator'||!service.clientName)continue;
@@ -75,7 +79,7 @@ export function registrationContacts(state,actor){
   const key=client.id;if(!seen.has(key)){seen.add(key);clients.push(client);}
  }
  const sellerIds=new Set(actor.role==='seller'?[actor.id]:related.flatMap(s=>[s.sellerId,s.billingOwner?.role==='seller'?s.billingOwner.id:'']).filter(Boolean));
- return {clients,sellers:people.filter(p=>p.active!==false&&sellerIds.has(p.id)).map(p=>({id:p.id,name:p.name}))};
+ return {clients,sellers:people.filter(p=>p.active!==false&&sellerIds.has(p.id)).map(p=>({id:p.id,name:p.name})),equipment:registryChoices(state,clients)};
 }
 
 
@@ -310,6 +314,10 @@ const requirePolicy = policy => {
 };
 
 export function applyAdminOperation(state,data,username,at){
+ if(['equipment-location','equipment-save','equipment-archive'].includes(data.action)){
+   applyRegistryChange(state,data,username,at,registrationCatalog(state));
+   return {equipmentRegistryChange:true};
+ }
  const workshop=workshopAdminOperation(state,data,username,at);if(workshop)return workshop;
   if(data.action==='save-catalog'){
     state.costCatalog ||= [];

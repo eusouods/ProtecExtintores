@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -58,6 +59,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.json.JSONArray
 import org.json.JSONObject
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -186,6 +190,9 @@ private fun RegistrationForm(vm: AppVm, catalog: RegistrationCatalog, draft: JSO
                                                 put(group, JSONArray(optJSONArray(group).objects().filterIndexed { i, _ -> i != index }))
                                             }
                                         })
+                                }
+                                if (group == "items" && catalog.registeredEquipment(draft.str("clientChoice")).isNotEmpty()) {
+                                    item { RegisteredEquipmentPicker(vm, catalog, draft) }
                                 }
                             }
                         }
@@ -347,7 +354,11 @@ private fun RegistrationRows(group: String, rows: List<JSONObject>, catalog: Reg
             HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             Text("${line?.count ?: 1} × ${line?.label.orEmpty()}", style = MaterialTheme.typography.bodyMedium)
             FlowRow {
-                ExpressiveTextButton(onClick = { open(index, row) }) { Text("Editar") }
+                if (row.str("equipmentId").isBlank()) {
+                    ExpressiveTextButton(onClick = { open(index, row) }) { Text("Editar") }
+                } else {
+                    Text(equipmentCode(row.str("equipmentId")), style = MaterialTheme.typography.bodySmall)
+                }
                 ExpressiveTextButton(onClick = { remove(index) }) { Text("Remover") }
             }
         }
@@ -357,6 +368,55 @@ private fun RegistrationRows(group: String, rows: List<JSONObject>, catalog: Reg
             if (group == "hydrantHoses") choice.put("type", "Tipo 1").put("diameterMm", "38").put("lengthMeters", "15")
             open(rows.size, choice)
         }) { Text("Adicionar") }
+    }
+}
+
+@Composable
+private fun RegisteredEquipmentPicker(vm: AppVm, catalog: RegistrationCatalog, draft: JSONObject) {
+    val clientId = draft.str("clientChoice")
+    val rows = draft.optJSONArray("items").objects()
+    val used = rows.map { it.str("equipmentId") }.toSet()
+    val assets = catalog.registeredEquipment(clientId).filterNot { it.str("id") in used }
+    var selected by remember(clientId) { mutableStateOf("") }
+    var code by remember(clientId) { mutableStateOf("") }
+    var error by remember(clientId) { mutableStateOf("") }
+    val context = LocalContext.current
+    CardBox {
+        Pick("Equipamento da ficha", selected, assets.map { SheetOption(it.str("id"), equipmentTitle(it)) }) {
+            selected = it
+            code = ""
+            error = ""
+        }
+        OutlinedTextField(code, { code = it.take(20); error = "" },
+            label = { Text("Código da etiqueta") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        ExpressiveTextButton(enabled = assets.isNotEmpty() && rows.size < 50, onClick = {
+            val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+            GmsBarcodeScanning.getClient(context, options).startScan()
+                .addOnSuccessListener { barcode ->
+                    val value = barcode.rawValue.orEmpty().trim()
+                    if (assets.any { equipmentCode(it.str("id")).equals(value, ignoreCase = true) }) {
+                        code = value
+                        error = ""
+                    } else error = "A etiqueta não corresponde a um equipamento disponível deste cliente."
+                }
+                .addOnFailureListener { error = "Câmera indisponível. Digite o código ou selecione o equipamento." }
+        }) { Text("Ler etiqueta QR") }
+        if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error)
+        ExpressiveOutlinedButton(enabled = assets.isNotEmpty() && rows.size < 50, onClick = {
+            val asset = assets.firstOrNull {
+                if (code.isBlank()) it.str("id") == selected
+                else equipmentCode(it.str("id")).equals(code.trim(), ignoreCase = true)
+            }
+            if (asset == null) error = "Confira a etiqueta ou selecione um equipamento deste cliente."
+            else {
+                val item = JSONObject().put("equipmentId", asset.str("id"))
+                    .put("type", asset.str("type")).put("kg", asset.str("kg")).put("qty", 1)
+                vm.editRegistration { put("items", JSONArray(rows + item)) }
+                selected = ""
+                code = ""
+                error = ""
+            }
+        }) { Text("Vincular à ordem") }
     }
 }
 
@@ -448,7 +508,7 @@ private fun RegistrationRowEditor(catalog: RegistrationCatalog, edit: RowToEdit,
 private fun JSONObject.removeField(field: String): JSONObject = apply { remove(field) }
 
 @Composable
-private fun Pick(label: String, selected: String?, options: List<Choice>, choose: (String) -> Unit) {
+internal fun Pick(label: String, selected: String?, options: List<SheetOption>, choose: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val value = options.firstOrNull { it.value == selected }?.label ?: "Selecionar"
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {

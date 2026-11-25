@@ -116,7 +116,10 @@
     return groups.map(group => `<tr class="receipt-section"><th colspan="3">${escape(group.label)}</th></tr>${group.rows.map(row => {
       const known = row.items.every(item => item.unitPrice !== '' && item.unitPrice != null && Number.isFinite(Number(item.unitPrice)));
       const subtotal = known ? formatMoney(row.items.reduce((total,item) => total + Number(item.unitPrice) * (Number(item.quantity) || 1), 0)) : '—';
-      return `<tr><td>${escape([row.name,row.detail].filter(Boolean).join(' · '))}</td><td>${escape(row.quantity)}</td><td>${escape(subtotal)}</td></tr>`;
+      const units = row.items.filter(item => item.equipmentId).map(item =>
+        [globalThis.protecEquipmentRecords?.code(item.equipmentId), item.serial && 'Série ' + item.serial, item.equipmentLocation].filter(Boolean).join(' · '));
+      const references = units.map(unit => `<br><small>${escape(unit)}</small>`).join('');
+      return `<tr><td>${escape([row.name,row.detail].filter(Boolean).join(' · '))}${references}</td><td>${escape(row.quantity)}</td><td>${escape(subtotal)}</td></tr>`;
     }).join('')}`).join('');
   }
 

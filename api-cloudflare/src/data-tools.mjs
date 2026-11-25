@@ -24,6 +24,7 @@ async function reauthenticate(env,username,password){
 }
 export function resetClientsAndServices(state,at){
  const next=structuredClone(state);next.clients=[];next.services=[];next.teamBills=[];next.orders=(next.orders||[]).filter(o=>o.kind!=='Manutenção').map(o=>({...o,customerId:'',clientId:'',clientDirectoryExcluded:true}));
+ delete next.equipmentRegistry;
  for(const item of next.extinguishers||[])for(const key of ['clientId','clientName','serviceId','customerId'])delete item[key];
  for(const item of next.inventory||[])if(['ABC','BC'].includes(item.powderAgent)){item.qty=0;item.unitCost=null;}
  next.powderMovements=[];next.powderMovementArchive=[];delete next.powderHistoryClearedAt;delete next.powderHistoryClearedBy;
